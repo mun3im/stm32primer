@@ -49,8 +49,9 @@
     \end{columns}
 \end{frame}
 
+
 %===============================================================================
-\section{Arithmetic}
+\section{Arithmetic Instructions}
 %===============================================================================
 
 \begin{frame}{Arithmetic Instructions}
@@ -123,8 +124,9 @@ total = a + b - c;
     registers, store the result.}}
 \end{frame}
 
+
 %===============================================================================
-\section{Logic and Bit Manipulation}
+\section{Logical Instructions and Bit Manipulation}
 %===============================================================================
 
 \begin{frame}{Logical Instructions}
@@ -342,6 +344,7 @@ GPIOA->MODER |=
     \end{block}
 \end{frame}
 
+
 %===============================================================================
 \section{Shift Basics}
 %===============================================================================
@@ -400,6 +403,50 @@ GPIOA->MODER |=
         separate shift step first. That is the subject of the next
         section.
     \end{block}
+\end{frame}
+
+\begin{frame}{Logical vs.\ Arithmetic Right Shifts}
+    \leavevmode
+    {\small Both shift right, and both look the same for positive numbers. The difference shows only when the sign bit is 1. Here \texttt{11110100} ($-44$) is shifted right by two:}
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{tikzpicture}[x=7.2mm, y=8mm]
+    \def\bw{0.95}
+    % ---------- before and LSR ----------
+    \node[lbl, anchor=east, align=right, font=\small] at (-0.4,1.375) {\textbf{before}};
+    \foreach \i/\b in {0/1,1/1,2/1,3/1,4/0,5/1,6/0,7/0}{
+        \draw[draw=blkline, fill=blkfill, thick] (\i*\bw,1) rectangle (\i*\bw+\bw,1.75);
+        \node[font=\small\ttfamily] at (\i*\bw+\bw/2,1.375) {\b};
+    }
+    \node[lbl, anchor=west, font=\small] at (8*\bw+0.3,1.375) {$= -44$ signed};
+
+    \node[lbl, anchor=east, align=right, font=\small] at (-0.4,-0.125) {\texttt{LSR \#2}};
+    \foreach \i/\b in {0/0,1/0,2/1,3/1,4/1,5/1,6/0,7/1}{
+        \draw[draw=blkline, fill=\ifnum\i<2 white\else blkfill\fi, thick]
+            (\i*\bw,-0.5) rectangle (\i*\bw+\bw,0.25);
+        \node[font=\small\ttfamily] at (\i*\bw+\bw/2,-0.125) {\b};
+    }
+    \node[lbl, anchor=west, font=\small] at (8*\bw+0.3,-0.125) {$= +61$ --- \textbf{sign lost}};
+    \node[lbl, anchor=north, font=\footnotesize, align=center] at (1*\bw,-0.5) {zeros in};
+
+    % ---------- ASR ----------
+    \begin{scope}[yshift=-12mm]
+    \node[lbl, anchor=east, align=right, font=\small] at (-0.4,-0.125) {\texttt{ASR \#2}};
+    \foreach \i/\b in {0/1,1/1,2/1,3/1,4/1,5/1,6/0,7/1}{
+        \draw[draw=accentline, fill=\ifnum\i<2 accentfill\else blkfill\fi, thick]
+            (\i*\bw,-0.5) rectangle (\i*\bw+\bw,0.25);
+        \node[font=\small\ttfamily] at (\i*\bw+\bw/2,-0.125) {\b};
+    }
+    \node[lbl, anchor=west, font=\small] at (8*\bw+0.3,-0.125) {$= -11$ --- \textbf{correct}};
+    \node[lbl, anchor=north, font=\footnotesize, align=center, text=accentline]
+        at (1*\bw,-0.5) {sign bit copied in};
+    \end{scope}
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{1mm}
+    {\small The bits shifted \emph{out} are the same. Only the bits shifted \emph{in} differ. \texttt{LSR} suits masks and unsigned values. \texttt{ASR} divides a signed value by $2^n$.}
 \end{frame}
 
 \definecolor{nibhifill}{HTML}{DCEBFF}
@@ -519,9 +566,13 @@ total = 4 * a + b;
     \end{block}
 
     \vspace{1mm}
-    {\small This only works for a power-of-two constant. \texttt{4 * a}
-    becomes a shift; \texttt{5 * a} still needs a real \texttt{MUL}.}
+    {\small A power-of-two constant becomes one shift. Other constants can
+    avoid \texttt{MUL} too, for example \texttt{5 * a} becomes one
+    \texttt{ADD} with a shifted operand. See the optional slide on the
+    compiler's choices.}
 \end{frame}
+
+
 %===============================================================================
 \section{The Barrel Shifter}
 %===============================================================================
@@ -654,6 +705,7 @@ total = 4 * a + b;
 		update in \texttt{xPSR}. The carry bit of xPSR is sent to ALU and barrel shifter.\par}
 \end{frame}
 
+
 %===============================================================================
 \section{Addressing Modes}
 %===============================================================================
@@ -686,7 +738,6 @@ total = 4 * a + b;
 	\end{itemize}
 \end{block}
 \end{frame}
-
 
 \begin{frame}[fragile]{Syntax Cheat Sheet}
     \begin{columns}[b]
@@ -784,9 +835,6 @@ total = 4 * a + b;
 		is \alert{data}, such as a run-time index.}
 \end{frame}
 
-%===============================================================================
-\section{Dynamic Indexed Modes}
-%===============================================================================
 \begin{frame}{Dynamic Indexed Access}
 	\begin{center}
 		{\small
@@ -827,7 +875,6 @@ total = 4 * a + b;
 		\]
 	}
 \end{frame}
-
 
 \begin{frame}[fragile]{Scaled Register Offset}
 	\begin{columns}[T]
@@ -985,10 +1032,6 @@ This is why array access on ARM is so cheap.
 
 \end{frame}
 
-
-
-
-
 \begin{frame}[fragile]{Worked Example: Array Processing}
 	\begin{columns}[T]
 		\begin{column}{.48\textwidth}
@@ -1033,6 +1076,86 @@ loop
 	{\small The \texttt{LSL \#2} handles the array arithmetic;
 		no multiply instruction appears.}
 \end{frame}
+
+
+%===============================================================================
+\section{Advanced Arithmetic Operations}
+%===============================================================================
+
+\begin{frame}[fragile]{Advanced Arithmetic: Carry and NOP}{Two more instructions worth knowing}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        \textbf{\texttt{ADC} and \texttt{SBC}}
+        {\small
+        \begin{itemize}\itemsep1pt
+            \item \texttt{ADC Rd, Rn, Op2} : \texttt{Rd = Rn + Op2 + C}
+            \item \texttt{SBC Rd, Rn, Op2} : \texttt{Rd = Rn $-$ Op2 $-$ $\overline{C}$}
+            \item For arithmetic \alert{wider than one register}: \texttt{uint64\_t}, or a bignum.
+            \item Add the low words with \texttt{ADDS} to capture the carry. Then add the high words with \texttt{ADC}.
+        \end{itemize}}
+
+        \vspace{2mm}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+uint64_t sum = a + b;
+\end{cc}
+\begin{asm}[basicstyle=\ttfamily\footnotesize]
+ADDS R0, R0, R2   ; low words, sets C
+ADC  R1, R1, R3   ; high words + carry
+\end{asm}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        \textbf{\texttt{NOP}}
+        {\small
+        \begin{itemize}\itemsep1pt
+            \item Changes no register, no memory, no flag.
+            \item Advances the PC and uses one cycle.
+            \item C has no operator for it. An empty statement \texttt{;} may be deleted by the compiler. A \texttt{NOP} may not.
+            \item Used to pad a short delay, to align code, or to leave space for a patch.
+        \end{itemize}}
+
+        \vspace{2mm}
+        \begin{block}{Already covered}
+            \texttt{RSB} (negation) and \texttt{SDIV}/\texttt{UDIV} (2--12 cycles, no flags) are in the arithmetic table at the start of the chapter.
+        \end{block}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+
+%===============================================================================
+\section{Optional: How a Compiler Chooses Between Shift and Multiply}
+%===============================================================================
+
+\begin{frame}{Optional: Shift or Multiply? Three Constants}{One C line, three different strategies}
+    \leavevmode
+    {\small The function \texttt{return raw * K;} compiles differently for each constant \texttt{K}. The argument arrives in \texttt{R0} and the result leaves in \texttt{R0}.}
+
+    \vspace{2mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l R{.34\textwidth}@{}}
+        \toprule
+        \textbf{Constant} & \textbf{Instruction} & \textbf{Why} \\
+        \midrule
+        $\times 5$  & \texttt{ADD R0, R0, R0, LSL \#2} & $5 = 4 + 1$: the shifter makes $4\times$, the ALU adds the original \\
+        $\times 8$  & \texttt{LSL R0, R0, \#3}         & a pure shift; no addition needed \\
+        $\times 7$  & \texttt{RSB R0, R0, R0, LSL \#3} & $7 = 8 - 1$: subtract, with \texttt{RSB} reversing the order \\
+        $\times 11$ & \texttt{MOV R1, \#11} then \texttt{MUL R0, R0, R1} & not a power of two, nor one away from one: a real multiply \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    \begin{block}{This is what ``reading assembly'' means}
+        Not decoding a strange language. Recognising a few patterns, and asking \alert{why the compiler chose each one}. This is not a rule: a different compiler or setting may choose differently.
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
 
 \begin{frame}{Summary}
 	\begin{columns}[c]
