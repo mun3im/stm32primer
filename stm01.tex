@@ -113,6 +113,7 @@
 	it yet: \alert{this is our roadmap}.}
 \end{frame}
 
+
 %===============================================================================
 \section{Embedded Systems}
 %===============================================================================
@@ -206,7 +207,6 @@
     \end{block}
 \end{frame}
 
-
 \begin{frame}{What Makes a System Embedded}
     \leavevmode
     {\small Every computer, from server to thermostat, is processor,
@@ -251,6 +251,28 @@
     \end{block}
 \end{frame}
 
+\begin{frame}{Classes of Computing Systems}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.2\textwidth} R{.2\textwidth} R{.24\textwidth}@{}}
+        \toprule
+        \textbf{Feature} & \textbf{Server} & \textbf{Personal} & \textbf{Embedded} \\
+        \midrule
+        Price of system & \$10,000 -- \$10M & \$1,000 -- \$10,000 & \$10 -- \$100,000 \\
+        Price of processor & \$200 -- \$2,000 & \$100 -- \$1,000 & \$0.20 -- \$200 \\
+        Sold per year & 5 million & 150 million & \alert{1 billion} \\
+        Critical design issues & Throughput, availability, scalability & Price-performance, graphics & Price, power, application-specific performance \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{A cheap processor is not an easy problem}
+        Many systems must meet a \alert{fixed deadline}, or fail completely. A \emph{real-time} system is correct only if the answer arrives \emph{on time}: an airbag controller that is right but late has still failed. Size, weight, power and cost are all tightly limited. Many devices run for years on one battery.
+    \end{block}
+\end{frame}
+
 \begin{frame}{Embedded Systems: An Example}
     \begin{minipage}[c]{0.66\textwidth}
         \includegraphics[width=\textwidth, height=.68\textheight, keepaspectratio]%
@@ -281,6 +303,32 @@
     suspension control module (SCM), door control unit (DCM), battery management
     system (BMS), and many more.\par}
 \end{frame}
+
+\begin{frame}{Components of an Embedded System}{Sensing, processing, actuation}
+    \begin{center}
+    \begin{tikzpicture}[x=10mm, y=10mm]
+        \node[memblk, minimum width=21mm, minimum height=11mm] (sen) at (0,0) {Sensor};
+        \node[blk, minimum width=21mm, minimum height=11mm] (adc) at (2.5,0) {Analog-to-digital\\converter};
+        \node[cpublk, minimum width=21mm, minimum height=13mm] (cpu) at (5.0,0) {Processor};
+        \node[blk, minimum width=21mm, minimum height=11mm] (dac) at (7.5,0) {Digital-to-analog\\converter};
+        \node[memblk, minimum width=21mm, minimum height=11mm] (act) at (10.0,0) {Actuator};
+        \node[blk, minimum width=21mm, minimum height=11mm] (hmi) at (5.0,2.1) {Human--machine\\interface};
+        \node[blk, minimum width=21mm, minimum height=11mm] (mem) at (5.0,-2.1) {Memory};
+        \draw[flow] (sen) -- (adc);
+        \draw[flow] (adc) -- (cpu);
+        \draw[flow] (cpu) -- (dac);
+        \draw[flow] (dac) -- (act);
+        \draw[{Stealth[length=2mm]}-{Stealth[length=2mm]}, draw=blkline, thick] (cpu) -- (hmi);
+        \draw[{Stealth[length=2mm]}-{Stealth[length=2mm]}, draw=blkline, thick] (cpu) -- (mem);
+        \node[lbl, anchor=north, align=center, text=memline] at (0,-0.75) {the physical world,\\measured};
+        \node[lbl, anchor=north, align=center, text=memline] at (10.0,-0.75) {the physical world,\\driven};
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{1mm}
+    {\small \textbf{Sensors} turn a physical quantity into a signal. \textbf{ADCs} turn it into a number. The \textbf{processor} computes, with \textbf{memory} for program and data. \textbf{DACs} and \textbf{actuators} turn results back into movement, heat or sound. An \textbf{HMI} lets a person observe or direct the system.}
+\end{frame}
+
 
 %===============================================================================
 \section{Microprocessor vs Microcontroller}
@@ -350,8 +398,6 @@
 	\end{block}
 
 \end{frame}
-
-
 
 \begin{frame}{Where the Chip Boundary Falls}
 	\leavevmode
@@ -462,6 +508,7 @@
     \end{columns}
 \end{frame}
 
+
 %===============================================================================
 \section{Buses and Memory-Mapped I/O}
 %===============================================================================
@@ -547,7 +594,6 @@
 	\end{beamercolorbox}
 \end{frame}
 
-
 \begin{frame}{The Address Bus}
     \begin{itemize}\itemsep4pt
         \item The address bus carries the address of the memory location
@@ -621,7 +667,6 @@
         trace a program.
     \end{block}
 \end{frame}
-
 
 \begin{frame}{Memory Organization: Addresses and Contents}
     \leavevmode
@@ -723,7 +768,6 @@
     \checkit{the CPU puts \texttt{0x2000} on the address bus and requests a read. Which bus carries the stored value back?}
 \end{frame}
 
-
 \begin{frame}{Memory-Mapped I/O}
     \leavevmode
     {\small The CPU reaches peripherals the \alert{same way} it reaches memory:
@@ -764,7 +808,6 @@
     \vspace{1mm}
     \checkit{what determines whether a read reaches SRAM or a peripheral register?}
 \end{frame}
-
 
 \begin{frame}{Same Transaction, Different Destination}
     \leavevmode
@@ -824,6 +867,7 @@
     {\footnotesize Peripherals need \alert{no special instructions} ---
     the address alone selects what the \texttt{LDR}/\texttt{STR} reaches.}
 \end{frame}
+
 
 %===============================================================================
 \section{Inside the CPU}
@@ -1016,6 +1060,7 @@
     \vspace{2mm}
     {\small The $z = x + y$ trace on the next slides puts every one of these to work. Chapter 2 replaces this generic register set with the Cortex-M4's actual sixteen registers.}
 \end{frame}
+
 
 %===============================================================================
 \section{Execution Cycle and Program Trace}
@@ -1257,6 +1302,11 @@
     16-bit machine instructions. Chapters 5--7 explain each one.}
 \end{frame}
 
+
+%===============================================================================
+\section{Embedded System Design}
+%===============================================================================
+
 \begin{frame}{From Source to Executable}
     \begin{columns}[c]
     \begin{column}{.46\textwidth}
@@ -1310,6 +1360,27 @@
     \end{columns}
 \end{frame}
 
+\begin{frame}{The Toolchain}{The programs that turn source into something the target can run}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.68\textwidth}@{}}
+        \toprule
+        \textbf{Tool} & \textbf{What it does} \\
+        \midrule
+        \textbf{Compiler} & Translates C into assembly or machine code, producing an object file. \\
+        \textbf{Cross-compiler} & Runs on one platform but \emph{generates} code for another: on your x86 laptop, emitting ARM instructions. The normal case in embedded work. \\
+        \textbf{Assembler} & Translates assembly into machine code, also as an object file. \\
+        \textbf{Linker} & Combines object files and libraries into one executable. It decides where each piece lands in Flash or RAM, and adjusts addresses to match. \\
+        \textbf{Debugger} & Halts the running program to inspect registers and memory, or to examine its state after a crash. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    {\small An \alert{IDE} bundles them behind one interface, but the steps are unchanged. Knowing them is what lets you diagnose a build that fails \emph{somewhere in the middle}. C is an abstraction: sometimes you must read the instructions underneath. Assembly costs more effort but gives exact control of size and timing.}
+\end{frame}
+
 \begin{frame}{Two Computers: Host and Target}
     \begin{columns}[c]
     \begin{column}{.58\textwidth}
@@ -1359,9 +1430,89 @@
     {\small On a Nucleo board the \alert{ST-LINK} provides all three over one USB cable.}
 \end{frame}
 
+
+%===============================================================================
+\section{How Embedded Engineers Debug}
+%===============================================================================
+
+\begin{frame}{How Embedded Engineers Debug}{The debugger checks a prediction}
+    \leavevmode
+    {\small On a microcontroller there may be no console, no OS and no file system. The fault may even be that a peripheral was never switched on. So engineers use a \alert{hardware debugger}: a probe such as the ST-LINK on every Nucleo, connected to the processor's debug port. It can halt, inspect and resume the CPU.}
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm]
+        \node[blk, text width=22mm] (src) at (0,0) {Source code};
+        \node[blk, text width=22mm] (elf) at (3.4,0) {Executable (\texttt{.elf})};
+        \node[blk, text width=26mm] (run) at (7.0,0) {Code running on the MCU};
+        \node[blk, text width=26mm] (ins) at (10.9,0) {Inspect registers, memory, peripherals};
+        \node[cpublk, text width=26mm] (cmp) at (10.9,-1.9) {Compare with your prediction};
+        \draw[flow] (src) -- node[lbl, above] {compile} (elf);
+        \draw[flow] (elf) -- node[lbl, above] {flash} (run);
+        \draw[flow] (run) -- node[lbl, above] {halt} (ins);
+        \draw[flow] (ins) -- (cmp);
+        \draw[flow] (cmp.west) -- ++(-12mm,0) -| (run.south);
+        \node[lbl, fill=white, inner sep=1pt] at (7.0,-1.9) {resume or single-step};
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{1mm}
+    {\small Throughout this course you will predict a register's contents \emph{before} running. The debugger tells you whether you were right.}
+\end{frame}
+
+\begin{frame}{Three Debugging Habits}{Worth forming now}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}R{.3\textwidth} R{.56\textwidth}@{}}
+        \toprule
+        \textbf{Habit} & \textbf{Why} \\
+        \midrule
+        \textbf{Read the peripheral registers, not just your variables} & Most embedded bugs are \emph{configuration} errors. If a pin does not toggle, look at \texttt{MODER} and the RCC clock-enable register before you suspect your loop. \\
+        \textbf{Single-step the first run of any new configuration} & Configuration code runs once, at startup. A mistake there gives silence, not a visible error. \\
+        \textbf{Check the clock first} & On an STM32 a peripheral with no clock reads back zero and ignores every write. This one mistake explains a large share of ``my code does nothing''. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+
+%===============================================================================
+\section{Selecting a Microprocessor}
+%===============================================================================
+
+\begin{frame}{Selecting a Microprocessor}{Engineers do not simply pick the fastest chip}
+    \leavevmode
+    {\small The SWaP-C limits (size, weight, power, cost) set the outer boundary. They decide whether the job needs a microprocessor or a microcontroller at all. Three more criteria narrow the choice, and none is about the silicon:}
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.32\textwidth}
+        \begin{block}{Development support}
+            {\small A mature compiler, a hardware debugger, a cheap board such as the Nucleo. A better chip with poor tools loses to an adequate chip with good ones. \alert{Engineering time costs more than parts.}}
+        \end{block}
+    \end{column}
+    \begin{column}{.32\textwidth}
+        \begin{block}{Code density}
+            {\small How much Flash the program needs. Denser code means a smaller, cheaper, lower-power part. This is why ARM's compact \alert{Thumb} instruction set exists.}
+        \end{block}
+    \end{column}
+    \begin{column}{.32\textwidth}
+        \begin{block}{Lifecycle}
+            {\small Will the maker still sell the part in five years? A redesign forced by a discontinued chip costs far more than a slightly dearer part at the start.}
+        \end{block}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    {\small The rest of the course assumes the answer is an \alert{STM32F446RE}, and asks: given this chip, how do you make it do something?}
+\end{frame}
+
+
 %===============================================================================
 \section{Meet the Board}
 %===============================================================================
+
 \begin{frame}{From Requirements to Hardware}
 	\begin{columns}[c]
 		\begin{column}{.48\textwidth}
@@ -1388,6 +1539,7 @@
 		\end{column}
 	\end{columns}
 \end{frame}
+
 \begin{frame}{Meet the Board: STM32 Nucleo-F446RE}
     \begin{columns}[c]
     \begin{column}{.42\textwidth}
@@ -1419,6 +1571,7 @@
     \end{column}
     \end{columns}
 \end{frame}
+
 
 %===============================================================================
 \section{From C to a Pin}
