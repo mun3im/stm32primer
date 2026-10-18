@@ -88,8 +88,9 @@
     \end{block}
 \end{frame}
 
+
 %===============================================================================
-\section{The Running Example: A Sensor Monitor}
+\section{The Project: A Sensor Monitor}
 %===============================================================================
 
 \begin{frame}{The Project}
@@ -129,8 +130,9 @@
     \end{enumerate}}
 \end{frame}
 
+
 %===============================================================================
-\section{The Non-Blocking Main Loop}
+\section{Architecture: The Non-Blocking Main Loop}
 %===============================================================================
 
 \begin{frame}[fragile]{The Pattern}
@@ -226,8 +228,310 @@ while (1) {
     \end{block}
 \end{frame}
 
+
 %===============================================================================
-\section{Verification}
+\section{The Complete Program}
+%===============================================================================
+
+\begin{frame}[fragile]{The Complete Program (1)}{Shared state and interrupt handlers}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+#include "stm32f4xx.h"
+
+/* Shared state: written by ISRs, read by main */
+volatile uint32_t msTicks     = 0;
+volatile uint16_t adc_result  = 0;
+volatile uint8_t  adc_ready   = 0;
+volatile uint8_t  button_flag = 0;
+
+/* Application state (main context only) */
+static uint8_t show_millivolts = 0;
+
+void SysTick_Handler(void) {
+    msTicks++;      // its only job: advance time
+}
+
+void ADC_IRQHandler(void) {
+    if (ADC1->SR & (1U << 1)) {   // EOC
+        adc_result = (uint16_t)ADC1->DR;
+        adc_ready  = 1;
+    }
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.46\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+void EXTI15_10_IRQHandler(void) {
+    static uint32_t last_press = 0;
+
+    if (EXTI->PR & (1U << 13)) {
+        EXTI->PR = (1U << 13);  // clear FIRST
+
+        // Debounce by timestamp,
+        // no delay loop in an ISR.
+        if ((msTicks - last_press) > 200) {
+            last_press  = msTicks;
+            button_flag = 1;
+        }
+    }
+}
+\end{cc}
+        \vspace{1mm}
+        {\small Each handler does the \alert{minimum}: capture the event, set a \texttt{volatile} flag, return.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{The Complete Program (2)}{Setup: LEDs and button}
+    \begin{columns}[T]
+    \begin{column}{.46\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+static void leds_init(void) {
+    RCC->AHB1ENR |= (1U << 1);   // GPIOB
+    for (uint32_t pin = 0; pin < 4; pin++) {
+        GPIOB->MODER &= ~(3U << (pin * 2));
+        GPIOB->MODER |=  (1U << (pin * 2));
+    }
+}
+\end{cc}
+        \vspace{1mm}
+        {\small Four outputs, \texttt{PB0}--\texttt{PB3}: the LED bar.}
+    \end{column}
+    \begin{column}{.5\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+static void button_init(void) {
+    RCC->AHB1ENR |= (1U << 2);   // GPIOC
+    GPIOC->MODER &= ~(3U << (13 * 2));
+    GPIOC->PUPDR &= ~(3U << (13 * 2));
+    GPIOC->PUPDR |=  (1U << (13 * 2));
+    RCC->APB2ENR |= (1U << 14);  // SYSCFG
+    SYSCFG->EXTICR[3] &= ~(0xFU << 4);
+    SYSCFG->EXTICR[3] |=  (2U << 4);
+    EXTI->FTSR |= (1U << 13);    // falling
+    EXTI->IMR  |= (1U << 13);    // unmask
+    NVIC_SetPriority(EXTI15_10_IRQn, 3);
+    NVIC_EnableIRQ(EXTI15_10_IRQn);
+}
+\end{cc}
+    \end{column}
+    \end{columns}
+    \vspace{1mm}
+    {\small Every peripheral follows the same shape: \alert{clock, pins, parameters, then use}.}
+\end{frame}
+
+\begin{frame}[fragile]{The Complete Program (3)}{Setup: ADC and UART}
+    \begin{columns}[T]
+    \begin{column}{.46\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+static void adc_init(void) {
+    RCC->AHB1ENR |= (1U << 0);   // GPIOA
+    RCC->APB2ENR |= (1U << 8);   // ADC1
+    GPIOA->MODER |= (3U << (0 * 2));
+    ADC1->SQR1  &= ~(0xFU << 20);
+    ADC1->SQR3  &= ~(0x1FU << 0);
+    ADC1->SMPR2 &= ~(7U << 0);
+    ADC1->SMPR2 |=  (7U << 0);   // 480 cycles
+    ADC1->CR1   |=  (1U << 5);   // EOCIE
+    ADC1->CR2   |=  (1U << 0);   // ADON
+    NVIC_SetPriority(ADC_IRQn, 1);
+    NVIC_EnableIRQ(ADC_IRQn);
+}
+\end{cc}
+        \vspace{1mm}
+        {\small ADC priority 1, button priority 3: the ADC is more urgent.}
+    \end{column}
+    \begin{column}{.5\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+static void uart_init(void) {
+    RCC->AHB1ENR |= (1U << 1);   // GPIOB
+    RCC->APB2ENR |= (1U << 4);   // USART1
+    GPIOB->MODER &= ~((3U<<(6*2)) | (3U<<(7*2)));
+    GPIOB->MODER |=  ((2U<<(6*2)) | (2U<<(7*2)));
+    GPIOB->AFR[0] &= ~((0xFU<<(6*4)) | (0xFU<<(7*4)));
+    GPIOB->AFR[0] |=  ((7U<<(6*4)) | (7U<<(7*4)));
+    USART1->BRR  = (104U << 4) | 3U; // 9600 @ 16 MHz
+    USART1->CR1 |= (1U << 3) | (1U << 2); // TE, RE
+    USART1->CR1 |= (1U << 13);   // UE
+}
+\end{cc}
+        \vspace{1mm}
+        {\small Pin map: \texttt{PA0} analog, \texttt{PB6}/\texttt{PB7} USART1, \texttt{PB0}--\texttt{PB3} LED bar, \texttt{PC13} button.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{The Complete Program (4)}{Helpers}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+static void uart_write(uint8_t c) {
+    while (!(USART1->SR & (1U << 7))) { }  // TXE
+    USART1->DR = c;
+}
+
+static void uart_print(const char *s) {
+    while (*s) uart_write((uint8_t)*s++);
+}
+
+static void uart_print_uint(uint32_t v) {
+    char buf[11];
+    int i = 0;
+    if (v == 0) { uart_write('0'); return; }
+    while (v) { buf[i++] = '0' + (v % 10); v /= 10; }
+    while (i)  { uart_write((uint8_t)buf[--i]); }
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.46\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+// 12-bit reading -> 4-LED bar,
+// written atomically via BSRR
+static void leds_show_bar(uint16_t raw) {
+    uint32_t level = (raw * 5U) / 4096U;  // 0..4
+    uint32_t pattern = (level >= 4) ? 0x0F
+                       : ((1U << level) - 1U);
+    GPIOB->BSRR = (pattern & 0x0F)
+                | ((~pattern & 0x0F) << 16);
+}
+\end{cc}
+        \vspace{1mm}
+        {\small One \texttt{BSRR} store sets some LEDs and clears the others in the same cycle.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{The Complete Program (5)}{\texttt{main()}: setup and two of the three tasks}
+    \begin{columns}[T]
+    \begin{column}{.6\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+int main(void) {
+    __disable_irq();
+    leds_init(); button_init();
+    adc_init();  uart_init();
+    SysTick_Config(16000000 / 1000);  // 1 ms tick
+    __enable_irq();
+    uart_print("\r\nSensor Monitor ready.\r\n");
+
+    uint32_t next_sample = 0;
+    while (1) {
+        /* Task 1: start a conversion every 100 ms */
+        if ((msTicks - next_sample) >= 100) {
+            next_sample += 100;       // no drift
+            ADC1->CR2 |= (1U << 30);  // SWSTART
+        }
+
+        /* Task 2: a result arrived (next slide) */
+
+        /* Task 3: button pressed */
+        if (button_flag) {
+            button_flag = 0;
+            show_millivolts = !show_millivolts;
+            uart_print(show_millivolts
+                       ? "-> millivolts\r\n" : "-> raw\r\n");
+        }
+    }
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.36\textwidth}
+        \textbf{Read it as three \texttt{if}s}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item \texttt{(msTicks - next\_sample) >= 100}: a sample is \alert{due}.
+            \item \texttt{adc\_ready}: a result \alert{arrived}.
+            \item \texttt{button\_flag}: the user \alert{pressed}.
+        \end{itemize}}
+        \vspace{1mm}
+        {\small Each branch finishes quickly and returns to the top. \alert{No branch waits for another.}}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{The Complete Program (6)}{Task 2: a result arrived}
+    \begin{columns}[T]
+    \begin{column}{.58\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+if (adc_ready) {
+    uint16_t raw;
+
+    __disable_irq();            // critical section:
+    raw       = adc_result;     // copy the shared value
+    adc_ready = 0;
+    __enable_irq();
+
+    leds_show_bar(raw);
+
+    if (show_millivolts) {
+        // Integer maths only: no FPU needed.
+        uint32_t mv = ((uint32_t)raw * 3300U) / 4095U;
+        uart_print("Level: ");
+        uart_print_uint(mv);
+        uart_print(" mV\r\n");
+    } else {
+        uart_print("Raw:   ");
+        uart_print_uint(raw);
+        uart_print("\r\n");
+    }
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.38\textwidth}
+        \begin{block}{Why a critical section?}
+            {\small The ISR may fire between reading the value and clearing the flag. Interrupts are off for only \alert{three statements}. The slow UART printing happens outside.}
+        \end{block}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+
+%===============================================================================
+\section{Design Decisions Worth Noting}
+%===============================================================================
+
+\begin{frame}{Design Decisions Worth Noting}
+    \begin{center}
+    {\footnotesize
+    \striped
+    \begin{tabular}{@{}l R{.7\textwidth}@{}}
+        \toprule
+        \textbf{Decision} & \textbf{Why} \\
+        \midrule
+        \textbf{The schedule does not drift} & \texttt{next\_sample += 100} steps by a fixed amount. \texttt{msTicks + 100} would add any delay from the rest of the loop, and the rate would slowly fall below 10\,Hz. That breaks the uniform interval Nyquist relies on. \\
+        \textbf{A minimal critical section} & \texttt{adc\_result} and \texttt{adc\_ready} are read and cleared with interrupts off, so the ISR cannot overwrite the value between the two accesses. Only three statements are protected. UART printing happens outside. \\
+        \textbf{Priorities follow urgency} & ADC priority 1, button priority 3. A conversion result is lost if not read before the next one. A button press can wait. \\
+        \textbf{Integer maths, no FPU} & \texttt{(raw * 3300) / 4095}: multiply first to keep precision. $4095\times3300$ fits in 32 bits. Dividing first would truncate to zero. \\
+        \textbf{The LED bar is atomic} & One \texttt{BSRR} store updates all four LEDs, so no half-finished pattern is ever visible. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+\begin{frame}{You Already Know This: A State Machine}
+    \leavevmode
+    This architecture is a \alert{state machine with a shared time base}. You have designed exactly this, on paper, as a synchronous sequential circuit.
+
+    \vspace{3mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l@{}}
+        \toprule
+        \textbf{In digital electronics} & \textbf{In this program} \\
+        \midrule
+        Edge-triggered inputs & Interrupts that set flags \\
+        Combinational next-state logic & The \texttt{if} tests in the main loop \\
+        The clock & SysTick \\
+        State in flip-flops & State in \texttt{volatile} variables \\
+        Change behaviour: rewire & Change behaviour: \alert{edit the code} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+
+%===============================================================================
+\section{The Timing Budget}
 %===============================================================================
 
 \begin{frame}{The Timing Budget}
@@ -260,6 +564,11 @@ while (1) {
         cannot work, and you know that before writing a line.
     \end{block}
 \end{frame}
+
+
+%===============================================================================
+\section{Predict, Then Measure}
+%===============================================================================
 
 \begin{frame}{Predict, Then Measure}
     \begin{columns}[T]
@@ -295,6 +604,11 @@ while (1) {
     \end{block}
 \end{frame}
 
+
+%===============================================================================
+\section{What a Working Demonstration Does Not Prove}
+%===============================================================================
+
 \begin{frame}{What a Working Demonstration Does Not Prove}
     \begin{columns}[T]
     \begin{column}{.5\textwidth}
@@ -321,6 +635,11 @@ while (1) {
     \end{column}
     \end{columns}
 \end{frame}
+
+
+%===============================================================================
+\section{A Debugging Methodology}
+%===============================================================================
 
 \begin{frame}{A Debugging Methodology}
     \leavevmode
@@ -350,6 +669,33 @@ while (1) {
     {\small Steps 1 and 2 account for most first-time faults --- and
     \alert{a register that does not read back is an unclocked peripheral}.}
 \end{frame}
+
+\begin{frame}{A Worked Investigation: The LED That Does Not Blink}{Six causes, ruled out in order}
+    \begin{center}
+    {\scriptsize
+    \striped
+    \begin{tabular}{@{}c l R{.58\textwidth}@{}}
+        \toprule
+        \textbf{Step} & \textbf{Question} & \textbf{The observation that settles it} \\
+        \midrule
+        1 & Is the clock enabled? & Write \texttt{0xFFFF} to \texttt{GPIOA->MODER} and read it back. If it reads zero, the \texttt{RCC->AHB1ENR} bit is missing. \\
+        2 & Is the pin an output? & Read \texttt{MODER} bits 11:10. If not \texttt{01}, the driver is disconnected. \\
+        3 & Is \texttt{ODR} changing? & Watch \texttt{ODR} bit 5 while stepping. If it never changes, the write is not running, or \texttt{volatile} is missing. \\
+        4 & Does the pin move? & Meter or scope on PA5. \texttt{ODR} toggles but the pin does not: an alternate function or analog mode has claimed it. \\
+        5 & Is it the pin you think? & Check the schematic. On some Nucleo variants the LED is not on PA5. \\
+        6 & Is the circuit right? & Voltage but no light: a reversed LED, an open resistor, or the wrong sink/source direction. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{1mm}
+    {\small The walk goes \alert{up the five levels}: register, configuration, C, pin voltage, circuit. Steps 1--4 use the debugger and a meter, not the source code. Rereading the program is almost always the slowest move.}
+\end{frame}
+
+
+%===============================================================================
+\section{What You Have Learned}
+%===============================================================================
 
 \begin{frame}{What You Have Learned}
     \begin{columns}[T]
@@ -386,6 +732,183 @@ while (1) {
         Everything in the thirteen chapters since has been an elaboration of that.
     \end{block}
 \end{frame}
+
+
+%===============================================================================
+\section{The Capstone Project}
+%===============================================================================
+
+\begin{frame}{The Capstone Project}{A system you design before you build}
+    \leavevmode
+    {\small Six weeks, in a group, on hardware you keep. It replaces a final exam question with a final exam \emph{system}: one you can plug in, measure, and defend.}
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.46\textwidth}
+        \begin{block}{A shared core, then a free choice}
+            {\small \textbf{Weeks 1--4:} everyone builds the same core: GPIO with interrupt-driven input, and a UART debug link, under the non-blocking architecture.
+
+            \vspace{1mm}
+            \textbf{Weeks 5--6:} each group adds one enhancement peripheral, integrates it without breaking the core, and defends it.}
+        \end{block}
+    \end{column}
+    \begin{column}{.5\textwidth}
+        {\footnotesize
+        \striped
+        \begin{tabular}{@{}c R{.62\textwidth}@{}}
+            \toprule
+            \textbf{Week} & \textbf{Deliverable} \\
+            \midrule
+            1 & M1: GPIO output, verified with a meter or scope \\
+            2 & M2: debounced EXTI input drives the output through a \texttt{volatile} flag \\
+            3 & M3: UART debug link at a known baud rate \\
+            4 & M4: integration in one non-blocking loop \\
+            5 & Enhancement chosen, brought up, integrated \\
+            6 & Demonstration and written report \\
+            \bottomrule
+        \end{tabular}}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{The Required Core}{By the end of Week 4, whatever the enhancement}
+    \begin{enumerate}\itemsep3pt
+        \item At least one \alert{GPIO output}, changed only through a register write the group can point to and explain.
+        \item At least one external input handled through \alert{EXTI}, not by polling. The handler clears the flag, records the event, returns.
+        \item A \alert{UART link} at a stated baud rate, reporting at least one state change to a PC terminal.
+        \item The whole system as a \alert{non-blocking cooperative loop}: interrupts set flags, the main loop does the work, no branch blocks another.
+        \item A one-paragraph \alert{timing budget}, produced \emph{before} Milestone 4 is demonstrated.
+    \end{enumerate}
+
+    \vspace{3mm}
+    {\small Milestones 1--3 may use the peripherals separately. Milestone 4 needs them combined: one program, one main loop, one timing budget.}
+\end{frame}
+
+\begin{frame}{Milestone Rubrics (1)}{Each milestone is 10 points, weighted equally}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \textbf{M1: GPIO output}
+        {\scriptsize
+        \striped
+        \begin{tabular}{@{}c R{.78\linewidth}@{}}
+            \toprule
+            \textbf{Pts} & \textbf{Criterion} \\
+            \midrule
+            4 & Pin configured (clock, \texttt{MODER}) and verified with a meter or scope, not just ``the LED lit''. \\
+            3 & The group states from memory which bits were written and why. \\
+            3 & Named masks, no magic numbers; clock enable before any write. \\
+            \bottomrule
+        \end{tabular}}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \textbf{M2: Debounced EXTI input}
+        {\scriptsize
+        \striped
+        \begin{tabular}{@{}c R{.78\linewidth}@{}}
+            \toprule
+            \textbf{Pts} & \textbf{Criterion} \\
+            \midrule
+            3 & Interrupt configured (\texttt{SYSCFG}, edge, \texttt{IMR}, NVIC) and reliable. \\
+            3 & Debounce by timestamp, not a blocking delay in the handler. \\
+            2 & Handler clears the pending bit first, sets a \texttt{volatile} flag, returns. \\
+            2 & Main loop drives the M1 output correctly over at least ten presses. \\
+            \bottomrule
+        \end{tabular}}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Milestone Rubrics (2)}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \textbf{M3: UART debug link}
+        {\scriptsize
+        \striped
+        \begin{tabular}{@{}c R{.78\linewidth}@{}}
+            \toprule
+            \textbf{Pts} & \textbf{Criterion} \\
+            \midrule
+            4 & Correct baud register value for the stated clock, verified by clean text on a PC terminal. \\
+            3 & \texttt{TXE} polled correctly: no missed or duplicated characters. \\
+            3 & The group states the baud rate, its clock, and the arithmetic, from memory. \\
+            \bottomrule
+        \end{tabular}}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \textbf{M4: Integration}
+        {\scriptsize
+        \striped
+        \begin{tabular}{@{}c R{.78\linewidth}@{}}
+            \toprule
+            \textbf{Pts} & \textbf{Criterion} \\
+            \midrule
+            4 & All three peripherals in one non-blocking loop, no branch blocking another. \\
+            2 & Every ISR-shared variable is \texttt{volatile}, and the group says why. \\
+            2 & A timing budget written \emph{before} the demonstration. \\
+            2 & Live fault injection: the group finds the fault with the bottom-up method, not by guessing. \\
+            \bottomrule
+        \end{tabular}}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{The Enhancement}{Weeks 5--6: one more peripheral, integrated}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        {\small \textbf{Option A: DHT11 sensor.} One open-drain data line with a timing-based protocol. It needs bit-banging with microsecond delays, and a reading takes about 20\,ms. The group must decide: one blocking call scheduled as a rare low-priority task, or interrupt-driven phases. Justify it against the timing budget.
+
+        \vspace{2mm}
+        \textbf{Option B: WS2812 LEDs.} Each bit is a precisely timed pulse (about 1.25\,\textmu s), 24 bits per LED, no clock line. Generate it by cycle-counted bit-banging, or from a timer's PWM with DMA.
+
+        \vspace{2mm}
+        \emph{A group may propose another peripheral, with approval, if it brings a comparable integration challenge.}}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        \textbf{Enhancement rubric (20 points)}
+        {\scriptsize
+        \striped
+        \begin{tabular}{@{}c R{.78\linewidth}@{}}
+            \toprule
+            \textbf{Pts} & \textbf{Criterion} \\
+            \midrule
+            6 & Works alone, verified independently (scope, reference reading). \\
+            6 & Integrated without breaking M4; the timing budget is \alert{re-measured}, not assumed. \\
+            4 & Integration timing cost estimated beforehand, checked afterward. \\
+            4 & The group explains the hardest design decision, unprompted. \\
+            \bottomrule
+        \end{tabular}}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Final Report and Demonstration}{Week 6}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \begin{block}{Live demonstration}
+            {\small Fault injection, as in Milestone 4. The instructor may disconnect a wire, ask for a register value, or ask what happens if an input arrives during the enhancement's busiest moment.}
+        \end{block}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \begin{block}{Written report: at most four pages}
+            {\small
+            \begin{itemize}\itemsep1pt
+                \item functional decomposition
+                \item final pin assignment
+                \item timing budget for the complete system
+                \item verification plan: what was measured, with what instrument, and the pass/fail criterion
+            \end{itemize}}
+        \end{block}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    \alert{A demonstration with no timing budget, and a timing budget with no demonstration, both earn partial credit at best.} The two claims are not substitutes for one another.
+\end{frame}
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
 
 \begin{frame}{Summary}
 	\begin{columns}[c]
