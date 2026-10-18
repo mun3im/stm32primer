@@ -28,7 +28,7 @@
 \setbeamertemplate{itemize items}[square]
 \usepackage[scaled=.92]{beramono}
 \usepackage{listings}
-\usepackage{styles/lstlangarm}
+\usepackage{styles/lstslides}
 \usepackage{array}
 \definecolor{bgcolor}{HTML}{F2E9E9}
 % lstlangarm.sty references \color{mauve} for string literals but never defines
@@ -162,14 +162,14 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{The Payoff}{What these three lines of C actually do}
+\begin{frame}[fragile]{The Payoff}{What these two lines of C actually do}
     \leavevmode
     By the end of this chapter, you will understand \alert{exactly} how these two lines of C turn on a physical pin on your Nucleo board:
 
     \vspace{3mm}
     \begin{center}
-    \begin{minipage}{.72\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\normalsize]
+    \begin{minipage}{.92\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
 volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
 *gpioa_odr |= (1U << 5);     // PA5 rises to 3.3 V -- the user LED
 \end{lstlisting}

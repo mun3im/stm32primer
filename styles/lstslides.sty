@@ -1,0 +1,42 @@
+% lstslides.sty -- slide-only part of the listings setup.
+% The shared part is lstcommon.sty (canonical copy in the book root, copied
+% here by sync-lst.sh). This file gives it the slide colour values and size,
+% and adds the slide-only styles.
+\ProvidesPackage{lstslides}[2026/10/18 slide listings setup]
+\RequirePackage{xcolor}
+
+% Colour values. Two theme-independent backgrounds, distinct from each other
+% and from the beamer theme palette: warm tan for C, cool blue for ARM.
+\colorlet{codekw}{blue}
+\colorlet{codecomment}{green!45!black}   % readable on the tinted backgrounds
+\colorlet{codestring}{red}
+\colorlet{codenumber}{gray}
+\definecolor{codebg}{HTML}{F2E9E9}       % C (the default language)
+\definecolor{asmbg}{HTML}{E8EEF4}        % ARM assembly
+\definecolor{instbg}{HTML}{E8F4EE}       % one highlighted instruction
+
+\RequirePackage{styles/lstlangarm}
+\RequirePackage{styles/lstcommon}
+
+\lstset{basicstyle=\small\ttfamily}
+
+% Slide-only keys. Redefining the empty `codebase' hook from lstcommon makes
+% armasm and arminst pick these up too.
+\lstdefinestyle{codebase}{
+    stepnumber=1,
+    frame=none,
+    rulecolor=\color{black!40},
+    title=\lstname,
+    escapeinside={\%*}{*)},
+    belowskip=-2\baselineskip
+}
+
+% C with the slide-only extra keywords.
+\lstdefinestyle{myc}{
+    style=codebase,
+    language=C,
+    backgroundcolor=\color{codebg},
+    morekeywords={uint32_t,__IO,__asm}
+}
+
+\endinput

@@ -11,7 +11,10 @@ chapter of the course book. They cover the ARM Cortex-M4 on the STM32F446RE
 |---|---|
 | `stm01.tex` ... `stm14.tex` | The slide sources. One deck per chapter. |
 | `stm01.pdf` ... `stm14.pdf` | The built slides, ready to use. |
-| `styles/` | The Flux beamer theme (`navy` style, a deep dark blue added to `styles/beamercolorthemeflux.sty`) and `lstlangarm.sty`, the ARM assembly listing language. |
+| `styles/` | The Flux beamer theme (`navy` style, a deep dark blue added to `styles/beamercolorthemeflux.sty`) and the code-listing setup. |
+| `styles/lstlangarm.sty` | The ARM assembly language for `listings` (vendor file, unchanged). |
+| `styles/lstcommon.sty` | Listing settings shared with the book: C as the default language, `language=ARM`, and the `armasm` and `arminst` styles. |
+| `styles/lstslides.sty` | Slide-only part: colours, font size, and the `myc` style. |
 | `assets/` | The images and figures the decks include. |
 
 Only the files needed to read and rebuild the slides are here.
@@ -76,4 +79,4 @@ These fail silently. The deck compiles with no error, so check the PDF.
 3. A TikZ picture wider than its column overflows into the next column.
 4. `lstlisting` and `\verb` need `\begin{frame}[fragile]`.
 5. `\newcolumntype` must be in the preamble, never inside a frame.
-6. Use `language=ARM` for ARM listings, as in the book. `styles/lstlangarm.sty` defines `ARM` as an alias of the `[ARM]Assembler` dialect.
+6. Use `language=ARM` for ARM listings, as in the book. Add `style=armasm` for the blue ARM background. Plain `language=C` listings get the shared C look with the tan background.

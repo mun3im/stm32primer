@@ -1,0 +1,74 @@
+% lstcommon.sty -- listings setup shared by the book and the slide decks.
+%
+% CANONICAL COPY lives in the book root. Slides/styles/lstcommon.sty is a
+% copy made by sync-lst.sh -- edit this one, then run the script.
+%
+% What is shared: the common listing settings, C as the default language,
+% the ARM language, and the styles derived from the common settings
+% (armasm, arminst). What is NOT shared: colour values, font size and
+% line numbering. Each host defines those itself, the same way the TikZ
+% styles share names but not colour values.
+%
+% Load order in the host:
+%   1. \definecolor / \colorlet for the names below (all optional)
+%   2. \RequirePackage{lstlangarm}   (vendor ARM Assembler dialect)
+%   3. \RequirePackage{lstcommon}
+%   4. host-only \lstset{...} (size, numbering) and \lstdefinestyle{codebase}
+\ProvidesPackage{lstcommon}[2026/10/18 shared listings setup]
+\RequirePackage{xcolor}
+\RequirePackage{listings}
+
+% ---- Colour names. A host defines them first; these are only fallbacks. --
+\providecolor{codekw}{rgb}{0,0,0.8}          % keywords
+\providecolor{codecomment}{rgb}{0,0.5,0}     % comments
+\providecolor{codestring}{rgb}{0.5,0,0.5}    % string literals
+\providecolor{codenumber}{gray}{0.5}         % line numbers
+\providecolor{codebg}{rgb}{0.92,0.96,1}      % background: C, the default
+\providecolor{asmbg}{rgb}{0.92,0.96,1}       % background: ARM assembly
+\providecolor{instbg}{rgb}{0.92,0.96,1}      % background: one instruction
+
+% ---- Common settings. C is the default language. ---------------------------
+\lstset{
+    language=C,
+    backgroundcolor=\color{codebg},
+    keywordstyle=\color{codekw},
+    commentstyle=\color{codecomment},
+    stringstyle=\color{codestring},
+    numberstyle=\tiny\color{codenumber},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    breakatwhitespace=false,
+    captionpos=b,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=4
+}
+
+% ---- ARM: the vendor Assembler dialect under the short name the book uses.
+\lstdefinelanguage{ARM}[ARM]{Assembler}{}
+
+% ---- Styles derived from the common settings. -------------------------------
+% `codebase' is an empty hook. A host may redefine it after loading this file.
+% Styles are resolved when a listing is typeset, so a later redefinition
+% still reaches armasm and arminst.
+\lstdefinestyle{codebase}{}
+
+% language=ARM selects the keywords. A style is needed only when the ARM
+% background must differ from the C background (the slides do this).
+\lstdefinestyle{armasm}{
+    style=codebase,
+    language=ARM,
+    backgroundcolor=\color{asmbg},
+    morekeywords={adr,.global}
+}
+
+% A single highlighted instruction: armasm, other background, larger type.
+\lstdefinestyle{arminst}{
+    style=armasm,
+    backgroundcolor=\color{instbg},
+    basicstyle=\large\ttfamily
+}
+
+\endinput
