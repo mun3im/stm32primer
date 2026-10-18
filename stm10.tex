@@ -34,6 +34,42 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{An exact 1 Hz, with the CPU idle}
+    \leavevmode
+    By the end of this chapter you will know why these two assignments give a blink that is exact, however busy the CPU is:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+TIM2->PSC = 15999;   // 16 MHz / 16000 = 1 kHz
+TIM2->ARR = 999;     // 1000 ticks = 1 s
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        What is \texttt{PSC}? & Timer architecture \\
+        Why 15999 and 999? & Timing calculations \\
+        Why is it exact? & Why deterministic timing matters \\
+        Can it drive a pin directly? & PWM \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{Why Software Delays Fail}
@@ -267,6 +303,37 @@
         If the value you need does not fit in 16 bits, \alert{increase the prescaler}. Here both values fit comfortably.
     \end{block}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Predict the Period}{Work it out before you check}
+    \leavevmode
+    A 16\,MHz timer clock. Registers are set like this:
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+TIM2->PSC = 799;
+TIM2->ARR = 1999;
+\end{cc}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item What is the timer tick frequency?
+            \item How many ticks make one cycle?
+            \item What is the update period?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        Tick $= 16\,\text{MHz}/800 = 20\,\text{kHz}$. One cycle $= 2000$ ticks. Period $= 2000/20{,}000 = \alert{0.1\,\text{s}}$ (10\,Hz). Check: $(800 \times 2000)/16\times10^{6} = 0.1$.
+    \end{block}}
+\end{frame}
+}
 
 
 %===============================================================================

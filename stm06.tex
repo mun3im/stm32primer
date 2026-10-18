@@ -49,6 +49,47 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{A peripheral write, in assembly}
+    \leavevmode
+    By the end of this chapter you can read how the compiler turns this C into four instructions, and say what each one does to the bits:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{asm}[basicstyle=\ttfamily\small]
+GPIOA->MODER &= ~(3U << 10);   // clear bits 11:10
+GPIOA->MODER |=  (1U << 10);   // write 01
+
+LDR   R1, [R0]          ; read MODER
+BIC   R1, R1, #0xC00    ; clear the field
+ORR   R1, R1, #0x400    ; write 01
+STR   R1, [R0]          ; write back
+\end{asm}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        What does \texttt{BIC} do? & Logical instructions \\
+        Where did \texttt{0xC00} come from? & Shifts and masks \\
+        Can the shift be free? & The barrel shifter \\
+        How are array elements reached? & Addressing modes \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{Arithmetic Instructions}
@@ -448,6 +489,37 @@ GPIOA->MODER |=
     \vspace{1mm}
     {\small The bits shifted \emph{out} are the same. Only the bits shifted \emph{in} differ. \texttt{LSR} suits masks and unsigned values. \texttt{ASR} divides a signed value by $2^n$.}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Predict the Shift}{Same bits, two different shifts}
+    \leavevmode
+    \texttt{R1 = 0xFFFFFFD4} (this is $-44$ as a signed value). Predict the result of each shift by 2:
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{asm}[basicstyle=\ttfamily\small]
+LSR  R2, R1, #2
+ASR  R3, R1, #2
+\end{asm}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item What is \texttt{R2}?
+            \item What is \texttt{R3}?
+            \item Which one is correct signed division?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        \texttt{R2 = 0x3FFFFFF5} (a large positive number: zeros fill in, the sign is lost). \texttt{R3 = 0xFFFFFFF5} ($-11$): the sign bit is copied in. \alert{\texttt{ASR} divides a signed value}.
+    \end{block}}
+\end{frame}
+}
 
 \definecolor{nibhifill}{HTML}{DCEBFF}
 \definecolor{nibhiline}{HTML}{1565C0}

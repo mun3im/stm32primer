@@ -34,6 +34,42 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{Two lines, one LED}
+    \leavevmode
+    By the end of this chapter you will know why these two lines are the safest way to switch a pin, and what each bit does:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+GPIOA->BSRR = (1U << 5);          // PA5 high: LED on
+GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        What is \texttt{BSRR}? & The GPIO registers \\
+        Why not write \texttt{ODR}? & \texttt{BSRR}: atomic set and reset \\
+        What makes the pin able to drive? & Inside a GPIO pin \\
+        Why does a button need extra care? & Experiments: pull-ups and debouncing \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{Inside a GPIO Pin}
@@ -366,6 +402,38 @@ int main(void) {
     {\small $5 \times 2 = 10$, so \texttt{PA5}'s mode bits sit at position
     10. $5 + 16 = 21$ is its reset bit in \texttt{BSRR}.}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Spot the Bug}{The LED never lights}
+    \leavevmode
+    The code below compiles and runs. PA5 stays dark. The registers read back as zero.
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+GPIOA->MODER &= ~(3U << 10);
+GPIOA->MODER |=  (1U << 10);
+GPIOA->ODR   ^=  (1U << 5);
+\end{cc}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item Is the C wrong?
+            \item What would you check first?
+            \item How can the debugger prove it?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        The C is fine. The \alert{clock is off}: \texttt{RCC->AHB1ENR |= (1U << 0);} is missing. A peripheral with no clock ignores writes and reads back zero. Write a pattern to \texttt{MODER} in the debugger and read it back.
+    \end{block}}
+\end{frame}
+}
 
 \begin{frame}[fragile]{Experiment 3: Button Controls LED}
     \begin{columns}[T]

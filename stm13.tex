@@ -34,6 +34,42 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{Read a sensor's name}
+    \leavevmode
+    By the end of this chapter you will know how this call asks a chip on the board who it is, using four wires:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+uint8_t id = sensor_read_reg(0x00);    // DEVID register
+// the ADXL345 answers 0xE5
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        Why four wires? & The SPI bus \\
+        Why does the byte come back as we send? & Full duplex by shift register \\
+        What if the mode is wrong? & Clock polarity and phase \\
+        What if I need many sensors on two wires? & I\textsuperscript{2}C \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{The SPI Bus}
@@ -577,6 +613,33 @@ void i2c_init(void) {
     \end{column}
     \end{columns}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Spot the Bug}{The I\textsuperscript{2}C bus is dead}
+    \leavevmode
+    A new I\textsuperscript{2}C master is wired up and configured. Every transfer fails at once. On the scope, SDA and SCL sit near \textbf{0\,V}.
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item Who should pull a released line high?
+            \item Which GPIO setting is easy to forget?
+            \item Which is the most common I\textsuperscript{2}C fault?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        Open-drain pins can only pull low. \alert{External pull-up resistors} bring a released line high. Two causes: the pull-ups are missing, or the pins were not set \alert{open-drain} (\texttt{OTYPER}). Missing pull-ups is the single most common fault.
+    \end{block}}
+\end{frame}
+}
 
 \begin{frame}[fragile]{A Register Read Over I\textsuperscript{2}C (1)}{Phases 1 and 2}
 \begin{cc}[basicstyle=\ttfamily\footnotesize]

@@ -34,6 +34,46 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{A decision becomes a branch}
+    \leavevmode
+    By the end of this chapter you can read a C condition in assembly. Notice that the branch tests the \alert{opposite} of the condition:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{asm}[basicstyle=\ttfamily\small]
+if (x == 5) { y = 1; }
+
+    CMP   R0, #5      ; compare x with 5
+    BNE   skip        ; opposite of ==
+    MOVS  R1, #1      ; y = 1
+skip
+\end{asm}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        What does \texttt{CMP} change? & Making decisions: flags \\
+        Why \texttt{BNE}, not \texttt{BEQ}? & Condition codes \\
+        How does a function return? & Subroutines: \texttt{BL} and \texttt{BX LR} \\
+        Why must \texttt{LR} be saved? & The stack \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{Making Decisions}
@@ -1034,6 +1074,38 @@ done
 		\end{center}
 	}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Spot the Bug}{This function never returns}
+    \leavevmode
+    \texttt{outer} calls \texttt{inner} and then returns to its own caller:
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{asm}[basicstyle=\ttfamily\small]
+outer
+    BL    inner     ; call inner
+    BX    LR        ; return to caller
+\end{asm}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item What does \texttt{BL inner} write into \texttt{LR}?
+            \item Where does \texttt{BX LR} then jump?
+            \item What is the fix?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        \texttt{BL} overwrites \texttt{LR} with the address of \texttt{BX LR}. So \texttt{BX LR} jumps to \alert{itself}, forever. Fix: \texttt{PUSH \{LR\}} first, and \texttt{POP \{PC\}} to return.
+    \end{block}}
+\end{frame}
+}
 
 
 %===============================================================================

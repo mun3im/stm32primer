@@ -33,6 +33,44 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{Type a letter, get it back}
+    \leavevmode
+    By the end of this chapter you will know how this loop talks to a PC terminal over a plain USB cable:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+while (1) {
+    uint8_t c = uart_read();   // wait for a character
+    uart_write(c);             // send it straight back
+}
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        What is on the wire? & The UART frame \\
+        How fast is it? & Baud rate calculation \\
+        What do \texttt{TXE} and \texttt{RXNE} mean? & Two minimal programs \\
+        Why is a UART a debugging tool? & UART as a debugging instrument \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{Serial versus Parallel}
@@ -278,6 +316,36 @@
 		receive is garbage, suspect \alert{baud rate} before anything else.
 	\end{block}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Predict the Baud Register}{Work out BRR for 115200}
+    \leavevmode
+    A 16\,MHz clock, oversampling by 16. \texttt{BRR} holds a mantissa and a 4-bit fraction.
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+USARTDIV = 16000000 / (16 * 115200)
+\end{cc}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item What is USARTDIV?
+            \item What are the mantissa and the fraction (in sixteenths)?
+            \item What value goes into \texttt{BRR}?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        $\text{USARTDIV} = 8.6806$. Mantissa $= 8$. Fraction $= 0.6806\times16 = 10.9 \to 11$. So $\texttt{BRR} = (8 \ll 4)\,|\,11 = \alert{\texttt{0x8B}}$.
+    \end{block}}
+\end{frame}
+}
 
 
 %===============================================================================

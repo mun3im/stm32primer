@@ -71,6 +71,41 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{One line, one voltage}
+    \leavevmode
+    By the end of this chapter you will know \alert{exactly} how this one line of C changes a voltage on a physical pin:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        What is \texttt{GPIOA->ODR}? & CMSIS: a struct laid over the registers \\
+        Why \texttt{(1U << 5)}? & Bit manipulation: building a mask \\
+        Why is nothing deleted by the compiler? & The \texttt{volatile} keyword \\
+        Why does nothing happen with the clock off? & A complete bare-metal program \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{What the Compiler Does}
@@ -692,6 +727,36 @@ while ((*status & 1) == 0)
     \end{tikzpicture}
     \end{center}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Predict the Field}{Why a plain OR is not enough}
+    \leavevmode
+    \texttt{MODER} bits 11:10 currently read \texttt{11} (analog). A student writes:
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+GPIOA->MODER |= (1U << 10);   // want 01
+\end{cc}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item Which bits does the OR change?
+            \item What do bits 11:10 hold afterwards?
+            \item Is PA5 now a general-purpose output?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        OR can only turn bits on. \texttt{11} OR \texttt{01} is still \alert{\texttt{11}}: PA5 stays analog. Clear the field first: \texttt{MODER \&= \textasciitilde(3U << 10);}, then OR in \texttt{01}.
+    \end{block}}
+\end{frame}
+}
 
 \begin{frame}{The Four Bit Operations}
     \begin{center}

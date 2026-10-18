@@ -11,6 +11,7 @@
 %===============================================================================
 \section{Why This Matters}
 %===============================================================================
+
 \begin{frame}{Why This Chapter Matters}
     \begin{columns}[T]
     \begin{column}{.47\textwidth}
@@ -32,6 +33,7 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
 \begin{frame}[fragile]{The Payoff}{What these two lines of C actually do}
     \leavevmode
     By the end of this chapter, you will understand \alert{exactly} how these two lines of C turn on a physical pin on your Nucleo board:
@@ -67,6 +69,8 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
     \vspace{1mm}
     {\small\centering Every abstract concept that follows --- addresses, pointer arithmetic, fixed-width types, \texttt{volatile} --- is a \alert{necessary tool} to make these two lines light the LED.\par}
 \end{frame}
+}
+
 
 %===============================================================================
 \section{Memory as a Numbered Array of Bytes}
@@ -99,6 +103,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
 		An address identifies a location; it is not the value stored there.
 	\end{block}
 \end{frame}
+
 \begin{frame}{Storing a Word}
 	\leavevmode
 
@@ -147,6 +152,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
 	\end{columns}
 \end{frame}
 
+
 %===============================================================================
 \section{A Variable Has an Address}
 %===============================================================================
@@ -181,6 +187,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
 	\end{block}
 
 \end{frame}
+
 
 %===============================================================================
 \section{A Pointer Holds an Address}
@@ -236,6 +243,7 @@ uint32_t v = *p;    // v becomes 42
     \end{center}
 \end{frame}
 
+
 %===============================================================================
 \section{Arrays Are Address Arithmetic}
 %===============================================================================
@@ -278,6 +286,7 @@ uint32_t v = *p;    // v becomes 42
     \end{column}
     \end{columns}
 \end{frame}
+
 \begin{frame}[fragile]{Pointer Arithmetic}
     \leavevmode
     A pointer already holds an address. Adding an integer to it moves that
@@ -319,6 +328,7 @@ q + 1;        // 0x20000101  (+1)
         computes the right address by itself.
     \end{block}
 \end{frame}
+
 \begin{frame}{Three Sentences to Remember}
     \leavevmode
     So far, three ideas are enough to explain how C reaches an address of
@@ -341,6 +351,7 @@ q + 1;        // 0x20000101  (+1)
     base address is fixed by the chip, not chosen by the compiler.
     Next: \alert{where do these addresses actually lead?}}
 \end{frame}
+
 
 %===============================================================================
 \section{Where Those Addresses Lead}
@@ -433,6 +444,7 @@ q + 1;        // 0x20000101  (+1)
 	\end{columns}
 \end{frame}
 
+
 %===============================================================================
 \section{Memory-Mapped I/O: The Central Idea}
 %===============================================================================
@@ -466,6 +478,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
     \vspace{1mm}
     {\small (Why \texttt{volatile}? We come back to that shortly.)}
 \end{frame}
+
 \begin{frame}{Because All Three Share One Address Space}
     \leavevmode
     {\small The CPU needs no special instructions for hardware:
@@ -481,6 +494,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
         each in turn.
     \end{block}
 \end{frame}
+
 \begin{frame}{The Conceptual Spine}
     \leavevmode
     {\small This is the conceptual spine of the whole book: how an
@@ -498,6 +512,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
     \end{tikzpicture}
     \end{center}
 \end{frame}
+
 
 %===============================================================================
 \section{Choosing Fixed-Width Types}
@@ -539,6 +554,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
         gets cut off. Add them into a wider type instead.
     \end{block}
 \end{frame}
+
 \begin{frame}{Data Sizes and Alignment}
     \leavevmode
     {\small A pointer's type does not only set the step size in pointer
@@ -584,6 +600,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
     \end{block}
 \end{frame}
 
+
 %===============================================================================
 \section{When Memory Can Change Without C Changing It}
 %===============================================================================
@@ -623,6 +640,7 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
         embedded code.
     \end{block}
 \end{frame}
+
 \begin{frame}[fragile]{\texttt{volatile} in Practice}
     \leavevmode
 \begin{lstlisting}[language=C, basicstyle=\ttfamily\normalsize]
@@ -645,6 +663,7 @@ while ((*status & 1) == 0) {
     an ISR talks to the main loop using nothing more than a flag.}
 \end{frame}
 
+{\beamerextras
 \begin{frame}[fragile]{Spot the Bug}{Why might this loop never exit?}
     \leavevmode
     The hardware sets bit~0 of the status register as soon as a sample is
@@ -679,6 +698,8 @@ while ((*status & 1) == 0) {
     \end{column}
     \end{columns}
 \end{frame}
+}
+
 
 %===============================================================================
 \section{const: A Brief Aside}
@@ -703,6 +724,7 @@ const uint8_t sine_table[256] = {
     about \emph{when} a value can change, which is exactly the question
     \texttt{volatile} answers.}
 \end{frame}
+
 
 %===============================================================================
 \section{What a Pointer Becomes}
@@ -742,6 +764,7 @@ const uint8_t sine_table[256] = {
     dereference is not an abstraction, it \emph{is} one of these two
     instructions.}
 \end{frame}
+
 
 %===============================================================================
 \section{Where Variables Live}
@@ -815,6 +838,7 @@ const uint8_t sine_table[256] = {
         usual causes are deep recursion and large local arrays.
     \end{block}
 \end{frame}
+
 
 %===============================================================================
 \section{Reading Memory in a Debugger}
@@ -891,6 +915,7 @@ uint32_t readings[4] = { 10, 20, 30, 40 };     // suppose at 0x20000100
     \end{block}
 \end{frame}
 
+{\beamerextras
 \begin{frame}[fragile]{Predict the Dump}{Draw the arrows yourself before reading on}
     \leavevmode
     Given the declaration below, placed at \texttt{0x20000100}:
@@ -937,6 +962,8 @@ uint32_t readings[4] = { 10, 20, 30, 40 };
     \end{column}
     \end{columns}
 \end{frame}
+}
+
 
 %===============================================================================
 \section{Summary}

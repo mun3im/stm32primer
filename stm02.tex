@@ -28,6 +28,7 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
 \begin{frame}[fragile]{The Payoff}{One line of C --- a tour through the whole chapter}
     \leavevmode
     By the end of this chapter, you will know \alert{exactly} how this one line of C travels through the hardware:
@@ -67,6 +68,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \vspace{1mm}
     {\small\centering Keep this one line in mind. Every abstract term that follows --- ISA, RISC, pipeline, APSR, memory map --- is a tool the hardware uses to execute it.\par}
 \end{frame}
+}
 
 
 %===============================================================================
@@ -246,6 +248,7 @@ if (sensor_value == 0) { turn_on_led(); }
     {\small The product of all three terms is what matters in the end. RISC improves two of the three terms, which is why it usually wins.}
 \end{frame}
 
+{\beamerextras
 \begin{frame}[fragile]{Spot the Bug}{What is wrong with these two Cortex-M instructions?}
     \leavevmode
     Both of the fragments below were written by students used to CISC assembly. Neither one assembles on a Cortex-M4. Say why, in each case, before reading the answer.
@@ -280,6 +283,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \vspace{2mm}
     {\small\centering Both answers rest on one rule each: the \alert{load-store principle} on the left, and the \alert{APSR records every ALU result} on the right.\par}
 \end{frame}
+}
 
 
 %===============================================================================
@@ -737,6 +741,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \end{columns}
 \end{frame}
 
+{\beamerextras
 \begin{frame}[fragile]{PC+4 in the Debugger}{The same instruction seen three ways}
     \leavevmode
     Set a breakpoint on the \texttt{MOV} below. Three windows in your IDE now show the same instant, from three angles:
@@ -774,6 +779,7 @@ int x = 10;    // <-- stop
         The \texttt{MOV} sits at \texttt{0x08000100}, but the debugger shows \texttt{PC = 0x08000104}. The PC is reading the instruction \alert{after} the one the arrow points at --- because by the time \texttt{MOV} executes, the pipeline has already \alert{fetched} the \texttt{STR} behind it. This is not an off-by-one bug. It is the pipeline, visible for the first time outside a textbook figure.
     \end{block}
 \end{frame}
+}
 
 \begin{frame}[fragile]{Connecting Registers to C}
     The same three lines from Chapter~1, now with the Cortex-M4 register set:
@@ -1093,6 +1099,7 @@ int z = x + y;    // at 0x2004
 	{\small\centering Both conventions store the \alert{same four bytes}. They only differ in which end sits at the lowest address. The Cortex-M4 is \alert{little-endian}, like x86, so raw memory dumps look the same on the target and on a typical PC.\par}
 \end{frame}
 
+{\beamerextras
 \begin{frame}{The Chapter 2 Mantra}{Three sentences that explain the rest of the syllabus}
     \leavevmode
     When something later in the course looks strange --- a C statement that compiles into more instructions than you expected, a debugger value that is off by four, an \texttt{if} that behaves oddly --- one of these three sentences almost always resolves it:
@@ -1124,6 +1131,7 @@ int z = x + y;    // at 0x2004
     \end{tabular}}
     \end{center}
 \end{frame}
+}
 
 
 %===============================================================================

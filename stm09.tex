@@ -33,6 +33,46 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{The CPU sleeps, the LED still toggles}
+    \leavevmode
+    By the end of this chapter you will know how this handler runs without anything calling it, while the main loop does nothing at all:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+void EXTI15_10_IRQHandler(void) {
+    EXTI->PR = (1U << 13);       // clear the pending flag
+    GPIOA->ODR ^= (1U << 5);     // toggle the LED
+}
+
+while (1) { __WFI(); }          // sleep until an interrupt
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        Who calls the handler? & The vector table and NVIC \\
+        Why is \texttt{EXTI15\_10} the name? & EXTI lines are shared \\
+        Why clear \texttt{PR}? & Under the hood: pending flags \\
+        What does \texttt{WFI} do? & Interrupts in practice \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{Why Interrupts Matter}
@@ -637,6 +677,38 @@ void EXTI15_10_IRQHandler(void)
         \end{enumerate}
     \end{block}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Spot the Bug}{The handler runs again and again}
+    \leavevmode
+    A student writes this handler. After one button press, the LED flickers wildly and the main loop never runs.
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+void EXTI15_10_IRQHandler(void) {
+    GPIOA->ODR ^= (1U << 5);
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item What keeps the request asserted?
+            \item What happens when the handler returns?
+            \item What single line is missing?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        The pending flag is never cleared. The request stays asserted, so the NVIC calls the handler \alert{again, immediately}. Add \texttt{EXTI->PR = (1U << 13);} at the top of the handler.
+    \end{block}}
+\end{frame}
+}
 
 
 %===============================================================================

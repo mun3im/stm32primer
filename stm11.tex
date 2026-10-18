@@ -33,6 +33,42 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{Turn the knob, read a number}
+    \leavevmode
+    By the end of this chapter you will know exactly why this code turns a voltage into a trustworthy number:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+raw     = ADC1->DR;                    // 0 .. 4095
+voltage = ((float)raw * 3.3f) / 4095.0f;
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        What is a code of 2048? & Sampling and resolution \\
+        What does the ADC need before it converts? & The STM32 ADC \\
+        Why can the reading be wrong yet steady? & Resolution is not accuracy \\
+        How fast can it sample? & Interrupt-driven conversion \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{Sampling, Quantization, and Resolution}
@@ -101,6 +137,33 @@
         Anything finer is invisible to your program.
     \end{block}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Predict the Voltage}{Before you look at the debugger}
+    \leavevmode
+    A potentiometer sits at mid-travel. The 12-bit ADC reads \texttt{raw = 2048}, with $V_{\text{REF}} = 3.3$\,V.
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item What voltage does that code represent?
+            \item What is one LSB, in millivolts?
+            \item If the real pin voltage is 1.60\,V, what could explain the gap?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        $V = 2048 \times 3.3/4095 = \alert{1.650\,\text{V}}$. One LSB $= 3.3/4095 \approx 0.806\,\text{mV}$. A 50\,mV gap is 62 LSB: look at the \alert{reference voltage}, the \alert{sampling time} and the circuit, not at the arithmetic.
+    \end{block}}
+\end{frame}
+}
 
 
 %===============================================================================

@@ -41,6 +41,46 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{One C line, four instructions}
+    \leavevmode
+    By the end of this chapter you can read what a debugger shows for \texttt{total = a + b;} and say where every value is, at each step:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{asm}[basicstyle=\ttfamily\small]
+LDR   R0, [R1]        ; load a
+LDR   R2, [R1, #4]    ; load b
+ADD   R0, R0, R2      ; add: registers only
+STR   R0, [R1, #8]    ; store total
+\end{asm}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        Why four instructions, not one? & The load-store workflow \\
+        What do the brackets mean? & Memory transfer instructions \\
+        What if the data is a byte, not a word? & Byte and halfword transfers \\
+        How do I read it in a disassembly window? & A worked disassembly \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+    \vspace{2mm}
+    {\small\centering Only one of the four is arithmetic.\par}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{How Much Assembly You Need}
@@ -489,6 +529,38 @@ int f(int a, int b) {
         instruction appears.
     \end{block}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Predict the Register}{Zero extension or sign extension?}
+    \leavevmode
+    \texttt{R1 = 0x20000000}. Memory there holds the bytes \texttt{EE FF C0 00} (lowest address first). Little-endian.
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{asm}[basicstyle=\ttfamily\small]
+LDR   R0, [R1]
+LDRB  R2, [R1]
+LDRSB R3, [R1]
+\end{asm}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item What is \texttt{R0}?
+            \item What is \texttt{R2}?
+            \item What is \texttt{R3}?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        \texttt{R0 = 0x00C0FFEE}: the whole word, little-endian. \texttt{R2 = 0x000000EE}: one byte, \alert{zero-extended}. \texttt{R3 = 0xFFFFFFEE}: the same byte, \alert{sign-extended}, because bit 7 of \texttt{0xEE} is 1.
+    \end{block}}
+\end{frame}
+}
 
 
 %===============================================================================

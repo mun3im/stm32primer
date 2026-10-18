@@ -33,6 +33,44 @@
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{The Payoff}{Everything, at once}
+    \leavevmode
+    By the end of this chapter you will know how one program does all of this together, with no task blocking another:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+Sensor Monitor ready.
+Level: 1650 mV          // from the potentiometer on PA0
+-> raw                  // button on PC13 toggled the mode
+Raw:   2048             // LED bar on PB0-PB3 shows the level
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Questions this code raises, and where this chapter answers them:}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.52\textwidth}@{}}
+        \toprule
+        \textbf{Question raised} & \textbf{Answered in} \\
+        \midrule
+        How can it do three jobs at once? & The non-blocking main loop \\
+        Why does the sample rate not drift? & Design decisions worth noting \\
+        Can I prove it meets its deadline? & The timing budget \\
+        What if it does not work? & A debugging methodology \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+}
+
 
 %===============================================================================
 \section{From Requirement to Architecture}
@@ -506,6 +544,39 @@ if (adc_ready) {
     \end{tabular}}
     \end{center}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Spot the Bug}{The sampling rate drifts}
+    \leavevmode
+    A student replaces the sampling line. The system works, but over a few minutes the measured rate falls below 10\,Hz.
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+if (msTicks >= next_sample) {
+    next_sample = msTicks + 100;   // <-- changed
+    ADC1->CR2 |= (1U << 30);
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Your prediction}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item What is the interval between two samples?
+            \item What does the extra delay add up to?
+            \item What was the original line?
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \visible<2->{\begin{block}{The answer}
+        The interval is $100\,\text{ms}$ \emph{plus} however late the loop reached the test. That error \alert{accumulates}. The original, \texttt{next\_sample += 100;}, steps by a fixed amount, so lateness never adds up.
+    \end{block}}
+\end{frame}
+}
 
 \begin{frame}{You Already Know This: A State Machine}
     \leavevmode
