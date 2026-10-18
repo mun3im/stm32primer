@@ -249,9 +249,9 @@ if (sensor_value == 0) { turn_on_led(); }
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
         \textbf{Fragment A}
-\begin{lstlisting}[style=armasm, language=ARM, basicstyle=\ttfamily\footnotesize]
+\begin{asm}[basicstyle=\ttfamily\footnotesize]
     ADD [0x20000100], R1
-\end{lstlisting}
+\end{asm}
         {\footnotesize ``Add R1 to the memory word at \texttt{0x20000100}.''}
 
         \vspace{2mm}
@@ -260,12 +260,12 @@ if (sensor_value == 0) { turn_on_led(); }
     \end{column}
     \begin{column}{.48\textwidth}
         \textbf{Fragment B}
-\begin{lstlisting}[style=armasm, language=ARM, basicstyle=\ttfamily\footnotesize]
+\begin{asm}[basicstyle=\ttfamily\footnotesize]
     MOV  R0, #5
     MOV  R1, #5
     CMP  R0, R1
     ; which flag is now 1?
-\end{lstlisting}
+\end{asm}
 
         \textbf{Predict}
         {\footnotesize \texttt{CMP} subtracts \texttt{R1} from \texttt{R0} and throws the difference away. Here $5 - 5 = 0$, so the \alert{Z (Zero) flag} is set. The N, C, V flags are 0. This is why a C \texttt{if (x == y)} works.}
@@ -730,11 +730,11 @@ int x = 10;    // <-- stop
     \end{column}
     \begin{column}{.34\textwidth}
         \textbf{Disassembly}
-\begin{lstlisting}[style=armasm, language=ARM, basicstyle=\ttfamily\scriptsize]
+\begin{asm}[basicstyle=\ttfamily\scriptsize]
 0x08000100: MOV R0, #10  <--
 0x08000104: STR R0, [SP, #4]
 0x08000108: LDR R0, [SP, #4]
-\end{lstlisting}
+\end{asm}
     \end{column}
     \begin{column}{.30\textwidth}
         \textbf{Register window}

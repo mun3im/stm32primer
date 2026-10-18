@@ -42,12 +42,12 @@
 \begin{frame}[fragile]{Three Things Wrong With \texttt{delay\_ms()}}
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
-\begin{lstlisting}[style=myc]
+\begin{cc}
 	void delay_ms(int n) {
 		for (volatile int i = 0;
 		i < n * 4000; i++) ;
 	}
-\end{lstlisting}
+\end{cc}
     \end{column}
     \begin{column}{.48\textwidth}
         \begin{enumerate}
@@ -142,7 +142,7 @@
 \end{frame}
 
 \begin{frame}[fragile]{A Periodic Timer Interrupt}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 RCC->APB1ENR |= (1U << 0);      // TIM2 clock
 TIM2->PSC = 15999;              // 16 MHz -> 1 kHz
 TIM2->ARR = 999;                // 1000 ticks -> 1 Hz
@@ -157,7 +157,7 @@ void TIM2_IRQHandler(void)
         GPIOA->ODR ^= (1U << 5);
     }
 }
-\end{lstlisting}
+\end{cc}
 
     \vspace{2mm}
     {\small The CPU is now \alert{free} between interrupts --- it can sleep, or do
@@ -179,7 +179,7 @@ void TIM2_IRQHandler(void)
         {\ttfamily\scriptsize SysTick\_Config(SystemCoreClock / 1000);}
     \end{column}
     \begin{column}{.46\textwidth}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 	volatile uint32_t ticks = 0;
 
 	void SysTick_Handler(void)
@@ -191,7 +191,7 @@ void TIM2_IRQHandler(void)
 	{
 		return ticks;
 	}
-\end{lstlisting}
+\end{cc}
     \end{column}
     \end{columns}
 
@@ -205,7 +205,7 @@ void TIM2_IRQHandler(void)
 
 
 \begin{frame}[fragile]{The Bad \texttt{delay\_ms()} --- For Comparison}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 		void delay_ms_bad(int n)
 		{
 			for (volatile int i = 0; i < n * 4000; i++)
@@ -215,11 +215,11 @@ void TIM2_IRQHandler(void)
 			fires makes it longer than requested. Do not use this
 			in real designs. */
 		}
-	\end{lstlisting}
+	\end{cc}
 \end{frame}
 
 \begin{frame}[fragile]{A Proper \texttt{delay\_ms()} --- Built on SysTick}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 		static volatile uint32_t systick_ms = 0;
 
 		void SysTick_Handler(void) { systick_ms++; }
@@ -240,11 +240,11 @@ void TIM2_IRQHandler(void)
 				__asm volatile ("wfi");  // sleep between ticks
 			}
 		}
-	\end{lstlisting}
+	\end{cc}
 \end{frame}
 
 \begin{frame}[fragile]{An Alternative: \texttt{delay\_ms()} on a General-Purpose Timer}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 		void tim2_delay_init(void)
 		{
 			RCC->APB1ENR |= (1U << 0);  // TIM2 clock enable
@@ -259,7 +259,7 @@ void TIM2_IRQHandler(void)
 			while (TIM2->CNT < n)
 			;
 		}
-	\end{lstlisting}
+	\end{cc}
 	{\small Useful when SysTick is already claimed by an RTOS, and the
 		mechanism is the same prescaler/auto-reload arithmetic from earlier in
 		this chapter.}
@@ -298,13 +298,13 @@ void TIM2_IRQHandler(void)
         {\small For pin $n \geq 8$ the shift is $(n - 8) \times 4$.}
     \end{column}
     \begin{column}{.46\textwidth}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 // PA5 -> TIM2_CH1 is AF1
 GPIOA->MODER &= ~(3U << 10);
 GPIOA->MODER |=  (2U << 10);
 
 GPIOA->AFR[0] |= (1U << (5*4));
-\end{lstlisting}
+\end{cc}
     \end{column}
     \end{columns}
 
@@ -350,7 +350,7 @@ GPIOA->AFR[0] |= (1U << (5*4));
 
 \begin{frame}[fragile]{Configuring PWM}
 
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 TIM2->PSC  = 15;                 // 16 MHz -> 1 MHz
 TIM2->ARR  = 999;                // 1 MHz / 1000 = 1 kHz PWM
 TIM2->CCR1 = 250;                // 250/1000 = 25% duty
@@ -359,7 +359,7 @@ TIM2->CCMR1 |= (6U << 4);        // PWM mode 1 on channel 1
 TIM2->CCMR1 |= (1U << 3);        // preload enable
 TIM2->CCER  |= (1U << 0);        // enable the output
 TIM2->CR1   |= (1U << 0);        // start
-\end{lstlisting}
+\end{cc}
 
     \vspace{2mm}
     \begin{block}{\texttt{ARR} sets the frequency, \texttt{CCR} sets the duty}
@@ -375,7 +375,7 @@ TIM2->CR1   |= (1U << 0);        // start
 
 
 \begin{frame}[fragile]{PWM Duty-Cycle Helper}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 		void pwm_init_tim2_ch1(uint32_t psc, uint32_t arr)
 		{
 			RCC->APB1ENR |= (1U << 0);
@@ -395,11 +395,11 @@ TIM2->CR1   |= (1U << 0);        // start
 			uint32_t arr = TIM2->ARR;
 			TIM2->CCR1 = ((uint32_t)percent * (arr + 1)) / 100U;
 		}
-	\end{lstlisting}
+	\end{cc}
 \end{frame}
 
 \begin{frame}[fragile]{Example: A Breathing LED, Non-Blocking}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 		void led_breathe_demo(void)
 		{
 			static periodic_task_t step = { .last_ms = 0, .period_ms = 20 };
@@ -412,7 +412,7 @@ TIM2->CR1   |= (1U << 0);        // start
 				pwm_set_duty_percent((uint8_t)duty);
 			}
 		}
-	\end{lstlisting}
+	\end{cc}
 	{\small Every 20\,ms the duty cycle steps by one percentage point up or
 		down, driven entirely by \texttt{task\_due()} --- no blocking call
 		anywhere in the loop.}
@@ -821,7 +821,7 @@ TIM2->CR1   |= (1U << 0);        // start
     enable --- after loading \texttt{LOAD} and clearing \texttt{VAL}.}
 
     \vspace{2mm}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\footnotesize]
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
 #include "stm32f4xx.h"                 /* STM32F446RE, Cortex-M4 */
 
 #define SYST_CTRL_ENABLE     (1U << 0) /* bit 0  -- ENB */
@@ -835,7 +835,7 @@ void systick_init_1ms(void) {
                   | SYST_CTRL_TICKINT                 /* raise an interrupt  */
                   | SYST_CTRL_ENABLE;                 /* start the counter   */
 }
-\end{lstlisting}
+\end{cc}
 
     \vspace{2mm}
     \begin{block}{The two things CMSIS does for you}
@@ -848,7 +848,7 @@ void systick_init_1ms(void) {
 \end{frame}
 
 \begin{frame}[fragile]{Handler and Millisecond Delay}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\footnotesize]
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
 static volatile uint32_t msTicks = 0;    /* ISR-shared, must be volatile */
 
 void SysTick_Handler(void) {             /* fires every 1 ms */
@@ -861,7 +861,7 @@ void delay(uint32_t ms) {
         __WFI();                         /* sleep until the next tick */
     }
 }
-\end{lstlisting}
+\end{cc}
 
     \vspace{2mm}
     \begin{columns}[T]

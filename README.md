@@ -13,8 +13,9 @@ chapter of the course book. They cover the ARM Cortex-M4 on the STM32F446RE
 | `stm01.pdf` ... `stm14.pdf` | The built slides, ready to use. |
 | `styles/` | The Flux beamer theme (`navy` style, a deep dark blue added to `styles/beamercolorthemeflux.sty`) and the code-listing setup. |
 | `styles/lstlangarm.sty` | The ARM assembly language for `listings` (vendor file, unchanged). |
+| `styles/stmcommon.sty` | The preamble every deck loads: fonts, the `navy` theme choice, packages, colours and the TikZ block styles. |
 | `styles/lstcommon.sty` | Listing settings shared with the book: C as the default language, `language=ARM`, and the `armasm` and `arminst` styles. |
-| `styles/lstslides.sty` | Slide-only part: colours, font size, and the `myc` style. |
+| `styles/lstslides.sty` | Slide-only part: colours, font size, the `myc` style and the `asm` and `cc` listing environments. |
 | `assets/` | The images and figures the decks include. |
 
 Only the files needed to read and rebuild the slides are here.
@@ -63,9 +64,10 @@ because the decks load `styles/` and `assets/` by relative path.
 - **Addendum.** Some decks end with `\section{Addendum}`. These frames are
   extra material that the book does not cover yet. To hide them, move
   `\end{document}` up to just before `\section{Addendum}`.
-- **Shared look.** The TikZ block styles (`blk`, `cpublk`, `memblk`, `cell`,
-  `lbl`, `flow`, `busline`) are repeated at the top of every deck. The slides
-  use bright colours for projection.
+- **Shared look.** Every deck starts with `\usepackage{styles/stmcommon}`, so the
+  theme colours and the TikZ block styles (`blk`, `cpublk`, `memblk`, `cell`,
+  `lbl`, `flow`, `busline`) are defined once. A deck adds only what it alone
+  needs. The slides use bright colours for projection.
 - **Running example.** LED on PA5, user button on PC13, 16 MHz clock.
 
 ## Known problems with the theme
@@ -79,4 +81,4 @@ These fail silently. The deck compiles with no error, so check the PDF.
 3. A TikZ picture wider than its column overflows into the next column.
 4. `lstlisting` and `\verb` need `\begin{frame}[fragile]`.
 5. `\newcolumntype` must be in the preamble, never inside a frame.
-6. Use `language=ARM` for ARM listings, as in the book. Add `style=armasm` for the blue ARM background. Plain `language=C` listings get the shared C look with the tan background.
+6. Write ARM listings as `\begin{asm}` and C listings with the slide extras as `\begin{cc}`. Both take extra options, for example `\begin{asm}[basicstyle=\footnotesize\ttfamily]`. Plain C needs no environment: `\begin{lstlisting}` is C by default.

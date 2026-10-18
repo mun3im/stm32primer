@@ -93,7 +93,7 @@
 
     \vspace{2mm}
     \begin{center}
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\footnotesize\ttfamily]
+    \begin{asm}[basicstyle=\footnotesize\ttfamily]
 ; Define register aliases and constants
 VAL1    RN  R1               ; VAL1 is an alias for R1
 VAL2    RN  R2               ; VAL2 is an alias for R2
@@ -109,7 +109,7 @@ __main
 
 HERE    B    HERE            ; infinite loop to halt
         END                  ; end of assembly file
-    \end{lstlisting}
+    \end{asm}
     \end{center}
 \end{frame}
 
@@ -210,12 +210,12 @@ HERE    B    HERE            ; infinite loop to halt
 
     \vspace{2mm}
     \begin{center}
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\footnotesize\ttfamily]
+    \begin{asm}[basicstyle=\footnotesize\ttfamily]
 	LDR   R0, [R1]        ; load a  (memory -> register)
 	LDR   R2, [R1, #4]    ; load b  (memory -> register)
 	ADD   R0, R0, R2      ; process (register + register)
 	STR   R0, [R1, #8]    ; store c (register -> memory)
-    \end{lstlisting}
+    \end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -275,11 +275,11 @@ HERE    B    HERE            ; infinite loop to halt
         \textbf{In C}
 
         \vspace{1mm}
-        \begin{lstlisting}[style=myc]
+        \begin{cc}
 int f(int a, int b) {
     return a + b;
 }
-        \end{lstlisting}
+        \end{cc}
 
         \vspace{2mm}
         {\footnotesize Arguments arrive in \texttt{R0} and \texttt{R1} by
@@ -289,10 +289,10 @@ int f(int a, int b) {
         \textbf{In assembly}
 
         \vspace{1mm}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+        \begin{asm}[basicstyle=\normalsize\ttfamily]
 	ADD   R0, R0, R1
 	BX    LR
-        \end{lstlisting}
+        \end{asm}
 
         \vspace{3mm}
         {\small Same addition. \alert{Two instructions} instead of four.}
@@ -387,19 +387,19 @@ int f(int a, int b) {
     \vspace{3mm}
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+        \begin{asm}[basicstyle=\normalsize\ttfamily]
 	MOV  R0, #0x11223344
 	STRB R0, [R1]
-        \end{lstlisting}
+        \end{asm}
 
         \vspace{2mm}
         {\small Stores only \texttt{0x44}. The upper 24 bits are ignored.}
     \end{column}
     \begin{column}{.48\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+        \begin{asm}[basicstyle=\normalsize\ttfamily]
 	MOV  R0, #0x12345678
 	STRH R0, [R1]
-        \end{lstlisting}
+        \end{asm}
 
         \vspace{2mm}
         {\small Stores only \texttt{0x5678}. The upper 16 bits are ignored.}
@@ -571,11 +571,11 @@ int f(int a, int b) {
 
     \vspace{2mm}
     \begin{block}{Prologue and epilogue}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+        \begin{asm}[basicstyle=\normalsize\ttfamily]
 	PUSH {LR}    ; prologue: save the return address
 	...          ; the function body
 	POP  {PC}    ; epilogue: return by loading PC directly
-        \end{lstlisting}
+        \end{asm}
 
         {\footnotesize \texttt{POP \{PC\}} \emph{is} the return. Recognising
         this pair on sight is one of the most useful disassembly skills.}
@@ -626,12 +626,12 @@ int f(int a, int b) {
 
     \vspace{2mm}
     \begin{center}
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+    \begin{asm}[basicstyle=\normalsize\ttfamily]
 	MOV R0, R1       ; R0 = R1
 	MOV R0, #25      ; R0 = 25
 	MVN R0, #0       ; R0 = 0xFFFFFFFF
 	MVN R0, R1       ; R0 = ~R1  (one's complement)
-    \end{lstlisting}
+    \end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -650,9 +650,9 @@ int f(int a, int b) {
 
     \vspace{2mm}
     \begin{center}
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\large\ttfamily]
+    \begin{asm}[basicstyle=\large\ttfamily]
 	LDR R0, =0x40020014
-    \end{lstlisting}
+    \end{asm}
     \end{center}
 
     \vspace{3mm}
@@ -683,11 +683,11 @@ int f(int a, int b) {
 
     \vspace{2mm}
     \begin{center}
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\footnotesize\ttfamily]
+    \begin{asm}[basicstyle=\footnotesize\ttfamily]
 ; build 0x40020014 (GPIOA->ODR), one halfword at a time
 	MOVW R0, #0x0014   ; R0 = 0x00000014, high half cleared
 	MOVT R0, #0x4002   ; R0 = 0x40020014, high half set, low half kept
-    \end{lstlisting}
+    \end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -707,11 +707,11 @@ int f(int a, int b) {
 \begin{frame}[fragile]{Reading It Back}
     \leavevmode
     \begin{center}
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+    \begin{asm}[basicstyle=\normalsize\ttfamily]
 	MOVW R3, #0x0014
 	MOVT R3, #0x4002   ; "R3 is being given a 32-bit address"
 	LDR  R2, [R3]      ; "...and now something is read through it"
-    \end{lstlisting}
+    \end{asm}
     \end{center}
 
     \vspace{3mm}
@@ -751,21 +751,21 @@ int f(int a, int b) {
         \textbf{The C}
 
         \vspace{1mm}
-        \begin{lstlisting}[style=myc]
+        \begin{cc}
 int c;
 c = a + b;
-        \end{lstlisting}
+        \end{cc}
 
         \vspace{3mm}
         \textbf{The listing}
 
         \vspace{1mm}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\footnotesize\ttfamily]
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
 	LDR  R3, [R7, #4]
 	LDR  R2, [R7, #8]
 	ADD  R3, R3, R2
 	STR  R3, [R7, #12]
-        \end{lstlisting}
+        \end{asm}
     \end{column}
     \begin{column}{.5\textwidth}
         \textbf{Reading it back}
@@ -1508,12 +1508,12 @@ c = a + b;
 %%------------------------------------------------------------------
 \begin{frame}[fragile]{Memory Copy Example}
 
-	\begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+	\begin{asm}[basicstyle=\normalsize\ttfamily]
 		LDR R0, =0x2000
 		LDR R1, =0x2004
 		LDR R2, [R0]
 		STR R2, [R1]
-	\end{lstlisting}
+	\end{asm}
 
 	\vspace{10mm}
 

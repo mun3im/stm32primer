@@ -62,11 +62,11 @@
         \textbf{The \texttt{S} suffix}
 
         \vspace{1mm}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\footnotesize\ttfamily]
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
 ADD  R0, R1, R2   ; flags unchanged
 
 ADDS R0, R1, R2   ; updates N Z C V
-        \end{lstlisting}
+        \end{asm}
     \end{column}
     \begin{column}{.5\textwidth}
         \textbf{Compare and test --- no result kept}
@@ -298,15 +298,15 @@ ADDS R0, R1, R2   ; updates N Z C V
         \includegraphics[width=.85\textwidth]{assets/struct-if-else.pdf}
     \end{column}
     \begin{column}{.34\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\footnotesize\ttfamily]
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
 if (a == b)
     x = 1;
 else
     x = 2;
-        \end{lstlisting}
+        \end{cc}
     \end{column}
     \begin{column}{.4\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\footnotesize\ttfamily]
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
 		CMP   R0, R1
         BNE   else_block
 
@@ -319,7 +319,7 @@ else_block
         MOV   R2, #2          ; x = 2
 
 endif
-    \end{lstlisting}
+    \end{asm}
     \end{column}
     \end{columns}
 
@@ -359,14 +359,14 @@ endif
         \includegraphics[scale=.55]{assets/struct-while.pdf}
     \end{column}
     \begin{column}{.37\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\footnotesize\ttfamily]
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
 sum = 0;
 for (i = 1; i <= 5; i++)
     sum = sum + i;
-        \end{lstlisting}
+        \end{cc}
     \end{column}
     \begin{column}{.37\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\footnotesize\ttfamily]
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
 		MOV   r0, #0
 		MOV   r1, #1
 loop
@@ -376,7 +376,7 @@ loop
  	   ADD   r1, r1, #1
  	   B     loop
 done
-        \end{lstlisting}
+        \end{asm}
     \end{column}
     \end{columns}
 \end{frame}
@@ -394,16 +394,16 @@ done
     \vspace{2mm}
     \begin{columns}[T]
     \begin{column}{.46\textwidth}
-        \begin{lstlisting}[style=myc]
+        \begin{cc}
 int x = 0x5555;   // input
 int c = 0;
 for (; x != 0; x >>= 1)
     if (x & 1)
         c++;
-        \end{lstlisting}
+        \end{cc}
     \end{column}
     \begin{column}{.5\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM]
+        \begin{asm}
 		LDR   r1, =0x5555
 		MOV   r0, #0       ; count = 0
 loop
@@ -412,7 +412,7 @@ loop
     	LSRS  r1, r1, #1   ; next bit
     	BNE   loop
 done
-        \end{lstlisting}
+        \end{asm}
     \end{column}
     \end{columns}
 
@@ -440,17 +440,17 @@ done
         \includegraphics[width=.85\textwidth]{assets/struct-do-while.pdf}
     \end{column}
     \begin{column}{.37\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\footnotesize\ttfamily]
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
 sum = 0;
 i = 1;
 do {
     sum = sum + i;
     i++;
 } while (i <= 5);
-        \end{lstlisting}
+        \end{cc}
     \end{column}
     \begin{column}{.4\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\footnotesize\ttfamily]
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
 		MOV   r0, #0
 		MOV   r1, #1
 loop
@@ -458,7 +458,7 @@ loop
     	ADD   r1, r1, #1
     	CMP   r1, #5
     	BLE   loop
-    \end{lstlisting}
+    \end{asm}
     \end{column}
     \end{columns}
 
@@ -479,14 +479,14 @@ loop
         \textbf{Counting up}
 
         \vspace{1mm}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\ttfamily\small]
+        \begin{asm}[basicstyle=\ttfamily\small]
      MOV  r0, #0
 loop
      ...          ; body
      ADD  r0, #1
      CMP  r0, #10
      BLT  loop
-        \end{lstlisting}
+        \end{asm}
 
         \vspace{3mm}
         {\small \alert{Three} instructions of overhead per iteration.}
@@ -495,13 +495,13 @@ loop
         \textbf{Counting down}
 
         \vspace{1mm}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\ttfamily\small]
+        \begin{asm}[basicstyle=\ttfamily\small]
      MOV  r0, #10
 loop
      ...          ; body
      SUBS r0, #1  ; and set flags
      BNE  loop
-        \end{lstlisting}
+        \end{asm}
 
         \vspace{3mm}
         {\small \alert{Two} --- the \texttt{CMP} is gone.}
@@ -526,7 +526,7 @@ loop
     \vspace{1mm}
     \begin{columns}[T]
     \begin{column}{.4\textwidth}
-        \begin{lstlisting}[style=myc]
+        \begin{cc}
 int max = 0;
 int *ptr = (int *)0x20001000;
 int nwords = 64;
@@ -536,10 +536,10 @@ do {
     ptr++;
     nwords--;
 } while (nwords);
-        \end{lstlisting}
+        \end{cc}
     \end{column}
     \begin{column}{.58\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM]
+        \begin{asm}
 		MOV    r0, #0          ; max
 		LDR    r1, =0x20001000 ; ptr
 		MOV    r2, #64         ; nwords
@@ -550,7 +550,7 @@ loop
     	MOV    r0, r3         ; new max
 skip	SUBS   r2, #1
     	BNE    loop
-        \end{lstlisting}
+        \end{asm}
     \end{column}
     \end{columns}
 
@@ -575,17 +575,17 @@ skip	SUBS   r2, #1
 	\alert{call} that block whenever it is needed.}
 
 	\vspace{3mm}
-	\begin{lstlisting}[style=myc]
+	\begin{cc}
 uint32_t read_gpioport(void) {
     return GPIOA->IDR;
 }
-	\end{lstlisting}
+	\end{cc}
 
 	\vspace{2mm}
 	{\small A caller simply writes}
-	\begin{lstlisting}[style=myc]
+	\begin{cc}
 uint32_t state = read_gpioport();
-	\end{lstlisting}
+	\end{cc}
 
 	\vspace{2mm}
 	{\small The same idea applies in assembly: the instructions that read the
@@ -736,19 +736,19 @@ uint32_t state = read_gpioport();
 	convention: the return value goes in \alert{\texttt{R0}}.}
 
 	\vspace{2mm}
-	\begin{lstlisting}[style=armasm, language=ARM, basicstyle=\small\ttfamily]
+	\begin{asm}[basicstyle=\small\ttfamily]
 read_gpioport
 		MOVW  R1, #0x0014   ; GPIOA_IDR low half
 		MOVT  R1, #0x4002   ; GPIOA_IDR high half
 		LDR   R0, [R1]      ; read GPIO input register
 		BX    LR            ; return, with result in R0
-	\end{lstlisting}
+	\end{asm}
 
 	\vspace{2mm}
-	\begin{lstlisting}[style=armasm, language=ARM, basicstyle=\small\ttfamily]
+	\begin{asm}[basicstyle=\small\ttfamily]
 		BL    read_gpioport
 		; R0 now contains the GPIO port value
-	\end{lstlisting}
+	\end{asm}
 
 	\vspace{2mm}
 	{\small \texttt{read\_gpioport} takes no arguments, yet still returns a
@@ -761,11 +761,11 @@ read_gpioport
 	{\small Now consider a function that needs information \emph{from} its
 	caller:}
 
-	\begin{lstlisting}[style=myc]
+	\begin{cc}
 uint32_t read_bit(uint32_t port, uint32_t mask) {
     return port & mask;
 }
-	\end{lstlisting}
+	\end{cc}
 
 	\vspace{2mm}
 	\begin{columns}[T]
@@ -784,11 +784,11 @@ uint32_t read_bit(uint32_t port, uint32_t mask) {
 			returns.}
 		\end{column}
 		\begin{column}{.46\textwidth}
-			\begin{lstlisting}[style=armasm, language=ARM, basicstyle=\small\ttfamily]
+			\begin{asm}[basicstyle=\small\ttfamily]
 read_bit
     AND   R0, R0, R1
     BX    LR
-			\end{lstlisting}
+			\end{asm}
 		\end{column}
 	\end{columns}
 
@@ -810,15 +810,15 @@ read_bit
     \vspace{2mm}
     \begin{columns}[T]
     \begin{column}{.46\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\normalsize\ttfamily]
+        \begin{cc}[basicstyle=\normalsize\ttfamily]
 int counter(void) {
     static int n = 0;
     return ++n;
 }
-        \end{lstlisting}
+        \end{cc}
     \end{column}
     \begin{column}{.5\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+        \begin{asm}[basicstyle=\normalsize\ttfamily]
 counter
      LDR   R0, =n
      LDR   R1, [R0]
@@ -826,7 +826,7 @@ counter
      STR   R1, [R0]
      MOV   R0, R1
      BX    LR
-        \end{lstlisting}
+        \end{asm}
     \end{column}
     \end{columns}
 
@@ -842,28 +842,28 @@ counter
     \vspace{1mm}
     \begin{columns}[T]
     \begin{column}{.34\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\normalsize\ttfamily]
+        \begin{cc}[basicstyle=\normalsize\ttfamily]
 int foo(int a, int b) {
     return a * 2 + b;
 }
 
 x = foo(y, z);
-        \end{lstlisting}
+        \end{cc}
     \end{column}
     \begin{column}{.6\textwidth}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+        \begin{asm}[basicstyle=\normalsize\ttfamily]
 foo
      LSLS  R0, R0, #1   ; a*2
      ADDS  R0, R0, R1   ; +b
      BX    LR
-        \end{lstlisting}
+        \end{asm}
 
         \vspace{2mm}
-        \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\normalsize\ttfamily]
+        \begin{asm}[basicstyle=\normalsize\ttfamily]
 ; y already in R0, z in R1
      BL    foo
      MOVS  R4, R0        ; x = result
-        \end{lstlisting}
+        \end{asm}
     \end{column}
     \end{columns}
 
@@ -876,18 +876,18 @@ foo
     {\small Every example so far has had exactly one implementation. Consider
     a function called exactly like any other:}
 
-    \begin{lstlisting}[style=myc]
+    \begin{cc}
 int popcount(uint32_t x);
 ...
 int n = popcount(mask);
-    \end{lstlisting}
+    \end{cc}
 
     \vspace{2mm}
     {\small A straightforward version checks every bit, shifting right until
     nothing remains --- the same loop as the earlier Popcount example, now
     wrapped as a callable function:}
 
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\small\ttfamily]
+    \begin{asm}[basicstyle=\small\ttfamily]
 popcount
     MOV   R1, #0        ; count = 0
 loop
@@ -897,7 +897,7 @@ loop
     BNE   loop
     MOV   R0, R1
     BX    LR
-    \end{lstlisting}
+    \end{asm}
 \end{frame}
 
 \begin{frame}[fragile]{A Faster \texttt{popcount}: Same Signature}
@@ -908,7 +908,7 @@ loop
     position.}
 
     \vspace{1mm}
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\small\ttfamily]
+    \begin{asm}[basicstyle=\small\ttfamily]
 popcount
     MOV   R1, #0        ; count = 0
     CMP   R0, #0
@@ -921,7 +921,7 @@ loop
 done
     MOV   R0, R1
     BX    LR
-    \end{lstlisting}
+    \end{asm}
 
 \begin{block}{Same signature, same calling sequence --- different caller cannot tell}
     Argument in \texttt{R0}, result in \texttt{R0}, \texttt{BX LR} to return
@@ -1067,14 +1067,14 @@ done
 \begin{frame}[fragile]{Saving the Return Address}
 	\begin{columns}[T]
 		\begin{column}{.6\textwidth}
-			\begin{lstlisting}[style=armasm, language=ARM, basicstyle=\small\ttfamily]
+			\begin{asm}[basicstyle=\small\ttfamily]
 		BL    AddNumbers
 
 AddNumbers
 		PUSH  {LR}      ; save caller's return address
 		ADD   R0, R0, R1
 		POP   {PC}      ; restore and return
-			\end{lstlisting}
+			\end{asm}
 
 			\vspace{3mm}
 			{\small
@@ -1471,7 +1471,7 @@ AddNumbers
     			\texttt{LR}: \alert{save, use, restore}.}
 
     \vspace{2mm}
-    \begin{lstlisting}[style=armasm, language=ARM, basicstyle=\small\ttfamily]
+    \begin{asm}[basicstyle=\small\ttfamily]
 foo  PUSH {R4, R5}    ; save registers this function will use
      MOV  R4, #0
      MOV  R5, #0xAB
@@ -1479,7 +1479,7 @@ foo  PUSH {R4, R5}    ; save registers this function will use
      ...
      POP  {R4, R5}    ; restore their original values
      BX   LR
-    \end{lstlisting}
+    \end{asm}
 
     \vspace{2mm}
 \begin{block}{Why this matters} The caller can continue using \texttt{R4} and \texttt{R5} after \texttt{foo} returns, knowing their values are unchanged. No special agreement is needed at each call site. \end{block}

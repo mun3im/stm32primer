@@ -309,7 +309,7 @@
 \begin{frame}[fragile]{Configuring USART2}
     \begin{columns}[c]
     \begin{column}{.52\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\scriptsize\ttfamily]
+        \begin{cc}[basicstyle=\scriptsize\ttfamily]
 void USART2_init(void) {
   // 1. Clocks: GPIOA on AHB1,
   //    USART2 on APB1
@@ -333,7 +333,7 @@ void USART2_init(void) {
   // 6. Enable peripheral last
   USART2->CR1 |= (1U << 13);
 }
-    \end{lstlisting}
+    \end{cc}
     \end{column}
     \begin{column}{.44\textwidth}
         {\small Three peripheral blocks, in order: \alert{clocks}, then
@@ -422,7 +422,7 @@ void USART2_init(void) {
 \begin{frame}[fragile]{Program 1: Sending ``Hello World!''}
     \begin{columns}[c]
     \begin{column}{.52\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\footnotesize\ttfamily]
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
 void USART2_write(int c)
 {
     while (!(USART2->SR
@@ -439,7 +439,7 @@ int main(void)
     }
     while (1) { }
 }
-    \end{lstlisting}
+    \end{cc}
     \end{column}
     \begin{column}{.44\textwidth}
     \begin{center}
@@ -475,7 +475,7 @@ int main(void)
 \begin{frame}[fragile]{Program 2: Displaying Received Characters}
     \begin{columns}[c]
     \begin{column}{.52\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\footnotesize\ttfamily]
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
 int USART2_read(void)
 {
     while (!(USART2->SR
@@ -491,7 +491,7 @@ int main(void)
         USART2_write(c);  // show it
     }
 }
-    \end{lstlisting}
+    \end{cc}
     \end{column}
     \begin{column}{.44\textwidth}
     \begin{center}
@@ -559,7 +559,7 @@ int main(void)
 \begin{frame}[fragile]{Printing Numbers Over UART}
     \begin{columns}[c]
     \begin{column}{.56\textwidth}
-        \begin{lstlisting}[style=myc, basicstyle=\scriptsize\ttfamily]
+        \begin{cc}[basicstyle=\scriptsize\ttfamily]
 // Decimal, without printf
 void uart_print_uint(uint32_t v)
 {
@@ -585,17 +585,17 @@ void uart_print_hex(uint32_t v)
     uart_write((uint8_t)d[(v>>s)&0xF]);
   }
 }
-    \end{lstlisting}
+    \end{cc}
     \end{column}
     \begin{column}{.40\textwidth}
         {\small A few hundred bytes buy a diagnostic channel that works in
         every program from here on:}
 
-        \begin{lstlisting}[style=myc, basicstyle=\scriptsize\ttfamily]
+        \begin{cc}[basicstyle=\scriptsize\ttfamily]
 uart_print("MODER = ");
 uart_print_hex(GPIOA->MODER);
 uart_print("\r\n");
-        \end{lstlisting}
+        \end{cc}
 
         \vspace{2mm}
         {\small \alert{Avoid \texttt{printf}}: it pulls in tens of kilobytes
@@ -605,7 +605,7 @@ uart_print("\r\n");
 \end{frame}
 
 \begin{frame}[fragile]{Interrupt-Driven Reception}
-        \begin{lstlisting}[style=myc, basicstyle=\footnotesize\ttfamily]
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
 volatile char     rx_buf[64];
 volatile uint8_t  rx_head = 0;
 
@@ -615,7 +615,7 @@ void USART2_IRQHandler(void)
         rx_buf[rx_head++ & 63] = USART2->DR;   // reading DR clears RXNE
     }
 }
-\end{lstlisting}
+\end{cc}
 
     \vspace{2mm}
     \begin{block}{Why polling a UART does not scale}
@@ -640,7 +640,7 @@ void USART2_IRQHandler(void)
     \vspace{2mm}
     \begin{columns}[c]
     \begin{column}{.52\textwidth}
-    \begin{lstlisting}[style=myc, basicstyle=\scriptsize\ttfamily]
+    \begin{cc}[basicstyle=\scriptsize\ttfamily]
 void USART1_init(void)
 {
     RCC->AHB1ENR |= (1U << 1);  // GPIOB
@@ -652,7 +652,7 @@ void USART1_init(void)
     USART1->CR1 = (1U << 3) | (1U << 2);
     USART1->CR1 |= (1U << 13);
 }
-    \end{lstlisting}
+    \end{cc}
     \end{column}
     \begin{column}{.44\textwidth}
         {\small \texttt{USART1}, on PB6/PB7, is the natural second choice: same

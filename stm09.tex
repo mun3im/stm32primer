@@ -75,12 +75,12 @@
 			\textbf{Polling}
 
 			\vspace{1mm}
-			\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+			\begin{cc}[basicstyle=\ttfamily\small]
 while (1) {
 	if (button_pressed())
 		do_something();
 }
-			\end{lstlisting}
+			\end{cc}
 
 			\vspace{5mm}
 			{\small
@@ -96,11 +96,11 @@ while (1) {
 			\textbf{Interrupts}
 
 			\vspace{1mm}
-			\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+			\begin{cc}[basicstyle=\ttfamily\small]
 void EXTI15_10_IRQHandler(void) {
 	do_something();
 }
-			\end{lstlisting}
+			\end{cc}
 
 			\vspace{5mm}
 			{\small
@@ -496,7 +496,7 @@ void EXTI15_10_IRQHandler(void) {
 \end{frame}
 
 \begin{frame}[fragile]{The Configuration Sequence}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small, numbers=left]
+\begin{cc}[basicstyle=\ttfamily\small, numbers=left]
 // 0. Clocks
 RCC->AHB1ENR |= (1U << 2);        // GPIOC
 RCC->APB2ENR |= (1U << 14);       // SYSCFG
@@ -514,7 +514,7 @@ NVIC_SetPriority(EXTI15_10_IRQn, 2);
 NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 // 4. HANDLE: write EXTI15_10_IRQHandler -- next section
-\end{lstlisting}
+\end{cc}
 
     \vspace{1mm}
     {\small Lines 10--15 all share one handler,
@@ -527,7 +527,7 @@ NVIC_EnableIRQ(EXTI15_10_IRQn);
 %===============================================================================
 
 \begin{frame}[fragile]{The Handler}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\small]
+\begin{cc}[basicstyle=\ttfamily\small]
 volatile uint8_t button_event = 0;     // shared with main() -> volatile
 
 void EXTI15_10_IRQHandler(void)
@@ -537,7 +537,7 @@ void EXTI15_10_IRQHandler(void)
         button_event = 1;              // just record it; main() acts
     }
 }
-\end{lstlisting}
+\end{cc}
 
     \vspace{5mm}
     \begin{block}{Three rules, and each one matters}

@@ -238,7 +238,7 @@
     \begin{columns}[T]
     \begin{column}{.5\textwidth}
         \textbf{With \texttt{ODR}}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\scriptsize]
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
 #include "stm32f4xx.h"
 void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
 int main(void) {
@@ -252,11 +252,11 @@ int main(void) {
         delay_ms(500);
     }
 }
-\end{lstlisting}
+\end{cc}
     \end{column}
     \begin{column}{.46\textwidth}
         \textbf{With \texttt{BSRR}}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\scriptsize]
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
 #include "stm32f4xx.h"
 void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
 int main(void) {
@@ -270,7 +270,7 @@ int main(void) {
         delay_ms(500);
     }
 }
-\end{lstlisting}
+\end{cc}
 
         \vspace{2mm}
         {\small Same effect, but the second version is \alert{atomic} and
@@ -287,7 +287,7 @@ int main(void) {
 \begin{frame}[fragile]{Experiment 3: Button Controls LED}
     \begin{columns}[T]
     \begin{column}{.52\textwidth}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\scriptsize]
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
 #include "stm32f4xx.h"
 int main(void) {
     RCC->AHB1ENR |= (1U << 2) | (1U << 0);  // GPIOC, GPIOA
@@ -305,7 +305,7 @@ int main(void) {
         }
     }
 }
-\end{lstlisting}
+\end{cc}
     \end{column}
     \begin{column}{.44\textwidth}
         \begin{center}
@@ -349,7 +349,7 @@ int main(void) {
 \begin{frame}[fragile]{Debouncing}
     \begin{columns}[T]
     \begin{column}{.52\textwidth}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\scriptsize]
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
 #include "stm32f4xx.h"
 void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
 void handle_press(void) { /* app-specific action */ }
@@ -372,7 +372,7 @@ int main(void) {
         }
     }
 }
-\end{lstlisting}
+\end{cc}
     \end{column}
     \begin{column}{.44\textwidth}
         \begin{block}{Mind the brackets}
@@ -399,7 +399,7 @@ int main(void) {
     Directly connects this chapter to your digital-electronics course.}
 
     \vspace{2mm}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\scriptsize]
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
 #include "stm32f4xx.h"
 void delay_ms(uint32_t ms) { for (uint32_t i=0; i<ms*4000; i++) __NOP(); }
 
@@ -415,7 +415,7 @@ int main(void) {
         delay_ms(300);
     }
 }
-\end{lstlisting}
+\end{cc}
 
     \vspace{2mm}
     \begin{block}{Why the mask-and-write}
@@ -427,7 +427,7 @@ int main(void) {
 \end{frame}
 
 \begin{frame}[fragile]{Experiment 6: Measuring Reaction Time}
-	\begin{lstlisting}[style=myc, basicstyle=\ttfamily\scriptsize]
+	\begin{cc}[basicstyle=\ttfamily\scriptsize]
 #include "stm32f4xx.h"
 void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
 volatile uint32_t reaction_ms;      // inspect this in the debugger
@@ -453,7 +453,7 @@ int main(void) {
 		delay_ms(1000);
 	}
 }
-	\end{lstlisting}
+	\end{cc}
 
 	{\small This measurement is only as accurate as \texttt{delay\_ms},
 		a calibrated software loop. Its timing shifts with compiler
@@ -499,7 +499,7 @@ int main(void) {
 \begin{frame}[fragile]{Common-Anode Lookup Table}
     \begin{columns}[T]
     \begin{column}{.56\textwidth}
-\begin{lstlisting}[style=myc, basicstyle=\ttfamily\scriptsize]
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
 #include "stm32f4xx.h"
 void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
 
@@ -522,7 +522,7 @@ int main(void) {
         delay_ms(1000);
     }
 }
-\end{lstlisting}
+\end{cc}
     \end{column}
     \begin{column}{.40\textwidth}
         \begin{block}{Why the values look inverted}
@@ -588,7 +588,7 @@ int main(void) {
 % edition, or discard.
 
 \begin{frame}[fragile]{Experiment 6: Knight Rider LED Chaser}
-	\begin{lstlisting}[style=myc, basicstyle=\ttfamily\footnotesize]
+	\begin{cc}[basicstyle=\ttfamily\footnotesize]
 		#include "stm32f4xx.h"
 		void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
 
@@ -608,7 +608,7 @@ int main(void) {
 				delay_ms(80);
 			}
 		}
-	\end{lstlisting}
+	\end{cc}
 
 	\vspace{2mm}
 	\begin{block}{One lit bit, walking back and forth}

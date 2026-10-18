@@ -40,4 +40,12 @@
     morekeywords={uint32_t,__IO,__asm}
 }
 
+% Named listing environments, so a deck says what a listing is, not which
+% options to set. The optional argument takes any extra keys, e.g.
+%   \begin{asm}[basicstyle=\footnotesize\ttfamily] ... \end{asm}
+% asm : ARM assembly, blue background.   cc : C with the slide extras.
+% Plain C needs no environment: \begin{lstlisting} is C by default.
+\lstnewenvironment{asm}[1][]{\lstset{style=armasm,language=ARM,#1}}{}
+\lstnewenvironment{cc}[1][]{\lstset{style=myc,#1}}{}
+
 \endinput
