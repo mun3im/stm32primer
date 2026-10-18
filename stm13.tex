@@ -71,17 +71,6 @@
     \end{block}
 \end{frame}
 
-\begin{frame}[plain]{Full Duplex by Shift Register}
-    \begin{center}
-    \includegraphics[width=.94\textwidth]{assets/spi-exchange.pdf}
-    \end{center}
-
-    \vspace{1mm}
-    {\small\centering SPI is an \alert{exchange}, not a send or a receive. The
-    two shift registers form one ring, so eight clock pulses trade their
-    contents.\par}
-\end{frame}
-
 \begin{frame}[plain]{More Than One Slave}
     \begin{center}
     \includegraphics[width=.9\textwidth, height=.62\textheight, keepaspectratio]%
@@ -94,6 +83,22 @@
     Adding a slave costs exactly one pin.\par}
 \end{frame}
 
+\begin{frame}[plain]{Full Duplex by Shift Register}
+    \begin{center}
+    \includegraphics[width=.94\textwidth]{assets/spi-exchange.pdf}
+    \end{center}
+
+    \vspace{1mm}
+    {\small\centering SPI is an \alert{exchange}, not a send or a receive. The
+    two shift registers form one ring, so eight clock pulses trade their
+    contents.\par}
+\end{frame}
+
+
+%===============================================================================
+\section{Clock Polarity and Phase}
+%===============================================================================
+
 \begin{frame}[plain]{Clock Polarity and Phase}
     \begin{center}
     \includegraphics[width=.84\textwidth, height=.58\textheight, keepaspectratio]%
@@ -105,6 +110,137 @@
     \textbf{CPHA} sets which edge samples the data. Four combinations, called
     \alert{modes 0 to 3} --- and the datasheet tells you which one your device
     needs.\par}
+\end{frame}
+
+\begin{frame}{The Four SPI Modes}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}c c c l l@{}}
+        \toprule
+        \textbf{Mode} & \textbf{CPOL} & \textbf{CPHA} & \textbf{SCK idle} & \textbf{Data sampled on} \\
+        \midrule
+        0 & 0 & 0 & Low  & Rising edge (first) \\
+        1 & 0 & 1 & Low  & Falling edge (second) \\
+        2 & 1 & 0 & High & Falling edge (first) \\
+        3 & 1 & 1 & High & Rising edge (second) \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        {\small \textbf{CPOL} only inverts the clock waveform. \textbf{CPHA} decides which edge samples the data. With CPHA $=0$ the data must already be stable when the clock first moves.}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \begin{block}{A wrong mode looks like a wiring fault}
+            {\small Data arrives shifted by one bit, or read at the wrong instant. It looks plausible but is wrong. \alert{Mode 0 is the most common.} The slave's datasheet states the mode.}
+        \end{block}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+
+%===============================================================================
+\section{Clock Frequency}
+%===============================================================================
+
+\begin{frame}{Clock Frequency}
+    \leavevmode
+    The master divides its peripheral bus clock by a power of two, chosen by the three \texttt{BR} bits:
+
+    \vspace{2mm}
+    \begin{center}
+    \fbox{\parbox{.5\textwidth}{\centering\vspace{1mm}
+    $f_{\text{SCK}} = \dfrac{f_{\text{PCLK}}}{2^{(\text{BR}+1)}}$
+    \vspace{1mm}}}
+    \end{center}
+
+    \vspace{2mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l l@{}}
+        \toprule
+        \textbf{BR} & \textbf{Divide by} & \textbf{SCK from 16\,MHz} \\
+        \midrule
+        \texttt{000} & 2 & 8\,MHz \\
+        \texttt{011} & 16 & \alert{1\,MHz} \\
+        \texttt{111} & 256 & 62.5\,kHz \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Choose the highest speed the slave supports \emph{and} the wiring allows. Long or unshielded wires need a slower clock. A breadboard rarely tolerates more than a few megahertz.}
+\end{frame}
+
+
+%===============================================================================
+\section{SPI Registers}
+%===============================================================================
+
+\begin{frame}{SPI Registers}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l c l R{.42\textwidth}@{}}
+        \toprule
+        \textbf{Register} & \textbf{Bit} & \textbf{Name} & \textbf{Function} \\
+        \midrule
+        \texttt{SPI\_CR1} & 9   & \texttt{SSM}      & Software slave management \\
+                          & 8   & \texttt{SSI}      & Internal slave select. Set with \texttt{SSM} when CS is a GPIO \\
+                          & 7   & \texttt{LSBFIRST} & Bit order; normally 0 (MSB first) \\
+                          & 6   & \texttt{SPE}      & SPI enable \\
+                          & 5:3 & \texttt{BR}       & Baud rate prescaler \\
+                          & 2   & \texttt{MSTR}     & Master mode \\
+                          & 1   & \texttt{CPOL}     & Idle level of SCK \\
+                          & 0   & \texttt{CPHA}     & Which edge samples \\
+        \texttt{SPI\_SR}  & 7   & \texttt{BSY}      & Transfer in progress \\
+                          & 1   & \texttt{TXE}      & Transmit buffer empty \\
+                          & 0   & \texttt{RXNE}     & Receive buffer not empty \\
+        \texttt{SPI\_DR}  & 15:0 &                  & Writing starts a transfer; reading gets the byte received \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{1mm}
+    {\small If the master drives CS as a GPIO, set \alert{both} \texttt{SSM} and \texttt{SSI}. Otherwise the peripheral thinks it lost arbitration and disables itself.}
+\end{frame}
+
+
+%===============================================================================
+\section{Configuring an SPI Master}
+%===============================================================================
+
+\begin{frame}{Why SPI2, Not SPI1}{A pin-assignment decision}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        \begin{center}
+        {\small
+        \striped
+        \begin{tabular}{@{}l l@{}}
+            \toprule
+            \textbf{Pin} & \textbf{Use} \\
+            \midrule
+            \texttt{PB13} & SCK  (AF5) \\
+            \texttt{PB14} & MISO (AF5) \\
+            \texttt{PB15} & MOSI (AF5) \\
+            \texttt{PB12} & CS, a plain GPIO output \\
+            \bottomrule
+        \end{tabular}}
+        \end{center}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        \begin{block}{SPI1 would break the LED}
+            {\small SPI1's default SCK is \alert{\texttt{PA5}}, the user LED used all semester. SPI2 keeps the LED free, so the new sensor joins the running system.}
+        \end{block}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    {\small Details that are easy to get wrong: SPI2 is on \alert{APB1} (\texttt{RCC->APB1ENR}, bit 14). \texttt{PB12}--\texttt{PB15} are in \texttt{AFR[1]}, indexed as $(\text{pin}-8)\times 4$. Checking for collisions like this before choosing pins is ordinary design work. Chapter 14 treats it that way.}
 \end{frame}
 
 \begin{frame}{Configuring an SPI Master}
@@ -142,6 +278,11 @@
     \end{block}
 \end{frame}
 
+
+%===============================================================================
+\section{A Register Transaction}
+%===============================================================================
+
 \begin{frame}[fragile]{A Register Transaction}
 \begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize]
 uint8_t spi_transfer(uint8_t out)
@@ -167,6 +308,47 @@ uint8_t read_register(uint8_t addr)
     transmitting, because the master supplies the clock.}
 \end{frame}
 
+
+%===============================================================================
+\section{Application: Reading an Accelerometer}
+%===============================================================================
+
+\begin{frame}[fragile]{Application: Reading an Accelerometer}{ADXL345 over SPI}
+    \begin{columns}[T]
+    \begin{column}{.58\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+#define REG_DEVID        0x00
+#define REG_POWER_CTL    0x2D
+#define REG_DATA_FORMAT  0x31
+#define REG_DATAX0       0x32
+
+void accel_init(void) {
+    spi_init();
+    sensor_write_reg(REG_DATA_FORMAT, 0x00); // +/-2g
+    sensor_write_reg(REG_POWER_CTL,   0x08); // start
+}
+
+int16_t accel_read_axis(uint8_t reg_low) {
+    uint8_t lo = sensor_read_reg(reg_low);
+    uint8_t hi = sensor_read_reg(reg_low + 1);
+    return (int16_t)((uint16_t)hi << 8 | lo);
+}
+
+float accel_to_g(int16_t raw) {
+    return (float)raw * 0.0039f;   // 3.9 mg/LSB
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.38\textwidth}
+        {\small
+        \textbf{The cast to \texttt{int16\_t} is essential.} Acceleration is signed. Rebuilt as an unsigned type, every negative reading becomes a large positive one.
+
+        \vspace{2mm}
+        \textbf{Read the ID first.} The ADXL345 returns \texttt{0xE5}. If you read \texttt{0x00} or \texttt{0xFF}, the bus is not working, and no more code will help.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
 \begin{frame}[plain]{The Complete Measurement Chain}
     \begin{center}
     \includegraphics[width=.92\textwidth, height=.68\textheight, keepaspectratio]%
@@ -178,8 +360,9 @@ uint8_t read_register(uint8_t addr)
     Every stage is a topic from an \alert{earlier chapter}.\par}
 \end{frame}
 
+
 %===============================================================================
-\section{I\textsuperscript{2}C}
+\section{I\textsuperscript{2}C: Two Wires, Many Devices}
 %===============================================================================
 
 \begin{frame}{Two Wires, Many Devices}
@@ -209,6 +392,33 @@ uint8_t read_register(uint8_t addr)
     {\small That is Chapter 8's open-drain output, now with a reason. The pull-up
     value follows from \alert{bus capacitance}: too large and the rising edge is
     too slow; too small and it wastes current.}
+\end{frame}
+
+\begin{frame}{The Pull-Up Value Is a Compromise}
+    \leavevmode
+    The bus line and its devices present a capacitance $C_b$. The pull-up must charge it within the rise time the standard allows:
+
+    \vspace{2mm}
+    \begin{center}
+    \fbox{\parbox{.4\textwidth}{\centering\vspace{1mm}
+    $t_r \approx 0.85\,R_p C_b$
+    \vspace{1mm}}}
+    \end{center}
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        {\small A smaller resistor gives faster edges, but draws more current whenever a device pulls the line low.
+
+        \vspace{2mm}
+        With $C_b = 100$\,pF, a 4.7\,k$\Omega$ pull-up gives about 400\,ns. That suits 100\,kHz, but is marginal at 400\,kHz, where 1\,k$\Omega$ is better.}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \begin{block}{The most common I\textsuperscript{2}C fault}
+            {\small \alert{Missing pull-ups.} Symptom: SDA and SCL sit near 0\,V and every transfer fails at once.}
+        \end{block}
+    \end{column}
+    \end{columns}
 \end{frame}
 
 \begin{frame}{A Transaction}
@@ -259,6 +469,29 @@ uint8_t read_register(uint8_t addr)
     \alert{unambiguous markers} for the start and end of a transfer.\par}
 \end{frame}
 
+\begin{frame}{Addressing}
+    \leavevmode
+    Each device answers to a \alert{7-bit address}: 128 possibilities, a few reserved. The manufacturer fixes it, often with one or two pins to select between variants. That is how two identical sensors share one bus.
+
+    \vspace{3mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l l@{}}
+        \toprule
+        \textbf{Datasheet says} & \textbf{On the wire, write} & \textbf{On the wire, read} \\
+        \midrule
+        \texttt{0x68} (7-bit) & \texttt{0xD0} & \texttt{0xD1} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{A device that never acknowledges}
+        The address goes in the upper seven bits of the first byte, with R/$\overline{\text{W}}$ in bit 0. A device that never ACKs is usually being addressed with the \alert{7-bit value shifted the wrong way}. The STM32 register expects the already-shifted 8-bit form.
+    \end{block}
+\end{frame}
+
 \begin{frame}[plain]{Many Devices on Two Wires}
     \begin{center}
     \includegraphics[width=.86\textwidth, height=.6\textheight, keepaspectratio]%
@@ -269,6 +502,135 @@ uint8_t read_register(uint8_t addr)
     {\small\centering Compare this with SPI's three private chip-select
     lines: here the pin count stays at \alert{two}, no matter how many
     devices hang off the bus --- selection has moved into \alert{software}.\par}
+\end{frame}
+
+\begin{frame}{I\textsuperscript{2}C Registers}
+    \begin{center}
+    {\scriptsize
+    \striped
+    \begin{tabular}{@{}l l l R{.46\textwidth}@{}}
+        \toprule
+        \textbf{Register} & \textbf{Bit} & \textbf{Name} & \textbf{Function} \\
+        \midrule
+        \texttt{I2C\_CR1} & 15 & \texttt{SWRST} & Software reset \\
+                          & 10 & \texttt{ACK}   & Acknowledge enable; clear to NACK the next byte \\
+                          & 9  & \texttt{STOP}  & Generate a stop condition \\
+                          & 8  & \texttt{START} & Generate a start (or repeated start) \\
+                          & 0  & \texttt{PE}    & Peripheral enable \\
+        \texttt{I2C\_CR2} & 5:0 & \texttt{FREQ} & PCLK1 in MHz, used to time the bus \\
+        \texttt{I2C\_CCR} & 11:0 & & $f_{\text{PCLK1}} / (2 \times f_{\text{SCL}})$ in standard mode \\
+        \texttt{I2C\_TRISE} & 5:0 & & Maximum SCL rise time, in \texttt{FREQ} units \\
+        \texttt{I2C\_SR1} & 7 & \texttt{TXE}  & Data register empty \\
+                          & 6 & \texttt{RXNE} & A byte has arrived \\
+                          & 2 & \texttt{BTF}  & Byte transfer finished \\
+                          & 1 & \texttt{ADDR} & Address sent and acked; cleared by reading \texttt{SR1} then \texttt{SR2} \\
+                          & 0 & \texttt{SB}   & Start condition generated \\
+        \texttt{I2C\_SR2} & 1 & \texttt{BUSY} & Communication in progress \\
+        \texttt{I2C\_DR}  & 7:0 &             & Carries the address byte and the data \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{1mm}
+    {\small The status bits are split across \alert{two} registers, \texttt{SR1} and \texttt{SR2}. This matters for \texttt{ADDR}.}
+\end{frame}
+
+\begin{frame}[fragile]{Configuring an I\textsuperscript{2}C Master}{I2C1 on PB8 (SCL) and PB9 (SDA), AF4}
+    \begin{columns}[T]
+    \begin{column}{.6\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+void i2c_init(void) {
+    RCC->AHB1ENR |= (1U << 1);   // GPIOB
+    RCC->APB1ENR |= (1U << 21);  // I2C1
+
+    GPIOB->MODER &= ~((3U<<(8*2)) | (3U<<(9*2)));
+    GPIOB->MODER |=  ((2U<<(8*2)) | (2U<<(9*2)));
+
+    // OPEN-DRAIN. Without this the bus cannot work.
+    GPIOB->OTYPER |= (1U << 8) | (1U << 9);
+
+    // AF4 = I2C1; pins 8-15 are in AFR[1]
+    GPIOB->AFR[1] &= ~((0xFU << 0) | (0xFU << 4));
+    GPIOB->AFR[1] |=  ((4U << 0) | (4U << 4));
+
+    I2C1->CR1 |= (1U << 15);     // SWRST
+    I2C1->CR1 &= ~(1U << 15);    // release
+    I2C1->CR2  = 16;             // FREQ: PCLK1 in MHz
+    I2C1->CCR  = 80;             // 16 MHz / (2 x 100 kHz)
+    I2C1->TRISE = 17;            // FREQ + 1
+    I2C1->CR1 |= (1U << 0);      // PE
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.36\textwidth}
+        \begin{block}{The forgotten step}
+            {\small Both pins must be \alert{open-drain} alternate-function outputs. This step has no counterpart in SPI, and it is the one most often forgotten.}
+        \end{block}
+
+        \vspace{2mm}
+        \begin{center}
+        \fbox{\parbox{.9\textwidth}{\centering\vspace{1mm}\small
+        $\text{CCR} = \dfrac{f_{\text{PCLK1}}}{2 f_{\text{SCL}}} = 80$
+        \vspace{1mm}}}
+        \end{center}
+        {\small \texttt{TRISE} $=$ \texttt{FREQ} $+ 1$ in standard mode.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{A Register Read Over I\textsuperscript{2}C (1)}{Phases 1 and 2}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+// addr: the 7-bit address ALREADY shifted left by 1
+uint8_t i2c_read_reg(uint8_t addr, uint8_t reg) {
+    while (I2C1->SR2 & (1U << 1)) { }     // bus free?
+
+    // --- Phase 1: START, address for WRITE ---
+    I2C1->CR1 |= (1U << 8);               // START
+    while (!(I2C1->SR1 & (1U << 0))) { }  // SB: start sent
+    I2C1->DR = addr & ~1U;                // address + write bit
+    while (!(I2C1->SR1 & (1U << 1))) { }  // ADDR: address acked
+    (void)I2C1->SR2;                      // SR1 then SR2 clears ADDR
+
+    // --- Phase 2: send the register number ---
+    while (!(I2C1->SR1 & (1U << 7))) { }  // TXE: DR empty
+    I2C1->DR = reg;
+    while (!(I2C1->SR1 & (1U << 2))) { }  // BTF: byte done
+\end{cc}
+    \vspace{1mm}
+    {\small Each step waits on a status flag: the busy-wait pattern, applied to a peripheral whose every phase must be confirmed.}
+\end{frame}
+
+\begin{frame}[fragile]{A Register Read Over I\textsuperscript{2}C (2)}{Phases 3 and 4}
+    \begin{columns}[T]
+    \begin{column}{.62\textwidth}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+    // --- Phase 3: repeated START, address for READ ---
+    I2C1->CR1 |= (1U << 8);               // repeated START
+    while (!(I2C1->SR1 & (1U << 0))) { }  // SB
+    I2C1->DR = addr | 1U;                 // address + read bit
+    while (!(I2C1->SR1 & (1U << 1))) { }  // ADDR
+    I2C1->CR1 &= ~(1U << 10);             // ACK = 0: NACK
+    (void)I2C1->SR2;                      // clear ADDR
+
+    // --- Phase 4: receive one byte, then STOP ---
+    I2C1->CR1 |= (1U << 9);               // STOP
+    while (!(I2C1->SR1 & (1U << 6))) { }  // RXNE
+    return (uint8_t)I2C1->DR;
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.34\textwidth}
+        \begin{block}{Two STM32 traps}
+            {\small \texttt{ADDR} is cleared by reading \texttt{SR1} \emph{then} \texttt{SR2}. The \texttt{(void)I2C1->SR2} is not dead code: delete it and the bus hangs.
+
+            \vspace{1mm}
+            For a one-byte read, clear \texttt{ACK} \emph{before} clearing \texttt{ADDR}.}
+        \end{block}
+    \end{column}
+    \end{columns}
+
+    \vspace{1mm}
+    {\small \textbf{Add a timeout} to every loop. A missing pull-up or an unpowered slave means a flag never sets, and the function never returns.}
 \end{frame}
 
 \begin{frame}{Choosing Between Them}
@@ -296,6 +658,41 @@ uint8_t read_register(uint8_t addr)
         device is actually there.
     \end{block}
 \end{frame}
+
+
+%===============================================================================
+\section{Comparing the Serial Protocols}
+%===============================================================================
+
+\begin{frame}{Comparing the Serial Protocols}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l l l@{}}
+        \toprule
+        \textbf{Property} & \textbf{UART} & \textbf{SPI} & \textbf{I\textsuperscript{2}C} \\
+        \midrule
+        Clock & None (async) & Shared SCK & Shared SCL \\
+        Wires & 2 & 4 (+1 per slave) & 2 \\
+        Speed & to $\sim$1\,Mbps & tens of Mbps & 0.1--3.4\,Mbps \\
+        Duplex & Full & Full & Half \\
+        Devices & 2 & Many (one CS each) & Many (addressed) \\
+        Addressing & None & Chip select & 7-bit address \\
+        Typical use & PC terminal, GPS & Sensors, displays, SD & Small sensors, EEPROM \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{A NACK is diagnostic information}
+        {\small I\textsuperscript{2}C is the only one with \alert{addressing in the protocol}, so it is the only one where a device can refuse to answer. An unpowered SPI slave returns \texttt{0x00} or \texttt{0xFF}, which looks like real data. An absent I\textsuperscript{2}C device announces its absence on the first byte.}
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
 
 \begin{frame}{An SPI Byte at Five Levels}
     \begin{center}

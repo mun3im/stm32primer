@@ -35,7 +35,7 @@
 
 
 %===============================================================================
-\section{Serial Fundamentals}
+\section{Serial versus Parallel}
 %===============================================================================
 
 \begin{frame}{Serial versus Parallel}
@@ -122,6 +122,11 @@
     RX} --- the crossover --- and both must share a \alert{common ground}. There is
     no clock line, which is why both ends must independently agree on the baud rate.}
 \end{frame}
+
+
+%===============================================================================
+\section{The UART Frame}
+%===============================================================================
 
 \begin{frame}{The UART Frame}
     \begin{center}
@@ -230,42 +235,10 @@
     the more general peripheral that happens to include UART mode.}
 \end{frame}
 
-%===============================================================================
-\section{Configuring the USART}
-%===============================================================================
 
-\begin{frame}{The Registers}
-    \begin{center}
-    {\footnotesize
-    \striped
-    \begin{tabular}{@{}l l l R{.46\textwidth}@{}}
-        \toprule
-        \textbf{Register} & \textbf{Bit} & \textbf{Name} & \textbf{Function} \\
-        \midrule
-        \texttt{USART\_CR1} & 13 & \texttt{UE} & USART enable \\
-                            & 12 & \texttt{M} & Word length: 0 = 8 data bits, 1 = 9 \\
-                            & 10 & \texttt{PCE} & Parity control enable \\
-                            & 5 & \texttt{RXNEIE} & Receive-interrupt enable \\
-                            & 3 & \texttt{TE} & Transmitter enable \\
-                            & 2 & \texttt{RE} & Receiver enable \\
-        \midrule
-        \texttt{USART\_CR2} & 13:12 & \texttt{STOP} & \phantom{}\alert{Stop bits}: 00 = 1, 10 = 2 (default: 1) \\
-        \midrule
-        \texttt{USART\_SR}  & 7 & \texttt{TXE} & \textbf{T}ransmit register \textbf{E}mpty --- ready for next byte \\
-                            & 6 & \texttt{TC} & Transmission complete --- last bit has left the pin \\
-                            & 5 & \texttt{RXNE} & \textbf{R}eceive register \textbf{N}ot \textbf{E}mpty --- a byte has arrived \\
-        \midrule
-        \texttt{USART\_DR}  & \multicolumn{2}{l}{7:0 (or 8:0)} & \phantom{}\alert{Data} --- write to send, read to receive \\
-        \midrule
-        \texttt{USART\_BRR} & \multicolumn{2}{l}{15:0} & \phantom{}\alert{Baud rate} divisor: mantissa in 15:4, fraction in 3:0 \\
-        \bottomrule
-    \end{tabular}}
-    \end{center}
-
-    \vspace{2mm}
-    {\small On the Nucleo, \texttt{USART2} is wired to the ST-LINK and appears on
-    your PC as a \alert{virtual COM port}.}
-\end{frame}
+%===============================================================================
+\section{Baud Rate Calculation}
+%===============================================================================
 
 \begin{frame}{Baud Rate}
 	\begin{columns}[c]
@@ -304,6 +277,44 @@
 		Characters arrive, but as nonsense. If the very first thing you ever
 		receive is garbage, suspect \alert{baud rate} before anything else.
 	\end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{USART Registers}
+%===============================================================================
+
+\begin{frame}{The Registers}
+    \begin{center}
+    {\footnotesize
+    \striped
+    \begin{tabular}{@{}l l l R{.46\textwidth}@{}}
+        \toprule
+        \textbf{Register} & \textbf{Bit} & \textbf{Name} & \textbf{Function} \\
+        \midrule
+        \texttt{USART\_CR1} & 13 & \texttt{UE} & USART enable \\
+                            & 12 & \texttt{M} & Word length: 0 = 8 data bits, 1 = 9 \\
+                            & 10 & \texttt{PCE} & Parity control enable \\
+                            & 5 & \texttt{RXNEIE} & Receive-interrupt enable \\
+                            & 3 & \texttt{TE} & Transmitter enable \\
+                            & 2 & \texttt{RE} & Receiver enable \\
+        \midrule
+        \texttt{USART\_CR2} & 13:12 & \texttt{STOP} & \phantom{}\alert{Stop bits}: 00 = 1, 10 = 2 (default: 1) \\
+        \midrule
+        \texttt{USART\_SR}  & 7 & \texttt{TXE} & \textbf{T}ransmit register \textbf{E}mpty --- ready for next byte \\
+                            & 6 & \texttt{TC} & Transmission complete --- last bit has left the pin \\
+                            & 5 & \texttt{RXNE} & \textbf{R}eceive register \textbf{N}ot \textbf{E}mpty --- a byte has arrived \\
+        \midrule
+        \texttt{USART\_DR}  & \multicolumn{2}{l}{7:0 (or 8:0)} & \phantom{}\alert{Data} --- write to send, read to receive \\
+        \midrule
+        \texttt{USART\_BRR} & \multicolumn{2}{l}{15:0} & \phantom{}\alert{Baud rate} divisor: mantissa in 15:4, fraction in 3:0 \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    {\small On the Nucleo, \texttt{USART2} is wired to the ST-LINK and appears on
+    your PC as a \alert{virtual COM port}.}
 \end{frame}
 
 \begin{frame}[fragile]{Configuring USART2}
@@ -347,6 +358,11 @@ void USART2_init(void) {
     \end{column}
     \end{columns}
 \end{frame}
+
+
+%===============================================================================
+\section{Two Minimal Programs: Send and Receive}
+%===============================================================================
 
 \begin{frame}{TXE and RXNE: The Two Status Bits}
 	\begin{center}
@@ -524,8 +540,60 @@ int main(void)
     \end{columns}
 \end{frame}
 
+
 %===============================================================================
-\section{UART as an Instrument}
+\section{An Echo Program}
+%===============================================================================
+
+\begin{frame}[fragile]{An Echo Program}{Send and receive, combined}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+void uart_write(uint8_t ch) {
+    while (!(USART2->SR & (1U << 7))) { }
+        // wait for TXE
+    USART2->DR = ch;
+}
+
+uint8_t uart_read(void) {
+    while (!(USART2->SR & (1U << 5))) { }
+        // wait for RXNE
+    return USART2->DR;   // clears RXNE
+}
+
+void uart_print(const char *s) {
+    while (*s) uart_write((uint8_t)*s++);
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.46\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+int main(void) {
+    USART2_init();
+
+    uart_print("\r\n-- UART Echo --\r\n");
+    uart_print("Type a character:\r\n");
+
+    while (1) {
+        uint8_t c = uart_read();
+        uart_write(c);
+    }
+}
+\end{cc}
+        \vspace{2mm}
+        {\small Every character typed on the PC is read and sent straight back.}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{No extra hardware}
+        On the Nucleo, the ST-LINK gives a USB \alert{virtual COM port} wired to these pins. The output appears in any terminal program the moment the board is plugged in.
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{UART as a Debugging Instrument}
 %===============================================================================
 
 \begin{frame}{The Most Valuable Debugging Tool You Have}
@@ -604,6 +672,11 @@ uart_print("\r\n");
     \end{columns}
 \end{frame}
 
+
+%===============================================================================
+\section{Interrupt-Driven Reception}
+%===============================================================================
+
 \begin{frame}[fragile]{Interrupt-Driven Reception}
         \begin{cc}[basicstyle=\footnotesize\ttfamily]
 volatile char     rx_buf[64];
@@ -628,6 +701,36 @@ void USART2_IRQHandler(void)
         \texttt{main()} processes the buffer when convenient.
     \end{block}
 \end{frame}
+
+\begin{frame}{Sending One Character at Five Levels}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.65\textwidth}@{}}
+        \toprule
+        \textbf{Level} & \textbf{Representation} \\
+        \midrule
+        Physical    & PA2 toggles between 0~V and 3.3~V for 10 bit periods \\
+        Hardware    & Shift register clocked at 9600~Hz; start and stop bits framed \\
+        Register    & \texttt{USART2->DR} written; \texttt{TXE} clears, then sets again \\
+        C           & \texttt{uart\_write('A');} \\
+        Observable  & The letter A appears in the PC terminal \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{UART, from this chapter on}
+        A peripheral you configure \alert{and} an instrument you reach for
+        in every program. Printing a register value is faster than setting
+        a breakpoint, and the system keeps running while you watch.
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{A Second Serial Link: When USART2 Is Not Enough}
+%===============================================================================
 
 \begin{frame}[fragile]{A Second Serial Link: When USART2 Is Not Enough}
     \leavevmode
@@ -665,30 +768,10 @@ void USART1_init(void)
     \end{columns}
 \end{frame}
 
-\begin{frame}{Sending One Character at Five Levels}
-    \begin{center}
-    {\small
-    \striped
-    \begin{tabular}{@{}l R{.65\textwidth}@{}}
-        \toprule
-        \textbf{Level} & \textbf{Representation} \\
-        \midrule
-        Physical    & PA2 toggles between 0~V and 3.3~V for 10 bit periods \\
-        Hardware    & Shift register clocked at 9600~Hz; start and stop bits framed \\
-        Register    & \texttt{USART2->DR} written; \texttt{TXE} clears, then sets again \\
-        C           & \texttt{uart\_write('A');} \\
-        Observable  & The letter A appears in the PC terminal \\
-        \bottomrule
-    \end{tabular}}
-    \end{center}
 
-    \vspace{3mm}
-    \begin{block}{UART, from this chapter on}
-        A peripheral you configure \alert{and} an instrument you reach for
-        in every program. Printing a register value is faster than setting
-        a breakpoint, and the system keeps running while you watch.
-    \end{block}
-\end{frame}
+%===============================================================================
+\section{Summary}
+%===============================================================================
 
 \begin{frame}{Summary}
 	\begin{columns}[c]
