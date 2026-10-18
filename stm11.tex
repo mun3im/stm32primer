@@ -35,7 +35,7 @@
 
 
 %===============================================================================
-\section{Sampling and Resolution}
+\section{Sampling, Quantization, and Resolution}
 %===============================================================================
 
 \begin{frame}{Two Approximations at Once}
@@ -102,9 +102,114 @@
     \end{block}
 \end{frame}
 
+
 %===============================================================================
-\section{Using the ADC}
+\section{The STM32 ADC}
 %===============================================================================
+
+\begin{frame}{The STM32 ADC}
+    \leavevmode
+    The STM32F446RE has \alert{three independent 12-bit successive-approximation (SAR) ADCs}. Each can sample up to 16 external channels, and several internal sources: the temperature sensor, the battery monitor and a precision reference.
+
+    \vspace{3mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.62\textwidth}@{}}
+        \toprule
+        \textbf{Mode} & \textbf{What it does} \\
+        \midrule
+        Single conversion & One conversion, then it stops. \\
+        Continuous & A new conversion starts when the last one ends. \\
+        Scan & Converts a programmed sequence of channels in order. \\
+        Alignment & Places the 12-bit result in a 16-bit register: right-aligned (default) or left-aligned. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+\begin{frame}{ADC and GPIO Registers Used in This Chapter}
+    \begin{center}
+    {\footnotesize
+    \striped
+    \begin{tabular}{@{}l l l R{.42\textwidth}@{}}
+        \toprule
+        \textbf{Register} & \textbf{Bit} & \textbf{Name} & \textbf{Function} \\
+        \midrule
+        \texttt{GPIOx\_MODER} & pin mode & & Analog mode (\texttt{11}). Disconnects the Schmitt trigger and pull resistors. \\
+        \texttt{ADC\_CR1} & 25:24 & & Resolution: \texttt{00}=12, \texttt{01}=10, \texttt{10}=8, \texttt{11}=6 bit \\
+                          & 8     & & Scan mode \\
+                          & 5     & \texttt{EOCIE} & End-of-conversion interrupt enable \\
+        \texttt{ADC\_CR2} & 0     & \texttt{ADON} & Powers the ADC \\
+                          & 1     & \texttt{CONT} & Continuous conversion \\
+                          & 11    & \texttt{ALIGN} & Result alignment \\
+                          & 30    & \texttt{SWSTART} & Triggers a conversion \\
+        \texttt{ADC\_SMPR1/2} & 3 bits/ch & & Sampling time, \texttt{000} (3 cycles) to \texttt{111} (480). Channels 0--9 use \texttt{SMPR2}. \\
+        \texttt{ADC\_SQR1/2/3} & 23:20, 4:0 & \texttt{L}, SQ1 & Sequence length; first channel \\
+        \texttt{ADC\_SR} & 1 & \texttt{EOC} & Set when a result is ready \\
+        \texttt{ADC\_DR} & 15:0 & & The result. Reading it clears \texttt{EOC}. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Sampling Time}{The setting people get wrong}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        \begin{itemize}
+            \item The ADC charges an internal capacitor from your signal
+                  \alert{before} converting.
+            \item \alert{Sampling time} is how long it is given to charge ---
+                  3 to 480 cycles.
+        \end{itemize}
+
+        \vspace{2mm}
+        {\ttfamily\scriptsize ADC1->SMPR2 |= (7U << 0);~// 480 cycles}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        \begin{block}{Too short, and you read nonsense}
+            A \alert{high-impedance} source --- a potentiometer, a sensor behind a
+            large resistor --- charges that capacitor slowly. Convert too early and
+            you measure a \emph{partly charged} capacitor, not your signal.
+        \end{block}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    {\small The symptom is characteristic: readings \alert{consistently low}, or
+    changing when you touch the wiring. The fix is a longer sampling time --- or a
+    buffer amplifier.}
+\end{frame}
+
+
+%===============================================================================
+\section{Experiment: Reading a Potentiometer}
+%===============================================================================
+
+\begin{frame}{Experiment: Reading a Potentiometer}{Polling-based conversion}
+    \leavevmode
+    {\small A potentiometer is a voltage divider between 3.3\,V and ground. Its wiper, on \texttt{PA0} (ADC1 channel 0), gives any voltage in between. The ADC turns it into a code from 0 to 4095.}
+
+    \vspace{3mm}
+    \begin{center}
+    \begin{tikzpicture}[font=\scriptsize]
+        \node[blk, text width=22mm] (init) at (0,0) {Initialize ADC};
+        \node[blk, text width=24mm] (start) at (3.6,0) {SWSTART: begin conversion};
+        \node[cpublk, diamond, aspect=2.2, text width=13mm, inner sep=1pt] (test) at (7.3,0) {EOC set?};
+        \node[blk, text width=26mm] (read) at (11.2,0) {Read DR (result, clears EOC)};
+        \draw[flow] (init) -- (start);
+        \draw[flow] (start) -- (test);
+        \draw[flow] (test) -- node[lbl, above] {yes} (read);
+        \draw[flow] ([xshift=-2.5mm]test.north) -- ++(0,5mm) -- ++(5mm,0) -- ([xshift=2.5mm]test.north);
+        \node[lbl, above] at ([yshift=5mm]test.north) {no: wait};
+        \draw[flow] (read.south) -- ++(0,-8mm) -| (start.south);
+        \node[lbl] at ([yshift=-11mm,xshift=-18mm]read.south) {loop};
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{4mm}
+    {\small Each measurement: start a conversion, wait for \texttt{EOC}, read \texttt{DR}, repeat. Rotate the pot in the debugger: the code should run from near 0 at ground to near 4095 at 3.3\,V.}
+\end{frame}
 
 \begin{frame}[fragile]{Configuration}
 \begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize]
@@ -163,33 +268,100 @@ uint16_t ADC_Read(void)
     \end{block}
 \end{frame}
 
-\begin{frame}{Sampling Time}{The setting people get wrong}
-    \begin{columns}[T]
-    \begin{column}{.5\textwidth}
-        \begin{itemize}
-            \item The ADC charges an internal capacitor from your signal
-                  \alert{before} converting.
-            \item \alert{Sampling time} is how long it is given to charge ---
-                  3 to 480 cycles.
-        \end{itemize}
 
-        \vspace{2mm}
-        {\ttfamily\scriptsize ADC1->SMPR2 |= (7U << 0);~// 480 cycles}
+%===============================================================================
+\section{Interrupt-Driven Conversion}
+%===============================================================================
+
+\begin{frame}[fragile]{Interrupt-Driven Conversion}
+    \begin{columns}[T]
+    \begin{column}{.55\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+volatile uint32_t adc_data = 0;
+volatile uint8_t  data_ready = 0;
+
+void ADC_IRQHandler(void) {
+    if (ADC1->SR & (1U << 1)) {  // EOC
+        adc_data   = ADC1->DR;   // clears flag
+        data_ready = 1;          // minimal work
+    }
+}
+
+// in adc_init_interrupt(), as before, plus:
+ADC1->CR1 |= (1U << 5);   // EOCIE
+NVIC_SetPriority(ADC_IRQn, 1);
+NVIC_EnableIRQ(ADC_IRQn);
+\end{cc}
     \end{column}
-    \begin{column}{.46\textwidth}
-        \begin{block}{Too short, and you read nonsense}
-            A \alert{high-impedance} source --- a potentiometer, a sensor behind a
-            large resistor --- charges that capacitor slowly. Convert too early and
-            you measure a \emph{partly charged} capacitor, not your signal.
-        \end{block}
+    \begin{column}{.41\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+while (1) {
+    ADC1->CR2 |= (1U << 30); // start
+    while (!data_ready) {
+        // real work happens here
+    }
+    data_ready = 0;
+    voltage = ((float)adc_data
+               * 3.3f) / 4095.0f;
+}
+\end{cc}
+        \vspace{2mm}
+        {\small A 12-bit conversion at 480 cycles takes hundreds of cycles. Polling wastes them all. The \texttt{EOC} interrupt frees the CPU.}
     \end{column}
     \end{columns}
+\end{frame}
+
+\begin{frame}{Both Programs Share a Hidden Flaw}
+    \leavevmode
+    \texttt{SWSTART} is issued from a software loop. So the gap between conversions depends on whatever the CPU was doing: a variable delay, an interrupt, one extra compiler instruction.
 
     \vspace{3mm}
-    {\small The symptom is characteristic: readings \alert{consistently low}, or
-    changing when you touch the wiring. The fix is a longer sampling time --- or a
-    buffer amplifier.}
+    \begin{block}{The sampling interval is not exactly $1/f_s$}
+        The Nyquist rule assumes an interval of exactly $1/f_s$. A jittery sampling clock has a real $f_s$ that is \alert{not the number you designed for}.
+    \end{block}
+
+    \vspace{3mm}
+    \begin{block}{The fix}
+        Trigger the conversion from a \alert{hardware timer}, the periodic interrupt you already built. The interval is then as exact as the timer's own clock. The exercises ask you to make this change.
+    \end{block}
 \end{frame}
+
+\begin{frame}{Can the ADC Keep Up? Conversion Time}
+    \leavevmode
+    A timer that fires on time is useless if the conversion cannot finish before the next one is due.
+
+    \vspace{2mm}
+    \begin{center}
+    \fbox{\parbox{.7\textwidth}{\centering\vspace{1mm}
+    $t_{\text{conv}} = \dfrac{\text{sampling cycles} + \text{conversion cycles}}{f_{\text{ADC}}}$
+    \vspace{1mm}}}
+    \end{center}
+
+    \vspace{2mm}
+    {\small With the ADC at 16\,MHz, a 12-bit conversion takes 12 cycles plus the sampling time. Budget: 62.5\,\textmu s per sample (16\,kHz audio).}
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l l l@{}}
+        \toprule
+        \textbf{Sampling time} & \textbf{Cycles} & \textbf{$t_{\text{conv}}$} & \textbf{Share of 62.5\,\textmu s} \\
+        \midrule
+        Shortest & $3 + 12 = 15$ & 0.94\,\textmu s & 1.5\% \\
+        Longest  & $480 + 12 = 492$ & 30.75\,\textmu s & \alert{about half} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{1mm}
+    {\small \textbf{The trade-off:} a high-impedance source needs a long sampling time, which spends the budget. Fix the \emph{source impedance} instead: buffer the microphone with an op-amp. Design the signal chain backwards from the timing requirement.}
+\end{frame}
+
+
+%===============================================================================
+\section{From Codes to Engineering Units}
+%===============================================================================
 
 \begin{frame}{From Codes to Engineering Units}
     \begin{columns}[T]
@@ -229,6 +401,31 @@ uint16_t ADC_Read(void)
     \alert{cannot} do in hardware.}
 \end{frame}
 
+\begin{frame}{From a Physical Quantity to a Measurement}{Every stage can make the answer worse}
+    \begin{center}
+    {\scriptsize
+    \striped
+    \begin{tabular}{@{}r l R{.36\textwidth}@{}}
+        \toprule
+        \textbf{Stage} & \textbf{What it produces} & \textbf{What can go wrong} \\
+        \midrule
+        Physical quantity & 25\,\textdegree C in the room & the sensor is not where you think \\
+        Sensor & 250\,mV & self-heating, nonlinearity, tolerance \\
+        Signal path & 250\,mV at the pin & source impedance, noise pickup, loading \\
+        Sampling & a held voltage & too slow for the signal; aliasing \\
+        Quantization & an integer, 0--4095 & step size sets the floor on resolution \\
+        Raw code & \texttt{0x136} & reference is not exactly 3.3\,V \\
+        Scaling & 0.2497\,V & float arithmetic, wrong constants \\
+        Engineering value & 24.97\,\textdegree C & calibration never applied \\
+        Reported measurement & ``25\,\textdegree C $\pm$ 0.5'' & quoted to more digits than justified \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{1mm}
+    {\small The skill: knowing \alert{which stage} you are looking at when a number is wrong.}
+\end{frame}
+
 \begin{frame}{Resolution Is Not Accuracy}
     \leavevmode
     \begin{columns}[T]
@@ -266,6 +463,96 @@ uint16_t ADC_Read(void)
     \end{block}
 \end{frame}
 
+\begin{frame}{Predict, Then Measure}{Before you run the potentiometer experiment}
+    \leavevmode
+    Predict the \alert{code} you expect at mid-travel and the \alert{voltage} you expect at the pin. Then measure the pin with a meter, and read the raw code in the debugger.
+
+    \vspace{3mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l@{}}
+        \toprule
+        \textbf{If this disagrees\ldots} & \textbf{the fault is in\ldots} \\
+        \midrule
+        the meter and your prediction & the \alert{circuit} \\
+        the code and the meter & the \alert{configuration}: sampling time, reference, channel \\
+        the scaled result and the code & your \alert{arithmetic} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    {\small Three numbers, three places to be wrong. One comparison narrows it down.}
+\end{frame}
+
+\begin{frame}[fragile]{Application: Temperature Sensor}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        An LM35 gives 10\,mV per \textdegree C, linearly from 0\,\textdegree C:
+
+        \vspace{2mm}
+        $T = \dfrac{V_{\text{IN}}}{0.01} = \dfrac{D \times V_{\text{REF}}}{4095 \times 0.01}$
+
+        \vspace{3mm}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+float read_temperature_c(void) {
+    uint32_t raw = adc_read();
+    float volts = ((float)raw * 3.3f)
+                  / 4095.0f;
+    return volts / 0.01f; // 10 mV/C
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        \begin{block}{Resolution check}
+            One LSB is 806\,\textmu V, which is only \alert{0.08\,\textdegree C}. Plenty.
+        \end{block}
+
+        \vspace{2mm}
+        \begin{block}{But most of the range is wasted}
+            The sensor spans 0.01--1.0\,V of the 3.3\,V range. \alert{Two thirds of the resolution is unused.} An amplifier ahead of the ADC would recover it.
+        \end{block}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Application: Light Sensor}
+    \leavevmode
+    A light-dependent resistor in a divider with a fixed resistor $R_{\text{fixed}}$:
+
+    \vspace{2mm}
+    \begin{center}
+    \fbox{\parbox{.6\textwidth}{\centering\vspace{1mm}
+    $R_{\text{LDR}} = R_{\text{fixed}} \times \dfrac{V_{\text{REF}} - V_{\text{IN}}}{V_{\text{IN}}}$
+    \vspace{1mm}}}
+    \end{center}
+
+    \vspace{3mm}
+    {\small From $R_{\text{LDR}}$ you find the illuminance through the LDR's calibration curve.}
+
+    \vspace{2mm}
+    \begin{block}{The relationship is non-linear}
+        A \alert{lookup table in Flash}, declared \texttt{const}, is often the practical way to implement it.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Improving a Measurement}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.62\textwidth}@{}}
+        \toprule
+        \textbf{Technique} & \textbf{Effect} \\
+        \midrule
+        \textbf{Averaging} & $N$ samples reduce uncorrelated noise by $\sqrt{N}$. Sixteen samples cut noise by 4. It does nothing for accuracy. \\
+        \textbf{Sufficient sampling time} & The main cause of readings that drift or read low. \\
+        \textbf{Anti-alias filtering} & A simple RC low-pass ahead of the pin, with a cutoff below $f_s/2$. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
 \begin{frame}{An Analog Measurement at Five Levels}
     \begin{center}
     {\small
@@ -291,6 +578,11 @@ uint16_t ADC_Read(void)
         not by the main loop.
     \end{block}
 \end{frame}
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
 
 \begin{frame}{Summary}
 	\begin{columns}[c]
