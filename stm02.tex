@@ -68,6 +68,7 @@ if (sensor_value == 0) { turn_on_led(); }
     {\small\centering Keep this one line in mind. Every abstract term that follows --- ISA, RISC, pipeline, APSR, memory map --- is a tool the hardware uses to execute it.\par}
 \end{frame}
 
+
 %===============================================================================
 \section{Architecture vs.\ Organization}
 %===============================================================================
@@ -102,6 +103,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \end{block}
 \end{frame}
 
+
 %===============================================================================
 \section{RISC and the Load-Store Principle}
 %===============================================================================
@@ -127,6 +129,7 @@ if (sensor_value == 0) { turn_on_led(); }
         RISC moves complexity out of the hardware decoder and into the compiler. The result is a set of simple instructions that pipeline cleanly, and behave in a predictable way.
     \end{block}
 \end{frame}
+
 \begin{frame}[fragile]{Memory Access vs.\ Register Architecture}
 	\begin{columns}[T]
 		\begin{column}{.48\textwidth}
@@ -163,6 +166,7 @@ if (sensor_value == 0) { turn_on_led(); }
 		\end{column}
 	\end{columns}
 \end{frame}
+
 \begin{frame}{The Load-Store Principle}
     \leavevmode
     \begin{columns}[c]
@@ -217,6 +221,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \end{column}
     \end{columns}
 \end{frame}
+
 \begin{frame}{More Instructions Does Not Mean Slower}
     \begin{center}
     \fbox{\parbox{.86\textwidth}{\centering\vspace{1mm}
@@ -276,6 +281,7 @@ if (sensor_value == 0) { turn_on_led(); }
     {\small\centering Both answers rest on one rule each: the \alert{load-store principle} on the left, and the \alert{APSR records every ALU result} on the right.\par}
 \end{frame}
 
+
 %===============================================================================
 \section{Von Neumann and Harvard Architectures}
 %===============================================================================
@@ -310,6 +316,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \vspace{2mm}
     {\small This shared-bus limit is called the \alert{Von Neumann bottleneck}. The next slide shows an architecture built to remove it.}
 \end{frame}
+
 \begin{frame}{Harvard Architecture}
     \begin{columns}[c]
     \begin{column}{.46\textwidth}
@@ -341,6 +348,7 @@ if (sensor_value == 0) { turn_on_led(); }
         A \alert{modified Harvard} machine. It has separate instruction and data buses (three AHB-Lite interfaces), but a \alert{single unified address space}. You get the speed of Harvard, but you can still load a constant stored in flash with an ordinary load instruction.
     \end{block}
 \end{frame}
+
 \begin{frame}{Von Neumann vs Harvard: Why It Matters for Pipelining}
     \begin{center}
     \begin{tikzpicture}[x=10mm, y=10mm]
@@ -377,6 +385,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \end{column}
     \end{columns}
 \end{frame}
+
 
 %===============================================================================
 \section{Pipelining}
@@ -422,6 +431,7 @@ if (sensor_value == 0) { turn_on_led(); }
         \item RISC instructions are simpler, so they are much easier to build a pipeline for.
     \end{itemize}
 \end{frame}
+
 \begin{frame}{What a Pipeline Costs}
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
@@ -447,27 +457,29 @@ if (sensor_value == 0) { turn_on_led(); }
     \end{block}
 \end{frame}
 
+
 %===============================================================================
 \section{ARM Cortex Profiles}
 %===============================================================================
 
-\begin{frame}{A Short History of ARM}
-    {\small\centering\emph{So why did ARM choose this approach?} To understand the Cortex-M4, we first look at where ARM came from, and how its processor families grew.\par}
+\begin{frame}{ARM:}{A Short History}
+    {\small\centering To understand the Cortex-M4, we first look at where ARM came from, and how its processor families grew.\par}
     \vspace{2mm}
+    \small
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
-        \begin{itemize}
-            \item \textbf{1980s} --- Acorn Computers in Cambridge builds the \textbf{BBC Micro} around the 6502, for the BBC's computer-literacy project.
-            \item \textbf{1985} --- Sophie Wilson and Steve Furber design a new CPU: the \alert{Acorn RISC Machine}. The ARM1 has only 24\,800 transistors and uses under 100\,mW.
-            \item \textbf{1990} --- ARM Ltd is spun out, jointly owned by Acorn, Apple, and VLSI. ``Acorn'' becomes \alert{Advanced RISC Machines}.
-        \end{itemize}
+        \begin{description}
+            \item [\textbf{1980s}]  Acorn Computers in Cambridge builds the \textbf{BBC Micro} around the 6502, for the BBC's computer-literacy project.
+            \item [\textbf{1985}]  Sophie Wilson and Steve Furber design a new CPU: the \alert{Acorn RISC Machine}. The ARM1 has only 24\,800 transistors and uses under 100\,mW.
+            \item [\textbf{1990}]  ARM Ltd is spun out, jointly owned by Acorn, Apple, and VLSI. ``Acorn'' becomes \alert{Advanced RISC Machines}.
+        \end{description}
     \end{column}
     \begin{column}{.48\textwidth}
-        \begin{itemize}
-            \item \textbf{1993} --- The Apple Newton ships with an ARM610. The product itself sells poorly, but the partnership pushes ARM toward a pure licensing model.
-            \item \textbf{2000s} --- Mobile phones make ARM the default choice: low power, good enough performance, and easy to license.
-            \item \textbf{Today} --- The most widely used ISA on Earth, used in everything from tiny sensors to Apple's M-series chips and Amazon's Graviton servers.
-        \end{itemize}
+        \begin{description}
+            \item [\textbf{1993}]  The Apple Newton ships with an ARM610. The product itself sells poorly, but the partnership pushes ARM toward a pure licensing model.
+            \item [\textbf{2000s}]  Mobile phones make ARM the default choice: low power, good enough performance, and easy to license.
+            \item [\textbf{Today}]  The most widely used ISA on Earth, used in everything from tiny sensors to Apple's M-series chips and Amazon's Graviton servers.
+        \end{description}
     \end{column}
     \end{columns}
     \vspace{2mm}
@@ -475,7 +487,9 @@ if (sensor_value == 0) { turn_on_led(); }
         ARM was designed to be small because Acorn was a small company with a limited budget. That early constraint later became the reason ARM came to dominate the embedded and mobile markets. This is the same cost-and-power argument as in Chapter~1.
     \end{block}
 \end{frame}
+
 \begin{frame}{ARM Does Not Make Chips}{Why there is an ST logo on an ARM core}
+	\small
     \begin{columns}[c]
     \begin{column}{.42\textwidth}
         \begin{center}
@@ -486,10 +500,10 @@ if (sensor_value == 0) { turn_on_led(); }
     \begin{column}{.54\textwidth}
         ARM is \alert{fabless}: it designs processor cores and licenses the design to others. It owns no chip factory itself.
         \vspace{2mm}
-        \begin{itemize}
-            \item \textbf{Core licence} --- A chip maker puts an ARM core into its own design, then adds its own memory, peripherals, and analog circuits (ST, NXP, Microchip, Nordic, \ldots).
-            \item \textbf{Architecture licence} --- A company designs its \emph{own} core that still runs the ARM instruction set. Fewer than ten such licences exist. Apple's M-series is one example.
-        \end{itemize}
+        \begin{description}
+            \item [\textbf{Core licence}]  A chip maker puts an ARM core into its own design, then adds its own memory, peripherals, and analog circuits (ST, NXP, Microchip, Nordic, \ldots).
+            \item [\textbf{Architecture licence}] A company designs its \emph{own} core that still runs the ARM instruction set. Fewer than ten such licences exist. Apple's M-series is one example.
+        \end{description}
         \vspace{2mm}
         {\small On your bench: ARM designed the \alert{Cortex-M4 core}. \alert{ST} added the flash, SRAM, GPIO, timers, ADC, and UART around it. The finished product is the \textbf{STM32F446RE}.}
     \end{column}
@@ -499,6 +513,7 @@ if (sensor_value == 0) { turn_on_led(); }
         {\small \textbf{ARM} defines the instruction-set architecture and licenses cores. \textbf{Cortex} names families of processor cores built around it. For embedded systems, the family we use is \alert{Cortex-M}.}
     \end{block}
 \end{frame}
+
 \begin{frame}{The Three Cortex Profiles}
 	\begin{center}
 		{\small
@@ -524,6 +539,7 @@ if (sensor_value == 0) { turn_on_led(); }
 	\vspace{1mm}
 	{\small\centering So where does the Cortex-M4 fit inside the Cortex-M family? That is next.\par}
 \end{frame}
+
 \begin{frame}{The Cortex-M Family}
 	\begin{center}
 		{\small
@@ -550,7 +566,8 @@ if (sensor_value == 0) { turn_on_led(); }
 	\vspace{2mm}
 	{\small The \textbf{F} in STM32F446RE's core name --- Cortex-M4\alert{F} --- shows that a floating-point unit is fitted. Your board can therefore do single-precision floating-point arithmetic in hardware.}
 \end{frame}
-\begin{frame}[plain]{Inside the Cortex-M4}
+
+\begin{frame}[plain]{Inside the Cortex-M4}{What each block is for}
 	\begin{columns}[c]
 		\begin{column}{.40\textwidth}
 			\begin{center}
@@ -559,7 +576,6 @@ if (sensor_value == 0) { turn_on_led(); }
 			\end{center}
 		\end{column}
 		\begin{column}{.55\textwidth}
-			\textbf{What each block is for}
 			\begin{itemize}
 				\item \textbf{CPU (Armv7-M)} --- the datapath from Chapter~1, now with 16 registers.
 				\item \textbf{NVIC} --- Nested Vectored Interrupt Controller. Interrupts are managed in hardware (Chapter~9).
@@ -571,6 +587,7 @@ if (sensor_value == 0) { turn_on_led(); }
 		\end{column}
 	\end{columns}
 \end{frame}
+
 \begin{frame}[plain]{Cortex-M4 Features}{The specification, in one place}
 	\begin{columns}[c]
 		\begin{column}{.55\textwidth}
@@ -603,6 +620,7 @@ if (sensor_value == 0) { turn_on_led(); }
 	{\small Every row above has already appeared in this chapter, except the last one. That last row is the reason Chapter~4 is written in C, not assembly.\par}
 \end{frame}
 
+
 %===============================================================================
 \section{The Cortex-M4 Register Set}
 %===============================================================================
@@ -621,6 +639,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \vspace{4mm}
     {\small This is the question we opened the chapter with: \emph{``This detailed view is called the programmer's model --- the part of the hardware that software can actually see.''} We can now describe that model in detail: registers, flags, memory, and peripherals.}
 \end{frame}
+
 \begin{frame}[plain]{The Complete Register Set}{Core registers in focus; special registers for reference}
 	\begin{center}
 	\begin{tikzpicture}[x=1mm, y=1mm]
@@ -657,6 +676,7 @@ if (sensor_value == 0) { turn_on_led(); }
 	\end{tikzpicture}
 	\end{center}
 \end{frame}
+
 \begin{frame}{The Cortex-M4 Core Registers}
 	\begin{center}
 		{\small
@@ -686,6 +706,7 @@ if (sensor_value == 0) { turn_on_led(); }
 	\vspace{1mm}
 	{\small \texttt{SP} is really two banked registers, \texttt{MSP} and \texttt{PSP}, chosen by \texttt{CONTROL}. The mask registers (\texttt{PRIMASK}, \texttt{FAULTMASK}, \texttt{BASEPRI}) control interrupts. Not every Cortex-M core has them; Chapter~9 comes back to this.}
 \end{frame}
+
 \begin{frame}{A Debugging Gotcha: Reading the PC}
     \begin{block}{The surprise}
         \texttt{MOV R0, PC} does \alert{not} give you the address of that
@@ -793,6 +814,7 @@ int z = x + y;    // at 0x2004
     the ALU can touch them.}
 \end{frame}
 
+
 %===============================================================================
 \section{The Application Program Status Register (APSR)}
 %===============================================================================
@@ -841,6 +863,7 @@ int z = x + y;    // at 0x2004
 	{\small \textbf{This is how a processor makes decisions:} the C statement \texttt{if (x == y)} works by subtracting, throwing away the difference, and testing the \textbf{Z} flag. \textbf{C} is the carry-out of the final full adder. \textbf{V} is the XOR of the carries into and out of the MSB. These are circuits you have already built.}
 \end{frame}
 
+
 %===============================================================================
 \section{The 4\,GB Memory Map}
 %===============================================================================
@@ -879,6 +902,7 @@ int z = x + y;    // at 0x2004
 	\end{column}
 	\end{columns}
 \end{frame}
+
 \begin{frame}{The Regions That Matter to You}
 	{\small\emph{Most of that 4\,GB does not matter to us. These are the regions you need to remember.}}
 
@@ -928,6 +952,7 @@ int z = x + y;    // at 0x2004
 	\alert{Peripherals}. External RAM, external devices, and the
 	bit-band alias are advanced topics this book does not use.}
 \end{frame}
+
 \begin{frame}[plain]{The 4\,GB Memory Map}{The STM32F446RE inside it}
 	\begin{center}
 		\begin{tikzpicture}[x=10mm, y=7mm]
@@ -979,8 +1004,9 @@ int z = x + y;    // at 0x2004
 		\end{tikzpicture}
 	\end{center}
 	\vspace{1mm}
-	{\small\centering \emph{Now let's see where the real STM32 resources live.} ARM \alert{fixes} this layout for every Cortex-M device. This is why the NVIC sits at the same address on every vendor's chip. Reading an empty region causes a \alert{HardFault}. This is why a wild pointer crashes loudly, instead of failing quietly.\par}
+	{\small\centering \emph{Now let's see where the real STM32 resources live.} ARM \alert{fixes} this layout for every Cortex-M device. This is why the NVIC sits at the same address on every vendor's chip.\par}
 \end{frame}
+
 \begin{frame}{Memory-Mapped I/O}{The idea the rest of the course rests on}
     \begin{block}{There is no special instruction for I/O}
         A peripheral register is just an address. You turn an LED on with the same \texttt{STR} instruction you use to write to a variable. Only the address is different.
@@ -1000,6 +1026,7 @@ int z = x + y;    // at 0x2004
     \vspace{3mm}
     {\small Same instruction, same registers, different address. And one of those addresses lights a real LED on \texttt{PA5}. That is the whole trick. Chapter~8 is where you put it to use.}
 \end{frame}
+
 \begin{frame}{Two Buses, Two Speeds}{AMBA: AHB for fast, APB for slow}
     \begin{columns}[c]
     \begin{column}{.52\textwidth}
@@ -1019,6 +1046,7 @@ int z = x + y;    // at 0x2004
     \end{column}
     \end{columns}
 \end{frame}
+
 \begin{frame}[plain]{Byte Order: Endianness}
 	\begin{center}
 		\begin{tikzpicture}[x=10mm, y=8mm]
@@ -1065,18 +1093,18 @@ int z = x + y;    // at 0x2004
 	{\small\centering Both conventions store the \alert{same four bytes}. They only differ in which end sits at the lowest address. The Cortex-M4 is \alert{little-endian}, like x86, so raw memory dumps look the same on the target and on a typical PC.\par}
 \end{frame}
 
-\begin{frame}{The Chapter 2 Mantra}{Three sentences that explain the rest of the book}
+\begin{frame}{The Chapter 2 Mantra}{Three sentences that explain the rest of the syllabus}
     \leavevmode
     When something later in the course looks strange --- a C statement that compiles into more instructions than you expected, a debugger value that is off by four, an \texttt{if} that behaves oddly --- one of these three sentences almost always resolves it:
 
     \vspace{5mm}
     \begin{center}
-    \begin{tikzpicture}[x=10mm, y=14mm]
-        \node[cpublk, minimum width=100mm, minimum height=12mm, align=center, font=\normalsize]
+    \begin{tikzpicture}[x=10mm, y=9mm]
+        \node[blk, minimum width=100mm, minimum height=7mm, align=center, font=\small]
             (m1) at (0,2) {\textbf{1.}~~ The ALU only speaks to registers};
-        \node[cpublk, minimum width=100mm, minimum height=12mm, align=center, font=\normalsize]
+        \node[blk, minimum width=100mm, minimum height=7mm, align=center, font=\small]
             (m2) at (0,1) {\textbf{2.}~~ The pipeline is always looking ahead};
-        \node[cpublk, minimum width=100mm, minimum height=12mm, align=center, font=\normalsize]
+        \node[blk, minimum width=100mm, minimum height=7mm, align=center, font=\small]
             (m3) at (0,0) {\textbf{3.}~~ The APSR leaves breadcrumbs for the PC};
     \end{tikzpicture}
     \end{center}
@@ -1097,54 +1125,12 @@ int z = x + y;    // at 0x2004
     \end{center}
 \end{frame}
 
-%===============================================================================
-\section{Summary}
-%===============================================================================
-
-\begin{frame}{Summary}
-	\begin{columns}[c]
-		\begin{column}{.62\textwidth}
-			\begin{center}
-				\begin{tikzpicture}[x=10mm, y=7.8mm]
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n0) at (0,0.00) {ISA, microarchitecture, platform};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n1) at (0,-1.05) {Load-store RISC: ALU uses registers only};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n2) at (0,-2.10) {Short pipeline: one instruction per cycle};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n3) at (0,-3.15) {R0--R12, SP, LR, PC};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n4) at (0,-4.20) {APSR flags N, Z, C, V decide branches};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n5) at (0,-5.25) {Fixed 4\,GB memory map};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n6) at (0,-6.30) {Peripherals sit at fixed addresses};
-					\node[cpublk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize, align=center] (n7) at (0,-7.65) {A peripheral register is just\\an address in the map};
-					\foreach \a/\b in {0/1,1/2,2/3,3/4,4/5,5/6,6/7}{\draw[flow] (n\a) -- (n\b);}
-				\end{tikzpicture}
-			\end{center}
-		\end{column}
-		\begin{column}{.34\textwidth}
-			{\scriptsize
-				\textbf{Terminology covered}\\[1mm]
-				\begin{itemize}
-					\item ISA vs microarchitecture
-					\item Load-store, pipeline
-					\item Core registers, APSR
-					\item Memory map, endianness
-					\item AHB and APB buses
-				\end{itemize}
-				\vspace{3mm}
-				\textbf{Next: Chapter 3}\\[1mm]
-				\emph{Memory, Addressing and Pointers}\\[1mm]
-				If a peripheral is an address, a pointer is how C reaches it.}
-		\end{column}
-	\end{columns}
-\end{frame}
 
 %===============================================================================
-\section{Addendum}
+\section{Beamer Extras}
 %===============================================================================
 
-\begin{frame}{Addendum --- STM32: The Chip and the Boards}
-    \begin{block}{Why these frames sit here}
-        The next frames cover the STM32F446RE chip and the Nucleo board that holds it. The book covers these only briefly, so the frames are parked in this Addendum as staging for the next edition. To hide them from a lecture build, move \texttt{\textbackslash end\{document\}} up to just before \texttt{\textbackslash section\{Addendum\}}.
-    \end{block}
-\end{frame}
+{\beamerextras
 \begin{frame}{From ARM to the Board on Your Desk}
     \leavevmode
     Four names are easy to confuse: ARM, Cortex-M4, STM32, Nucleo. Each name is a different layer of the same stack.
@@ -1163,6 +1149,9 @@ int z = x + y;    // at 0x2004
     \vspace{2mm}
     {\small\centering Every slide from here on sits at one of these four levels. Keeping them separate is the best way to avoid confusing ``ARM,'' ``the chip,'' and ``the board.''\par}
 \end{frame}
+}
+
+{\beamerextras
 \begin{frame}{What Is an STM32?}
     \begin{block}{STM32}
         \textbf{ST}Microelectronics' family of \textbf{32}-bit microcontrollers, each built around a licensed \alert{ARM Cortex-M} core.
@@ -1192,6 +1181,9 @@ int z = x + y;    // at 0x2004
     \vspace{2mm}
     {\small The family covers many market needs: \textbf{F} (general purpose), \textbf{L} (low power), \textbf{G} (advanced general purpose), \textbf{H} (high performance), \textbf{WB} (wireless), \textbf{U} (ultra-low power). We use an \alert{STM32F4}.}
 \end{frame}
+}
+
+{\beamerextras
 \begin{frame}[plain]{Reading the Part Number}{Every character means something}
     \begin{center}
     \includegraphics[height=.6\textheight, keepaspectratio]%
@@ -1211,6 +1203,9 @@ int z = x + y;    // at 0x2004
     \vspace{1mm}
     {\small\centering A part number is a specification. It is not a serial number.\par}
 \end{frame}
+}
+
+{\beamerextras
 \begin{frame}[plain]{The Chip Itself}{STM32F446RE in LQFP64}
     \begin{columns}[c]
     \begin{column}{.5\textwidth}
@@ -1234,6 +1229,9 @@ int z = x + y;    // at 0x2004
     \end{column}
     \end{columns}
 \end{frame}
+}
+
+{\beamerextras
 \begin{frame}[plain]{STM32 Boards}{The three you will actually use}
 	\begin{columns}[T]
 		\begin{column}{.32\textwidth}
@@ -1285,6 +1283,9 @@ int z = x + y;    // at 0x2004
 	\vspace{2mm}
 	{\small\centering Same Cortex-M4 core, same ISA, but very different boards.\par}
 \end{frame}
+}
+
+{\beamerextras
 \begin{frame}{The Nucleo-F446RE Board}{What ST adds around the chip}
     \begin{columns}[c]
     \begin{column}{.48\textwidth}
@@ -1306,6 +1307,9 @@ int z = x + y;    // at 0x2004
     \vspace{1mm}
     {\small Full details are in the \emph{STM32 Nucleo-64 Boards User Manual} (UM1724).\par}
 \end{frame}
+}
+
+{\beamerextras
 \begin{frame}[plain]{Nucleo-F446RE Pinout}
     \begin{columns}[c]
     \begin{column}{.5\textwidth}
@@ -1327,6 +1331,47 @@ int z = x + y;    // at 0x2004
         \texttt{PC13} --- user button}
     \end{column}
     \end{columns}
+\end{frame}
+}
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
+
+\begin{frame}{Summary}
+	\begin{columns}[c]
+		\begin{column}{.62\textwidth}
+			\begin{center}
+				\begin{tikzpicture}[x=10mm, y=7.8mm]
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n0) at (0,0.00) {ISA, microarchitecture, platform};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n1) at (0,-1.05) {Load-store RISC: ALU uses registers only};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n2) at (0,-2.10) {Short pipeline: one instruction per cycle};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n3) at (0,-3.15) {R0--R12, SP, LR, PC};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n4) at (0,-4.20) {APSR flags N, Z, C, V decide branches};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n5) at (0,-5.25) {Fixed 4\,GB memory map};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n6) at (0,-6.30) {Peripherals sit at fixed addresses};
+					\node[cpublk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize, align=center] (n7) at (0,-7.65) {A peripheral register is just\\an address in the map};
+					\foreach \a/\b in {0/1,1/2,2/3,3/4,4/5,5/6,6/7}{\draw[flow] (n\a) -- (n\b);}
+				\end{tikzpicture}
+			\end{center}
+		\end{column}
+		\begin{column}{.34\textwidth}
+			{\scriptsize
+				\textbf{Terminology covered}\\[1mm]
+				\begin{itemize}
+					\item ISA vs microarchitecture
+					\item Load-store, pipeline
+					\item Core registers, APSR
+					\item Memory map, endianness
+					\item AHB and APB buses
+				\end{itemize}
+				\vspace{3mm}
+				\textbf{Next: Chapter 3}\\[1mm]
+				\emph{Memory, Addressing and Pointers}\\[1mm]
+				If a peripheral is an address, a pointer is how C reaches it.}
+		\end{column}
+	\end{columns}
 \end{frame}
 
 \end{document}

@@ -61,9 +61,11 @@ because the decks load `styles/` and `assets/` by relative path.
   chapter, in the same order.
 - **Opening frames:** why the chapter matters, then its objectives.
 - **Closing frames:** a summary, then a pointer to the next chapter.
-- **Addendum.** Some decks end with `\section{Addendum}`. These frames are
-  extra material that the book does not cover yet. To hide them, move
-  `\end{document}` up to just before `\section{Addendum}`.
+- **Beamer extras.** Frames in `\section{Beamer Extras}` (just before the Summary) are
+  slide-only. They have a warm tint and a "BEAMER EXTRA" tag. The book is black and
+  white, so these frames use colour in ways the book cannot, and they are not meant
+  for the book. To leave them out of a lecture, skip those pages or remove the
+  section.
 - **Shared look.** Every deck starts with `\usepackage{styles/stmcommon}`, so the
   theme colours and the TikZ block styles (`blk`, `cpublk`, `memblk`, `cell`,
   `lbl`, `flow`, `busline`) are defined once. A deck adds only what it alone

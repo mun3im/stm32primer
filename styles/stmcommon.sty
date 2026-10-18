@@ -126,6 +126,24 @@
 %  - a TikZ picture wider than its column silently overflows into neighbours
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Beamer extras: frames that exist ONLY in the slides and are never meant for
+% the book. The book is printed in black and white. The slides can use colour,
+% so an extra frame gets a warm tint and a "BEAMER EXTRA" tag. Use it as a
+% group around one frame, inside \section{Beamer Extras}:
+%     {\beamerextras \begin{frame}...\end{frame}}
+\definecolor{extrabg}{HTML}{FFF6E0}
+\definecolor{extratag}{HTML}{B45F06}
+\newcommand{\beamerextras}{%
+  \setbeamercolor{background canvas}{bg=extrabg}%
+  \addtobeamertemplate{background}{}{%
+    \begin{tikzpicture}[remember picture,overlay]
+      \node[anchor=south, yshift=1.2mm, fill=extratag, text=white,
+            font=\sffamily\tiny\bfseries, inner sep=2.5pt, rounded corners=1pt]
+            at (current page.south) {BEAMER EXTRA};
+    \end{tikzpicture}}%
+}
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %% BEGIN CONDITIONAL COMPILATION %%
 \newif\ifwebex
 %\webextrue % uncomment to generate section separator

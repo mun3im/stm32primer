@@ -69,6 +69,7 @@
     \end{block}
 \end{frame}
 
+
 %===============================================================================
 \section{Timer Architecture}
 %===============================================================================
@@ -203,7 +204,6 @@ void TIM2_IRQHandler(void)
     \end{block}
 \end{frame}
 
-
 \begin{frame}[fragile]{The Bad \texttt{delay\_ms()} --- For Comparison}
 \begin{cc}[basicstyle=\ttfamily\small]
 		void delay_ms_bad(int n)
@@ -313,6 +313,7 @@ GPIOA->AFR[0] |= (1U << (5*4));
     manual --- a distinction that costs people an afternoon.}
 \end{frame}
 
+
 %===============================================================================
 \section{PWM}
 %===============================================================================
@@ -346,8 +347,6 @@ GPIOA->AFR[0] |= (1U << (5*4));
     \end{block}
 \end{frame}
 
-
-
 \begin{frame}[fragile]{Configuring PWM}
 
 \begin{cc}[basicstyle=\ttfamily\small]
@@ -372,7 +371,6 @@ TIM2->CR1   |= (1U << 0);        // start
     {\small A higher PWM frequency is less visible but wastes more switching
     energy. For LEDs, 1\,kHz is comfortably above flicker perception.}
 \end{frame}
-
 
 \begin{frame}[fragile]{PWM Duty-Cycle Helper}
 \begin{cc}[basicstyle=\ttfamily\small]
@@ -508,8 +506,9 @@ TIM2->CR1   |= (1U << 0);        // start
 	\end{columns}
 \end{frame}
 
+
 %===============================================================================
-\section{Addendum}
+\section{Beamer Extras}
 %===============================================================================
 
 %% SysTick, viewed as a block diagram that maps every CTRL bit back to the
@@ -523,6 +522,7 @@ TIM2->CR1   |= (1U << 0);        // start
 %% COUNTFLAG/CLKSOURCE/TICKINT/ENABLE. The alternate (slow) clock is
 %% implementation-defined: Internal/4 on the TM4C, HCLK/8 on STM32.
 
+{\beamerextras
 \begin{frame}[plain]{SysTick, from Bits to Blocks}
     \begin{center}
     \resizebox{\textwidth}{!}{%
@@ -671,7 +671,9 @@ TIM2->CR1   |= (1U << 0);        // start
     {\scriptsize\centering\emph{Diagram adapted and redrawn from
     microcontrollerslab.com, ``ARM Cortex-M4 SysTick timer with programming example''.}\par}
 \end{frame}
+}
 
+{\beamerextras
 \begin{frame}[plain]{SysTick's Three Registers, Bit by Bit}
     \begin{center}
     \begin{tikzpicture}[x=10mm, y=10mm,
@@ -737,7 +739,9 @@ TIM2->CR1   |= (1U << 0);        // start
     microcontrollerslab.com, ``ARM Cortex-M4 SysTick timer with programming
     example''.}\par}
 \end{frame}
+}
 
+{\beamerextras
 \begin{frame}{TI, ARM, and STMicro: Same SysTick, Three Register Names}
     \leavevmode
     {\small SysTick is a Cortex-M core peripheral --- same registers, same
@@ -768,7 +772,9 @@ TIM2->CR1   |= (1U << 0);        // start
         other Cortex-M vendors pick \alert{8} as well.}
     \end{block}
 \end{frame}
+}
 
+{\beamerextras
 \begin{frame}{Reading the Diagram from a Program's Point of View}
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
@@ -813,7 +819,9 @@ TIM2->CR1   |= (1U << 0);        // start
         tick rate.}
     \end{block}
 \end{frame}
+}
 
+{\beamerextras
 \begin{frame}[fragile]{Driving the Bits Directly}
     \leavevmode
     {\small No CMSIS helper. Write the four CTRL bits by hand, in the order
@@ -846,7 +854,9 @@ void systick_init_1ms(void) {
         you need a specific priority or non-default clock source.}
     \end{block}
 \end{frame}
+}
 
+{\beamerextras
 \begin{frame}[fragile]{Handler and Millisecond Delay}
 \begin{cc}[basicstyle=\ttfamily\footnotesize]
 static volatile uint32_t msTicks = 0;    /* ISR-shared, must be volatile */
@@ -888,7 +898,9 @@ void delay(uint32_t ms) {
     with \texttt{\_\_WFI()} added. Full source:
     \texttt{github.com/csrohit/bluepill-systick}.}\par}
 \end{frame}
+}
 
+{\beamerextras
 \begin{frame}{Portable: SysTick. Not Portable: Everything Around It.}
     \leavevmode
     {\small Same CMSIS source runs on both boards. The lines that change
@@ -931,6 +943,7 @@ void delay(uint32_t ms) {
         vendor's silicon}, so they change on every chip.}
     \end{block}
 \end{frame}
+}
 
 \end{document}
 

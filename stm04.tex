@@ -73,7 +73,7 @@
 
 
 %===============================================================================
-\section{C and the Compiler}
+\section{What the Compiler Does}
 %===============================================================================
 
 \begin{frame}{What the Compiler Does}
@@ -117,6 +117,75 @@
     \end{columns}
 \end{frame}
 
+\begin{frame}[fragile]{A C Statement, Compiled}{What the compiler writes for you}
+    \leavevmode
+    The Cortex-M4 is a load-store machine, so arithmetic happens only in registers. The compiler must move the values in and out.
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.36\textwidth}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+int x = 5;
+int y = 10;
+int z = x + y;
+\end{cc}
+
+        \vspace{2mm}
+        {\small \textbf{Notice}
+        \begin{itemize}\itemsep1pt
+            \item Locals live on the \alert{stack}, as offsets from \texttt{SP}.
+            \item Arithmetic uses \alert{registers only}.
+            \item With optimisation, the compiler may remove memory accesses. This is why \texttt{volatile} exists.
+        \end{itemize}}
+    \end{column}
+    \begin{column}{.6\textwidth}
+\begin{asm}[basicstyle=\ttfamily\footnotesize]
+MOV   R0, #5         ; x = 5
+STR   R0, [SP, #0]   ; store x on the stack
+MOV   R1, #10        ; y = 10
+STR   R1, [SP, #4]   ; store y
+LDR   R0, [SP, #0]   ; reload x
+LDR   R1, [SP, #4]   ; reload y
+ADD   R2, R0, R1     ; z = x + y
+STR   R2, [SP, #8]   ; store z
+\end{asm}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Function Calls}
+    \leavevmode
+    A \alert{function} is an idea in the C language. The processor has no built-in notion of one.
+
+    \vspace{3mm}
+    When one function calls another and later resumes, the compiler uses registers, memory and a \alert{calling convention}. The convention fixes three things:
+
+    \vspace{1mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l@{}}
+        \toprule
+        \textbf{The convention decides} & \textbf{On the Cortex-M4} \\
+        \midrule
+        Which registers carry the arguments & \texttt{R0}--\texttt{R3} \\
+        Where the return value is placed & \texttt{R0} \\
+        How the return address is kept & \texttt{LR}, set by \texttt{BL} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    \begin{block}{C and assembly can mix}
+        If both follow the same convention, C can call a function written in assembly, and the reverse. Chapters 5--7 show how.
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{Why Embedded C Rather Than Assembly}
+%===============================================================================
+
 \begin{frame}{C or Assembly?}
     \begin{center}
     {\small
@@ -144,8 +213,27 @@
     \end{block}
 \end{frame}
 
+\begin{frame}{Principles of Good Embedded C}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.62\textwidth}@{}}
+        \toprule
+        \textbf{Principle} & \textbf{In practice} \\
+        \midrule
+        \textbf{Readability} & Use clear names and consistent indents. Comment on \emph{why} a bit is set. The datasheet already says what it does. \\
+        \textbf{Modularity} & Small functions with one purpose. One function for each peripheral operation. \\
+        \textbf{No magic numbers} & Name your constants. \texttt{LED\_PIN} is clearer than \texttt{(1U \shl\ 5)}. \\
+        \textbf{Explicit types} & Always use the fixed-width types from Chapter 3. \\
+        \textbf{Defensive checks} & Check ranges and returned status before you use a value. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+
 %===============================================================================
-\section{CMSIS}
+\section{The CMSIS Framework}
 %===============================================================================
 
 \begin{frame}{What CMSIS Is}
@@ -183,6 +271,159 @@
 
     \vspace{2mm}
     {\small You need just one header: \texttt{\#include "stm32f446xx.h"}}
+\end{frame}
+
+\begin{frame}{The CMSIS Components}
+    \leavevmode
+    CMSIS is ARM's standard layer. It names every register the same way on any vendor's Cortex-M chip. It has six parts:
+
+    \vspace{2mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.66\textwidth}@{}}
+        \toprule
+        \textbf{Component} & \textbf{What it gives you} \\
+        \midrule
+        \alert{CMSIS-CORE} & Standard access to core registers, the NVIC, SysTick and all peripheral register structures. \alert{Used throughout this book.} \\
+        CMSIS-DSP & Optimised filters, FFTs, matrix and vector maths. \\
+        CMSIS-RTOS & A standard API that keeps an application independent of the real-time kernel. \\
+        CMSIS-Driver & Portable peripheral driver interfaces for middleware. \\
+        CMSIS-NN & Efficient neural-network kernels for small devices. \\
+        CMSIS-SVD & XML descriptions of every register and bit field. This is how a debugger shows registers by name. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+
+%===============================================================================
+\section{The Three Pillars of CMSIS Register Access}
+%===============================================================================
+
+\begin{frame}[fragile]{A Peripheral as a Struct}
+    \begin{columns}[T]
+    \begin{column}{.46\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+typedef struct {
+  __IO uint32_t MODER;
+  __IO uint32_t OTYPER;
+  __IO uint32_t OSPEEDR;
+  __IO uint32_t PUPDR;
+  __IO uint32_t IDR;
+  __IO uint32_t ODR;
+  __IO uint32_t BSRR;
+  __IO uint32_t LCKR;
+  __IO uint32_t AFR[2];
+} GPIO_TypeDef;
+\end{lstlisting}
+    \end{column}
+    \begin{column}{.5\textwidth}
+        Each member is one \alert{32-bit register}, in hardware order.
+        A \texttt{uint32\_t} is 4 bytes, so member $n$ sits at offset
+        $4n$. These are exactly the offsets given in the reference
+        manual.
+
+        \vspace{2mm}
+        {\small \texttt{\_\_IO} expands to \texttt{volatile}. CMSIS
+        marks every register for you.}
+
+        \vspace{2mm}
+        {\small \texttt{AFR[2]} uses Chapter 3's array indexing: two
+        real registers, reached as \texttt{AFR[0]} and \texttt{AFR[1]}.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Access Qualifiers: \texttt{\_\_I}, \texttt{\_\_O}, \texttt{\_\_IO}}
+    \leavevmode
+    Each struct member carries a qualifier. It records what you may do with that register.
+
+    \vspace{2mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l l R{.3\textwidth}@{}}
+        \toprule
+        \textbf{Qualifier} & \textbf{Access} & \textbf{Defined as} & \textbf{Example} \\
+        \midrule
+        \texttt{\_\_I}  & read-only  & \texttt{volatile const} & \texttt{IDR}: set by outside signals \\
+        \texttt{\_\_O}  & write-only & \texttt{volatile}       & \texttt{BSRR}: a trigger \\
+        \texttt{\_\_IO} & read/write & \texttt{volatile}       & \texttt{MODER}, \texttt{ODR} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{Every one of them includes \texttt{volatile}}
+        Writing to a read-only register is a \alert{compile-time error}. The reason for \texttt{volatile} is explained in the next section.
+    \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{Pillar 2: Base Addresses}{Taken from the memory map}
+    \leavevmode
+    The vendor defines each peripheral's base address as a macro, built up from the memory map of Chapter 2:
+
+    \vspace{2mm}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+#define PERIPH_BASE      0x40000000UL                 // Peripheral region
+#define AHB1PERIPH_BASE  (PERIPH_BASE + 0x00020000UL) // AHB1 bus
+#define GPIOA_BASE       (AHB1PERIPH_BASE + 0x0000UL) // Port A
+#define GPIOC_BASE       (AHB1PERIPH_BASE + 0x0800UL) // Port C
+\end{cc}
+
+    \vspace{2mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l@{}}
+        \toprule
+        \textbf{Macro} & \textbf{Value} \\
+        \midrule
+        \texttt{GPIOA\_BASE} & \texttt{0x40000000 + 0x00020000 + 0x0000 = 0x40020000} \\
+        \texttt{GPIOC\_BASE} & \texttt{0x40000000 + 0x00020000 + 0x0800 = 0x40020800} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{From Name to Address}
+    \begin{columns}[c]
+    \begin{column}{.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+#define GPIOA_BASE  0x40020000UL
+
+#define GPIOA \
+  ((GPIO_TypeDef *) GPIOA_BASE)
+\end{lstlisting}
+
+        \vspace{3mm}
+        A cast turns a plain number into a pointer to the struct.
+        After this, the compiler computes every register's address
+        for you.
+
+        \vspace{3mm}
+        {\small \texttt{ODR} is the sixth member, so its offset is
+        $5 \times 4 = 20 =$ \texttt{0x14}. This gives
+        \alert{\texttt{0x40020014}}, the same address as in Chapter 1.}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \begin{center}
+        \begin{tikzpicture}[x=10mm, y=10mm]
+            \node[memblk, minimum width=46mm, minimum height=9mm] (a) at (0,2.4)  {\texttt{GPIOA\_BASE} = \texttt{0x40020000}};
+            \node[blk,    minimum width=46mm, minimum height=9mm] (b) at (0,1.2)  {\texttt{GPIO\_TypeDef} struct};
+            \node[blk,    minimum width=46mm, minimum height=9mm] (c) at (0,0.0)  {\texttt{GPIOA} pointer};
+            \node[cpublk, minimum width=46mm, minimum height=9mm] (d) at (0,-1.2) {\texttt{GPIOA->ODR}};
+            \node[memblk, minimum width=46mm, minimum height=9mm] (e) at (0,-2.4) {\texttt{*(0x40020014)}};
+            \foreach \x/\y in {a/b, b/c, c/d, d/e}{\draw[flow] (\x) -- (\y);}
+            \node[lbl, anchor=west] at (2.45,1.8)  {laid on the offsets};
+            \node[lbl, anchor=west] at (2.45,0.6)  {one cast};
+            \node[lbl, anchor=west] at (2.45,-0.6) {member selection};
+            \node[lbl, anchor=west] at (2.45,-1.8) {a real address};
+        \end{tikzpicture}
+        \end{center}
+    \end{column}
+    \end{columns}
 \end{frame}
 
 \begin{frame}[plain]{The CMSIS Chain}{Silicon at the bottom, your code at the top}
@@ -227,81 +468,9 @@
     {\small\centering You only need to think about the top and bottom layers: the hardware exists, and your code names its registers. The two middle layers are a struct and a cast. They are written once, in a header file that you never edit.\par}
 \end{frame}
 
-\begin{frame}[fragile]{A Peripheral as a Struct}
-    \begin{columns}[T]
-    \begin{column}{.46\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
-typedef struct {
-  __IO uint32_t MODER;
-  __IO uint32_t OTYPER;
-  __IO uint32_t OSPEEDR;
-  __IO uint32_t PUPDR;
-  __IO uint32_t IDR;
-  __IO uint32_t ODR;
-  __IO uint32_t BSRR;
-  __IO uint32_t LCKR;
-  __IO uint32_t AFR[2];
-} GPIO_TypeDef;
-\end{lstlisting}
-    \end{column}
-    \begin{column}{.5\textwidth}
-        Each member is one \alert{32-bit register}, in hardware order.
-        A \texttt{uint32\_t} is 4 bytes, so member $n$ sits at offset
-        $4n$. These are exactly the offsets given in the reference
-        manual.
-
-        \vspace{2mm}
-        {\small \texttt{\_\_IO} expands to \texttt{volatile}. CMSIS
-        marks every register for you.}
-
-        \vspace{2mm}
-        {\small \texttt{AFR[2]} uses Chapter 3's array indexing: two
-        real registers, reached as \texttt{AFR[0]} and \texttt{AFR[1]}.}
-    \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}[fragile]{From Name to Address}
-    \begin{columns}[c]
-    \begin{column}{.48\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
-#define GPIOA_BASE  0x40020000UL
-
-#define GPIOA \
-  ((GPIO_TypeDef *) GPIOA_BASE)
-\end{lstlisting}
-
-        \vspace{3mm}
-        A cast turns a plain number into a pointer to the struct.
-        After this, the compiler computes every register's address
-        for you.
-
-        \vspace{3mm}
-        {\small \texttt{ODR} is the sixth member, so its offset is
-        $5 \times 4 = 20 =$ \texttt{0x14}. This gives
-        \alert{\texttt{0x40020014}}, the same address as in Chapter 1.}
-    \end{column}
-    \begin{column}{.48\textwidth}
-        \begin{center}
-        \begin{tikzpicture}[x=10mm, y=10mm]
-            \node[memblk, minimum width=46mm, minimum height=9mm] (a) at (0,2.4)  {\texttt{GPIOA\_BASE} = \texttt{0x40020000}};
-            \node[blk,    minimum width=46mm, minimum height=9mm] (b) at (0,1.2)  {\texttt{GPIO\_TypeDef} struct};
-            \node[blk,    minimum width=46mm, minimum height=9mm] (c) at (0,0.0)  {\texttt{GPIOA} pointer};
-            \node[cpublk, minimum width=46mm, minimum height=9mm] (d) at (0,-1.2) {\texttt{GPIOA->ODR}};
-            \node[memblk, minimum width=46mm, minimum height=9mm] (e) at (0,-2.4) {\texttt{*(0x40020014)}};
-            \foreach \x/\y in {a/b, b/c, c/d, d/e}{\draw[flow] (\x) -- (\y);}
-            \node[lbl, anchor=west] at (2.45,1.8)  {laid on the offsets};
-            \node[lbl, anchor=west] at (2.45,0.6)  {one cast};
-            \node[lbl, anchor=west] at (2.45,-0.6) {member selection};
-            \node[lbl, anchor=west] at (2.45,-1.8) {a real address};
-        \end{tikzpicture}
-        \end{center}
-    \end{column}
-    \end{columns}
-\end{frame}
 
 %===============================================================================
-\section{Writing to Hardware}
+\section{The volatile Keyword}
 %===============================================================================
 
 \begin{frame}[fragile]{\texttt{volatile}}{Two optimisations it prevents}
@@ -348,6 +517,11 @@ while ((*status & 1) == 0)
         hardware, that assumption is wrong.
     \end{block}
 \end{frame}
+
+
+%===============================================================================
+\section{Bit Manipulation on Peripheral Registers}
+%===============================================================================
 
 \begin{frame}[fragile]{Building a Mask: The Shift}
     \leavevmode
@@ -550,6 +724,58 @@ while ((*status & 1) == 0)
     field.''}
 \end{frame}
 
+\begin{frame}[fragile]{Testing Bits and Busy-Wait Polling}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \textbf{Test a bit}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+if ((GPIOC->IDR & (1U << 13)) == 0) {
+    // PC13 is LOW:
+    // the button is pressed
+}
+\end{cc}
+        {\small Mask the bit you want. Compare the result with zero.}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \textbf{Busy-wait on a flag}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+while (!(USART1->SR & (1U << 7))) {
+    // wait until the transmit
+    // register is empty
+}
+\end{cc}
+        {\small The loop re-reads the register each time. This works only because the register is \texttt{volatile}.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{One Register Write, Viewed at Four Levels}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.6\textwidth}@{}}
+        \toprule
+        \textbf{Level} & \textbf{Setting one output bit} \\
+        \midrule
+        Physical hardware & The output latch and push-pull driver for pin PA5 \\
+        Register & \texttt{GPIOA\_ODR} bit 5, at address \texttt{0x40020014} \\
+        C & \texttt{GPIOA->ODR |= (1U \shl\ 5);} \\
+        Machine code & Three Thumb-2 encodings stored in Flash \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{One row is deliberately missing}
+        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. The next part of the course fills in that row.
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{A Complete Bare-Metal Program}
+%===============================================================================
+
 \begin{frame}[fragile]{A Complete Bare-Metal Program}
     \begin{columns}[T]
     \begin{column}{.56\textwidth}
@@ -622,6 +848,83 @@ int main(void)
     \end{column}
     \end{columns}
 \end{frame}
+
+\begin{frame}[fragile]{The Shape of an Embedded Program}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \textbf{A hosted program (on a PC)}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+#include <stdio.h>
+
+int main(void) {
+    printf("Hello\n");
+    return 0;   // back to the OS
+}
+\end{cc}
+        {\small It runs, returns, and the OS cleans up.}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \textbf{A bare-metal program}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+int main(void) {
+    // setup: runs once
+    //   clocks, pins, peripherals
+
+    while (1) {
+        // loop: runs forever
+        //   read, decide, drive
+    }
+}
+\end{cc}
+        {\small No OS. \texttt{main} must never return.}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{Two consequences of having no operating system}
+        \alert{No library to fall back on:} \texttt{printf} needs a screen and an OS. Output means driving a peripheral yourself. \alert{Nothing cleans up:} the hardware stays in whatever state you leave it.
+    \end{block}
+
+    \vspace{1mm}
+    {\small \emph{If you know Arduino:} \texttt{setup()} is the code above the loop, and \texttt{loop()} is its body.}
+\end{frame}
+
+
+%===============================================================================
+\section{What Happens When the STM32 Starts Up}
+%===============================================================================
+
+\begin{frame}{What Happens When the STM32 Starts Up}{You never call \texttt{main}. Who does?}
+    \leavevmode
+    \begin{center}
+    \begin{tikzpicture}[node distance=5mm, font=\small]
+        \node[blk, text width=22mm] (a) {Power-on or reset};
+        \node[blk, right=of a, text width=30mm] (b) {Hardware loads SP and PC};
+        \node[cpublk, right=of b, text width=24mm] (c) {Reset\_Handler};
+        \node[blk, right=of c, text width=20mm] (d) {\texttt{main()}};
+        \draw[flow] (a) -- (b);
+        \draw[flow] (b) -- (c);
+        \draw[flow] (c) -- (d);
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{1mm}
+    {\small
+    \begin{enumerate}\itemsep2pt
+        \item \textbf{Reset.} The core starts from the 16\,MHz internal oscillator. This is why every example assumes 16\,MHz.
+        \item \textbf{Read the vector table} at \texttt{0x08000000}. Word 0 goes into \texttt{SP}. Word 1 goes into \texttt{PC}. No software has run, yet the CPU has a stack and a start address.
+        \item \textbf{Run \texttt{Reset\_Handler}.} This startup code copies initialised variables from Flash to SRAM, clears the rest to zero, and calls \texttt{SystemInit()}.
+        \item \textbf{Call \texttt{main()}.} Now your code runs.
+    \end{enumerate}}
+
+    \vspace{1mm}
+    {\small A global such as \texttt{int count = 5;} is ready when \texttt{main} starts, because startup code copied it. If \texttt{main} returned, there would be nowhere to go.}
+\end{frame}
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
 
 \begin{frame}{Summary}
 	\begin{columns}[c]

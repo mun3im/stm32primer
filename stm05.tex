@@ -41,6 +41,7 @@
     \end{columns}
 \end{frame}
 
+
 %===============================================================================
 \section{How Much Assembly You Need}
 %===============================================================================
@@ -79,6 +80,7 @@
         disassembly window and explain what the processor is doing.
     \end{block}
 \end{frame}
+
 
 %===============================================================================
 \section{A First Assembly Program}
@@ -185,6 +187,7 @@ HERE    B    HERE            ; infinite loop to halt
         reads as ``R3 becomes R1 plus R2.'' Right to left.
     \end{block}
 \end{frame}
+
 
 %===============================================================================
 \section{The Load-Store Workflow}
@@ -307,6 +310,7 @@ int f(int a, int b) {
     \end{block}
 \end{frame}
 
+
 %===============================================================================
 \section{Memory Transfer Instructions}
 %===============================================================================
@@ -426,6 +430,7 @@ int f(int a, int b) {
     \end{center}
 \end{frame}
 
+
 %===============================================================================
 \section{Optional: Signed Loads}
 %===============================================================================
@@ -484,6 +489,7 @@ int f(int a, int b) {
         instruction appears.
     \end{block}
 \end{frame}
+
 
 %===============================================================================
 \section{The Core Register Set in Practice}
@@ -610,6 +616,7 @@ int f(int a, int b) {
     \vspace{2mm}
     {\small Chapter~7 builds the full convention. Appendix~C tabulates it.}
 \end{frame}
+
 
 %===============================================================================
 \section{Constants: \texttt{MOV}, \texttt{MVN}, and Building an Address}
@@ -741,6 +748,7 @@ int f(int a, int b) {
     a surprise.}
 \end{frame}
 
+
 %===============================================================================
 \section{Worked Example: Reading Your First Disassembly}
 %===============================================================================
@@ -816,45 +824,10 @@ c = a + b;
     \end{block}
 \end{frame}
 
-%===============================================================================
-\section{Summary}
-%===============================================================================
 
-\begin{frame}{Summary}
-	\begin{columns}[c]
-		\begin{column}{.62\textwidth}
-			\begin{center}
-				\begin{tikzpicture}[x=10mm, y=7.8mm]
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n0) at (0,0.00) {Goal: literacy, not fluency};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n1) at (0,-1.05) {Statement: label, opcode, operands, comment};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n2) at (0,-2.10) {Memory access is load--process--store};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n3) at (0,-3.15) {\texttt{LDR Rn, =label} loads an address};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n4) at (0,-4.20) {\texttt{LDR Rn, [Rm]} loads a value};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n5) at (0,-5.25) {Size suffix B, H; zero or sign extend};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n6) at (0,-6.30) {Low registers R0--R7 give short code};
-					\node[cpublk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize, align=center] (n7) at (0,-7.65) {You can read a disassembly\\and name the C behind it};
-					\foreach \a/\b in {0/1,1/2,2/3,3/4,4/5,5/6,6/7}{\draw[flow] (n\a) -- (n\b);}
-				\end{tikzpicture}
-			\end{center}
-		\end{column}
-		\begin{column}{.34\textwidth}
-			{\scriptsize
-				\textbf{Terminology covered}\\[1mm]
-				\begin{itemize}
-					\item Label, opcode, operand
-					\item LDR, STR and size suffixes
-					\item Zero and sign extension
-					\item Low and high registers
-				\end{itemize}
-				\vspace{3mm}
-				\textbf{Next: Chapter 6}\\[1mm]
-				\emph{Memory, Arithmetic and Bit Manipulation}\\[1mm]
-				How ARM calculates addresses, and how it changes single bits.}
-		\end{column}
-	\end{columns}
-\end{frame}
-
-\section{Addendum}
+%===============================================================================
+\section{Beamer Extras}
+%===============================================================================
 
 % \bw, \rh, \regx, \regy, \memx, \memy are shared across every bit-level
 % TikZ frame below. Must sit OUTSIDE any \begin{frame}[fragile], because
@@ -887,6 +860,8 @@ c = a + b;
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}{Load Group of Instructions}
 	\begin{itemize}
 		\item An LDR-type instruction fetches data from memory and puts
@@ -906,12 +881,15 @@ c = a + b;
 		\end{itemize}
 	\end{itemize}
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % LDR: Loading a Word from Memory (Little-Endian)
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{LDR: Loading a Word from Memory (Little-Endian)}
 	\begin{verbatim}
 		LDR  R0, [R1]    ; load word
@@ -978,12 +956,15 @@ c = a + b;
 	\end{itemize}
 
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % LDRH Instruction
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{LDRH Instruction}
 	\begin{verbatim}
 		LDRH  R0, [R1]    ; load halfword
@@ -1056,12 +1037,15 @@ c = a + b;
 		\item After \texttt{LDRH R1, [R0]} runs, the lower halfword of R1 holds 0xFFEE, and the top halfword is \alert{cleared}.
 	\end{itemize}
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % LDRB Instruction
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{LDRB Instruction}
 	\resizebox{0.92\textwidth}{!}{%
 		\begin{tikzpicture}[x=10mm, y=8mm]
@@ -1131,12 +1115,15 @@ c = a + b;
 		\item After \texttt{LDRB R1, [R0]} runs, the lowest byte of R1 holds 0xEE, and the remaining bytes are \alert{cleared}.
 	\end{itemize}
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % LDRSH Instruction
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{LDRSH Instruction}
 	\begin{verbatim}
 		LDRSH R0, [R1]    ; load signed halfword
@@ -1209,12 +1196,15 @@ c = a + b;
 		\item After \texttt{LDRH R1, [R0]} runs, the lower halfword of R1 holds 0xFFEE, and the top halfword holds the sign bit of the loaded halfword.
 	\end{itemize}
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % LDRSB Instruction
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{LDRSB Instruction}
 	\begin{verbatim}
 		LDRSB R0, [R1]    ; load signed byte
@@ -1287,12 +1277,15 @@ c = a + b;
 		\item After \texttt{LDRSB R1, [R0]} runs, the lowest byte of R1 holds 0xEE, and the remaining bytes hold the sign bit of the loaded byte.
 	\end{itemize}
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % STR: Storing a Word to Memory
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{STR: Storing a Word to Memory}
 	\begin{verbatim}
 		STR   R0, [R1]    ; store 32-bit word
@@ -1344,12 +1337,15 @@ c = a + b;
 		\end{tikzpicture}%
 	}
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % STRH: Storing a Halfword to Memory
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{STRH: Storing a Halfword to Memory}
 	\begin{verbatim}
 		STRH R0, [R1]
@@ -1423,12 +1419,15 @@ c = a + b;
 		\item After \texttt{STRH R1, [R0]} runs, the \alert{memory halfword} at 0x40020014 holds 0x4433.
 	\end{itemize}
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % STRB: Storing a Byte to Memory
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{STRB: Storing a Byte to Memory}
 	\begin{verbatim}
 		STRB R0, [R1]
@@ -1500,12 +1499,15 @@ c = a + b;
 		\item After \texttt{STRB R1, [R0]} runs, the \alert{memory byte} at 0x40020014 holds 0x44.
 	\end{itemize}
 \end{frame}
+}
 
 %%------------------------------------------------------------------
 % Memory Copy Example
 %% Reason dropped: bit-level register/memory visualization not in
 %% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
 %%------------------------------------------------------------------
+
+{\beamerextras
 \begin{frame}[fragile]{Memory Copy Example}
 
 	\begin{asm}[basicstyle=\normalsize\ttfamily]
@@ -1619,7 +1621,45 @@ c = a + b;
 		%	\end{itemize}
 
 \end{frame}
+}
 
 
+%===============================================================================
+\section{Summary}
+%===============================================================================
+
+\begin{frame}{Summary}
+	\begin{columns}[c]
+		\begin{column}{.62\textwidth}
+			\begin{center}
+				\begin{tikzpicture}[x=10mm, y=7.8mm]
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n0) at (0,0.00) {Goal: literacy, not fluency};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n1) at (0,-1.05) {Statement: label, opcode, operands, comment};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n2) at (0,-2.10) {Memory access is load--process--store};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n3) at (0,-3.15) {\texttt{LDR Rn, =label} loads an address};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n4) at (0,-4.20) {\texttt{LDR Rn, [Rm]} loads a value};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n5) at (0,-5.25) {Size suffix B, H; zero or sign extend};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n6) at (0,-6.30) {Low registers R0--R7 give short code};
+					\node[cpublk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize, align=center] (n7) at (0,-7.65) {You can read a disassembly\\and name the C behind it};
+					\foreach \a/\b in {0/1,1/2,2/3,3/4,4/5,5/6,6/7}{\draw[flow] (n\a) -- (n\b);}
+				\end{tikzpicture}
+			\end{center}
+		\end{column}
+		\begin{column}{.34\textwidth}
+			{\scriptsize
+				\textbf{Terminology covered}\\[1mm]
+				\begin{itemize}
+					\item Label, opcode, operand
+					\item LDR, STR and size suffixes
+					\item Zero and sign extension
+					\item Low and high registers
+				\end{itemize}
+				\vspace{3mm}
+				\textbf{Next: Chapter 6}\\[1mm]
+				\emph{Memory, Arithmetic and Bit Manipulation}\\[1mm]
+				How ARM calculates addresses, and how it changes single bits.}
+		\end{column}
+	\end{columns}
+\end{frame}
 
 \end{document}
