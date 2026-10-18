@@ -463,9 +463,45 @@ if (sensor_value == 0) { turn_on_led(); }
 
 
 %===============================================================================
-\section{ARM Cortex Profiles}
+\section{ARM History}
 %===============================================================================
 
+{\beamerextras
+\begin{frame}{ARM History: Four Decades on One Line}{Colour shows the era}
+    \begin{center}
+    \begin{tikzpicture}[x=10.2mm, y=10mm,
+        ev/.style={font=\scriptsize, align=center, text width=19mm, inner sep=1pt}]
+        \draw[line width=1.4pt, draw=Gray] (-0.3,0) -- (12.0,0);
+        \foreach \x/\yr/\txt/\col/\anc/\yy in {%
+            0/1981/{BBC Micro (6502)}/accentline/south/0.35,
+            1/1985/{ARM1 silicon works}/accentline/north/-0.35,
+            2/1987/{Acorn Archimedes}/accentline/south/0.35,
+            3.1/1990/{ARM Ltd founded}/blkline/north/-0.35,
+            4.2/1993/{Apple Newton}/blkline/south/0.35,
+            5.2/1994/{Thumb (ARM7TDMI)}/blkline/north/-0.35,
+            6.2/1998/{Listed in London and New York}/blkline/south/0.35,
+            7.3/2004/{Cortex-M3}/memline/north/-0.35,
+            8.4/2010/{Cortex-M4: our core}/primary/south/0.35,
+            9.5/2016/{SoftBank buys ARM}/primary/north/-0.35,
+            10.6/2020/{Apple M1; Fugaku \#1}/primary/south/0.35,
+            11.7/2023/{Arm IPO on Nasdaq}/primary/north/-0.35}{
+            \fill[\col] (\x,0) circle (1.6mm);
+            \node[ev, anchor=\anc, text=\col] at (\x,\yy) {\textbf{\yr}\\\txt};
+        }
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{2mm}
+    {\small\centering \textcolor{accentline}{\textbf{1980s}} a small British company builds a CPU.\quad
+    \textcolor{blkline}{\textbf{1990s}} it becomes a licensing company.\quad
+    \textcolor{memline}{\textbf{2000s}} it takes the phone market.\quad
+    \textcolor{primary}{\textbf{2010s on}} it reaches everything else.\par}
+    \vspace{1mm}
+    {\tiny\color{Gray} Outline adapted from SKEE3223 Module 02; extra facts added.}
+\end{frame}
+}
+
+{\beamerextras
 \begin{frame}{ARM:}{A Short History}
     {\small\centering To understand the Cortex-M4, we first look at where ARM came from, and how its processor families grew.\par}
     \vspace{2mm}
@@ -491,6 +527,140 @@ if (sensor_value == 0) { turn_on_led(); }
         ARM was designed to be small because Acorn was a small company with a limited budget. That early constraint later became the reason ARM came to dominate the embedded and mobile markets. This is the same cost-and-power argument as in Chapter~1.
     \end{block}
 \end{frame}
+}
+
+{\beamerextras
+\begin{frame}{ARM1: First Time Right}{How a tiny team built a CPU in the 1980s}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        \textbf{Why a new CPU?}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item The BBC Micro used the 6502. Acorn needed something faster for its next machine.
+            \item The 16-bit chips on sale did not impress \alert{Sophie Wilson} and \alert{Steve Furber}.
+            \item They read the Berkeley RISC research. The lesson they took: a \alert{small team} can design a good CPU, if the design is simple.
+        \end{itemize}}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        \textbf{What they did}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item Wilson designed the instruction set. Furber led the hardware design.
+            \item Their first model of the CPU was a \alert{program in BBC BASIC} running on a BBC Micro.
+            \item \alert{26 April 1985:} the first silicon came back from VLSI Technology. It worked the first time.
+            \item About 25\,000 transistors, and very low power.
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    \begin{block}{Why this matters to you}
+        Simple wins. The ``reduced'' in RISC is the reason this course can teach a whole Cortex-M4 instruction set in a few chapters.
+    \end{block}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}{What Is in the Name?}{The letters changed three times}
+    \begin{center}
+    \begin{tikzpicture}[node distance=7mm, font=\small]
+        \node[cpublk, text width=36mm] (a) {\textbf{A}corn \textbf{R}ISC \textbf{M}achine\\[-1pt]{\scriptsize 1985}};
+        \node[blk, right=of a, text width=40mm] (b) {\textbf{A}dvanced \textbf{R}ISC \textbf{M}achines\\[-1pt]{\scriptsize 1990}};
+        \node[memblk, right=of b, text width=24mm] (c) {\textbf{Arm}\\[-1pt]{\scriptsize 2017}};
+        \draw[flow] (a) -- (b);
+        \draw[flow] (b) -- (c);
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \begin{block}{1990: the spin-off}
+            {\small Acorn, Apple and VLSI Technology formed a joint venture. Apple wanted ARM for its Newton PDA, but did not want to depend on a rival. A separate company solved that. About a dozen engineers moved into a converted \alert{barn} near Cambridge.}
+        \end{block}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \begin{block}{2017: the rebrand}
+            {\small The company dropped the acronym and the capital letters. The name is now just \alert{Arm}. Older slides, and many books, still write ARM. This book uses ARM for the architecture family.}
+        \end{block}
+    \end{column}
+    \end{columns}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}{Selling Designs, Not Chips}{The business model that won}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+        \textbf{How Arm earns money}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item A \alert{licence fee} when a company starts using a core.
+            \item A small \alert{royalty} on every chip shipped.
+            \item Arm owns no factory. The licensee adds peripherals, memory and analog parts, then has the chip made.
+        \end{itemize}}
+        \vspace{2mm}
+        {\small \textbf{Licensees:} Qualcomm, Samsung, Nvidia, Apple, and the maker of your board, \alert{STMicroelectronics}.}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Ownership}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item \textbf{1998:} listed in London and New York.
+            \item \textbf{2016:} bought by SoftBank for about \$32\,billion.
+            \item \textbf{2020--22:} a planned sale to Nvidia was announced, then dropped.
+            \item \textbf{2023:} listed again, on Nasdaq.
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    \begin{block}{The result}
+        {\small Phones chose ARM for low power. Then embedded systems, cars and IoT followed. Then data centres (Amazon Graviton) and laptops (Apple M1 and M2).}
+    \end{block}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}{Did You Know?}{Arm trivia}
+    \begin{columns}[T]
+    \begin{column}{.32\textwidth}
+        \begin{block}{Powered by leakage}
+            {\small The story goes that an early ARM test board ran with its power connection missing. The chip was running on stray current leaking through its I/O lines. The design sipped so little power that nobody noticed.}
+        \end{block}
+    \end{column}
+    \begin{column}{.32\textwidth}
+        \begin{block}{Thumb in your pocket}
+            {\small Thumb (1994) squeezed instructions to 16 bits to save memory. The ARM7TDMI core that used it ran the Game Boy Advance, and many phones of that time.}
+        \end{block}
+    \end{column}
+    \begin{column}{.32\textwidth}
+        \begin{block}{A supercomputer too}
+            {\small In 2020 Fugaku, a Japanese supercomputer built on Arm cores, ranked \alert{number 1} in the world. The same architecture family is on your desk.}
+        \end{block}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \begin{block}{Your core is a teenager}
+            {\small The Cortex-M4 was announced in 2010. The first Cortex-M3 chips from ST arrived around 2007, and they started the STM32 family you use now.}
+        \end{block}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \begin{block}{Cambridge, again}
+            {\small The Raspberry Pi also comes from Cambridge. Its first board used an ARM11 core. Its own microcontroller chip, the RP2040, uses two Cortex-M0+ cores.}
+        \end{block}
+    \end{column}
+    \end{columns}
+\end{frame}
+}
+
+
+%===============================================================================
+\section{ARM Cortex Profiles}
+%===============================================================================
 
 \begin{frame}{ARM Does Not Make Chips}{Why there is an ST logo on an ARM core}
 	\footnotesize
