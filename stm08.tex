@@ -123,7 +123,7 @@
 
 
 %===============================================================================
-\section{The GPIO Registers}
+\section{GPIO Registers}
 %===============================================================================
 
 \begin{frame}{The Register Set}
@@ -188,6 +188,36 @@
     \end{columns}
 \end{frame}
 
+\begin{frame}[plain]{\texttt{OTYPER} --- Output Type}
+    \begin{center}
+    \includegraphics[width=.9\textwidth, height=.42\textheight, keepaspectratio]%
+        {assets/otyper-bits.pdf}
+    \end{center}
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.4\textwidth}
+        {\small
+        \striped
+        \begin{tabular}{@{}l l@{}}
+            \toprule
+            \textbf{Bit} & \textbf{Output type} \\
+            \midrule
+            \texttt{0} & \alert{Push-pull} (reset state) \\
+            \texttt{1} & Open-drain \\
+            \bottomrule
+        \end{tabular}}
+    \end{column}
+    \begin{column}{.56\textwidth}
+        {\ttfamily\footnotesize
+        GPIOA->OTYPER \&= \textasciitilde(1U << 5);~~// push-pull}
+
+        \vspace{2mm}
+        {\small Unlike \texttt{MODER}, each pin owns only \alert{one bit}: \texttt{OT}$y$ for pin $y$. There are only two output types to choose from.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
 \begin{frame}[plain]{\texttt{BSRR} --- Atomic Set and Reset}
     \begin{center}
     \includegraphics[width=.9\textwidth, height=.38\textheight, keepaspectratio]%
@@ -212,6 +242,58 @@
     \end{column}
     \end{columns}
 \end{frame}
+
+\begin{frame}{Sample I/O Addresses on the STM32F4 (1)}
+    \leavevmode
+    {\small Every peripheral is reached the same way: a \alert{base address plus a fixed offset}. This is the memory-map pattern from Chapter 2.}
+
+    \vspace{3mm}
+    \begin{center}
+    \resizebox{.97\textwidth}{!}{%
+    \begin{tabular}{llllll}
+    \toprule
+    \multicolumn{2}{l}{\textbf{GPIO Port A}} & \multicolumn{2}{l}{\textbf{Clock Control (RCC)}} & \multicolumn{2}{l}{\textbf{Timer 2}} \\
+    \midrule
+    \texttt{GPIOA\_MODER} & \texttt{0x40020000} & \texttt{RCC\_CR}      & \texttt{0x40023800} & \texttt{TIM2\_CR1}  & \texttt{0x40000000} \\
+    \texttt{GPIOA\_OTYPER} & \texttt{0x40020004} & \texttt{RCC\_PLLCFGR} & \texttt{0x40023804} & \texttt{TIM2\_CR2}  & \texttt{0x40000004} \\
+    \texttt{GPIOA\_OSPEEDR} & \texttt{0x40020008} & \texttt{RCC\_CFGR}   & \texttt{0x40023808} & \texttt{TIM2\_DIER} & \texttt{0x4000000C} \\
+    \texttt{GPIOA\_PUPDR} & \texttt{0x4002000C} & \texttt{RCC\_AHB1ENR} & \texttt{0x40023830} & \texttt{TIM2\_SR}   & \texttt{0x40000010} \\
+    \texttt{GPIOA\_IDR} & \texttt{0x40020010} & \texttt{RCC\_APB1ENR} & \texttt{0x40023840} & \texttt{TIM2\_EGR}  & \texttt{0x40000014} \\
+    \texttt{GPIOA\_ODR} & \texttt{0x40020014} & \texttt{RCC\_APB2ENR} & \texttt{0x40023844} & \texttt{TIM2\_CNT}  & \texttt{0x40000024} \\
+    \texttt{GPIOA\_BSRR} & \texttt{0x40020018} &  &  & \texttt{TIM2\_PSC}  & \texttt{0x40000028} \\
+    \texttt{GPIOA\_AFRL} & \texttt{0x40020020} &  &  & \texttt{TIM2\_ARR}  & \texttt{0x4000002C} \\
+    \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    {\small GPIO port registers sit \texttt{0x400} bytes apart. The \texttt{RCC} registers gate the clocks of all the others.}
+\end{frame}
+
+\begin{frame}{Sample I/O Addresses on the STM32F4 (2)}
+    \leavevmode
+    \begin{center}
+    \resizebox{.97\textwidth}{!}{%
+    \begin{tabular}{llllll}
+    \toprule
+    \multicolumn{2}{l}{\textbf{ADC1}} & \multicolumn{2}{l}{\textbf{USART1}} & \multicolumn{2}{l}{\textbf{NVIC}} \\
+    \midrule
+    \texttt{ADC\_SR}   & \texttt{0x40012000} & \texttt{USART1\_SR}  & \texttt{0x40011000} & \texttt{NVIC\_ISER0} & \texttt{0xE000E100} \\
+    \texttt{ADC\_CR1}  & \texttt{0x40012004} & \texttt{USART1\_DR}  & \texttt{0x40011004} & \texttt{NVIC\_ISER1} & \texttt{0xE000E104} \\
+    \texttt{ADC\_CR2}  & \texttt{0x40012008} & \texttt{USART1\_BRR} & \texttt{0x40011008} & \texttt{NVIC\_ICER0} & \texttt{0xE000E180} \\
+    \texttt{ADC\_DR}   & \texttt{0x4001204C} & \texttt{USART1\_CR1} & \texttt{0x4001100C} & \texttt{NVIC\_ICER1} & \texttt{0xE000E184} \\
+    \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    {\small Read the leading digits as the memory map taught you: \alert{\texttt{0x40\ldots}} is a peripheral register. The NVIC sits at \texttt{0xE000\ldots}, in the Private Peripheral region reserved for the core itself. GPIO, timer, ADC and USART registers share the \texttt{0x40} prefix because they are all ordinary memory-mapped peripherals.}
+\end{frame}
+
+
+%===============================================================================
+\section{Peripheral Clock Gating}
+%===============================================================================
 
 \begin{frame}[plain]{Peripheral Clock Gating}
     \begin{center}
@@ -535,6 +617,86 @@ int main(void) {
     \end{columns}
 \end{frame}
 
+\begin{frame}{Driving a Pin, Viewed at Five Levels}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}r R{.62\textwidth}@{}}
+        \toprule
+        \textbf{Level} & \textbf{Representation} \\
+        \midrule
+        Physical hardware & PMOS/NMOS output pair charging the LED's series resistor \\
+        Register & \texttt{GPIOA\_BSRR} bit 5, at \texttt{0x40020018} \\
+        C & \texttt{GPIOA->BSRR = (1U << 5);} \\
+        Assembly & \texttt{MOV R0,\#0x20} / \texttt{STR R0,[R1,\#0x18]} \\
+        Machine code & Two Thumb-2 encodings in Flash \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{Worth pausing over}
+        This is the first time \alert{every level} of the course model is filled in by something you built yourself. Read it as one chain, from the voltage on the pin up to the C statement.
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{Beamer Extras}
+%===============================================================================
+
+% stm08_todo.tex -- unreviewed slide material dropped during the
+% 2026-10-07 sync of stm08.tex to chapter 8.
+%
+% See CLAUDE.md section "The book is the superset" for the parking rule.
+% NOT part of any build.
+%
+% Reason dropped: this experiment is not in chapter 8. Chapter 8 numbers
+% its Experiment 5 as "A Four-Bit Binary Counter". Knight Rider is a
+% popular variant of the same idea -- promote to the book at the next
+% edition, or discard.
+
+{\beamerextras
+\begin{frame}[fragile]{Experiment 6: Knight Rider LED Chaser}
+	\begin{cc}[basicstyle=\ttfamily\scriptsize]
+		#include "stm32f4xx.h"
+		void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
+
+		int main(void) {
+			RCC->AHB1ENR |= (1U << 1);      // enable GPIOB clock
+			GPIOB->MODER &= ~(0xFFFFU);     // clear PB0..PB7
+			GPIOB->MODER |=  (0x5555U);     // PB0..PB7 as outputs (01 each)
+
+			int pos = 0, dir = 1;
+			while (1) {
+				GPIOB->BSRR = (0xFFU << 16);   // all eight LEDs off
+				GPIOB->BSRR = (1U << pos);     // light only the current one
+
+				if (pos == 7 || pos == 0) dir = -dir;  // bounce at the ends
+				pos += dir;
+
+				delay_ms(80);
+			}
+		}
+	\end{cc}
+
+	\vspace{2mm}
+	\begin{block}{One lit bit, walking back and forth}
+		Only one output pin is ever high at a time; everything else is
+		cleared first with a single \alert{atomic} \texttt{BSRR} write,
+		then the new bit is set with a second write. \texttt{pos} does
+		the work a hardware shift register would do in an all-analogue
+		version of this circuit --- flipping \texttt{dir} at each end
+		turns a shift into a \alert{bounce}.
+	\end{block}
+\end{frame}
+}
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
+
 \begin{frame}{Summary}
 	\begin{columns}[c]
 		\begin{column}{.62\textwidth}
@@ -568,58 +730,6 @@ int main(void) {
 		\end{column}
 	\end{columns}
 \end{frame}
-
-
-%===============================================================================
-\section{Beamer Extras}
-%===============================================================================
-
-% stm08_todo.tex -- unreviewed slide material dropped during the
-% 2026-10-07 sync of stm08.tex to chapter 8.
-%
-% See CLAUDE.md section "The book is the superset" for the parking rule.
-% NOT part of any build.
-%
-% Reason dropped: this experiment is not in chapter 8. Chapter 8 numbers
-% its Experiment 5 as "A Four-Bit Binary Counter". Knight Rider is a
-% popular variant of the same idea -- promote to the book at the next
-% edition, or discard.
-
-{\beamerextras
-\begin{frame}[fragile]{Experiment 6: Knight Rider LED Chaser}
-	\begin{cc}[basicstyle=\ttfamily\footnotesize]
-		#include "stm32f4xx.h"
-		void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
-
-		int main(void) {
-			RCC->AHB1ENR |= (1U << 1);      // enable GPIOB clock
-			GPIOB->MODER &= ~(0xFFFFU);     // clear PB0..PB7
-			GPIOB->MODER |=  (0x5555U);     // PB0..PB7 as outputs (01 each)
-
-			int pos = 0, dir = 1;
-			while (1) {
-				GPIOB->BSRR = (0xFFU << 16);   // all eight LEDs off
-				GPIOB->BSRR = (1U << pos);     // light only the current one
-
-				if (pos == 7 || pos == 0) dir = -dir;  // bounce at the ends
-				pos += dir;
-
-				delay_ms(80);
-			}
-		}
-	\end{cc}
-
-	\vspace{2mm}
-	\begin{block}{One lit bit, walking back and forth}
-		Only one output pin is ever high at a time; everything else is
-		cleared first with a single \alert{atomic} \texttt{BSRR} write,
-		then the new bit is set with a second write. \texttt{pos} does
-		the work a hardware shift register would do in an all-analogue
-		version of this circuit --- flipping \texttt{dir} at each end
-		turns a shift into a \alert{bounce}.
-	\end{block}
-\end{frame}
-}
 
 \end{document}
 

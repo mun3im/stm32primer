@@ -35,40 +35,9 @@
 
 
 %===============================================================================
-\section{Four Words That Are Not Synonyms}
+\section{Why Interrupts Matter}
 %===============================================================================
-\begin{frame}{Four Words That Are Not Synonyms}
-    \leavevmode
-    {\small Students often use these words interchangeably. They name
-    different links in a causal chain.}
 
-    \vspace{2mm}
-    \begin{center}
-    {\small
-    \striped
-    \begin{tabular}{@{}l R{.68\textwidth}@{}}
-        \toprule
-        \textbf{Term} & \textbf{Meaning} \\
-        \midrule
-        \textbf{Event}             & Something happened, such as a button edge on PC13. \\
-        \textbf{Interrupt request} & Hardware asks the processor to respond. EXTI raises it and holds it in a pending flag. \\
-        \textbf{Exception}         & The Cortex-M mechanism that transfers execution: the NVIC accepts the request, the processor consults the vector table. \\
-        \textbf{ISR (handler)}     & The C function that runs, for example \texttt{EXTI15\_10\_IRQHandler()}. \\
-        \bottomrule
-    \end{tabular}}
-    \end{center}
-
-    \vspace{3mm}
-    \begin{block}{In one line}
-        An \alert{event} causes an \alert{interrupt request}, which the
-        NVIC turns into an \alert{exception}, which runs an \alert{ISR}.
-        The rest of this chapter fills in each link.
-    \end{block}
-\end{frame}
-
-%===============================================================================
-\section{Polling and Interrupts}
-%===============================================================================
 \begin{frame}[fragile]{Polling and Interrupts}
 	\begin{columns}[T]
 		\begin{column}{.48\textwidth}
@@ -118,6 +87,45 @@ void EXTI15_10_IRQHandler(void) {
 		An interrupt lets the hardware say ``It has happened.''
 	\end{block}
 \end{frame}
+
+
+%===============================================================================
+\section{Four Words That Are Not Synonyms}
+%===============================================================================
+
+\begin{frame}{Four Words That Are Not Synonyms}
+    \leavevmode
+    {\small Students often use these words interchangeably. They name
+    different links in a causal chain.}
+
+    \vspace{2mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.68\textwidth}@{}}
+        \toprule
+        \textbf{Term} & \textbf{Meaning} \\
+        \midrule
+        \textbf{Event}             & Something happened, such as a button edge on PC13. \\
+        \textbf{Interrupt request} & Hardware asks the processor to respond. EXTI raises it and holds it in a pending flag. \\
+        \textbf{Exception}         & The Cortex-M mechanism that transfers execution: the NVIC accepts the request, the processor consults the vector table. \\
+        \textbf{ISR (handler)}     & The C function that runs, for example \texttt{EXTI15\_10\_IRQHandler()}. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{In one line}
+        An \alert{event} causes an \alert{interrupt request}, which the
+        NVIC turns into an \alert{exception}, which runs an \alert{ISR}.
+        The rest of this chapter fills in each link.
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{Polling Versus Interrupts}
+%===============================================================================
 
 \begin{frame}{Interrupts vs.\ Polling, on the Wire}
     \leavevmode
@@ -226,6 +234,11 @@ void EXTI15_10_IRQHandler(void) {
 		loop pass needs nothing extra, so \alert{polling is simplest}.}
 \end{frame}
 
+
+%===============================================================================
+\section{What Happens When an Interrupt Fires}
+%===============================================================================
+
 \begin{frame}{What Happens When an Interrupt Fires}
     \leavevmode
     {\scriptsize We use an \alert{external} interrupt: a button
@@ -294,8 +307,9 @@ void EXTI15_10_IRQHandler(void) {
     \alert{execution time} --- how long the main program must wait.}
 \end{frame}
 
+
 %===============================================================================
-\section{The Vector Table and NVIC}
+\section{Who Routes the Event? The Vector Table and NVIC}
 %===============================================================================
 
 \begin{frame}{Who Routes the Event?}
@@ -430,8 +444,9 @@ void EXTI15_10_IRQHandler(void) {
     \end{columns}
 \end{frame}
 
+
 %===============================================================================
-\section{Handling External Interrupts}
+\section{From Pin to Handler}
 %===============================================================================
 
 \begin{frame}{From Pin to Handler}
@@ -464,6 +479,11 @@ void EXTI15_10_IRQHandler(void) {
     \end{block}
 \end{frame}
 
+
+%===============================================================================
+\section{EXTI Lines Are Shared}
+%===============================================================================
+
 \begin{frame}[plain]{EXTI Lines Are Shared}
     \begin{columns}[c]
     \begin{column}{.4\textwidth}
@@ -495,6 +515,72 @@ void EXTI15_10_IRQHandler(void) {
     \end{columns}
 \end{frame}
 
+\begin{frame}{NVIC Channel Grouping}
+    \leavevmode
+    {\small The EXTI lines are grouped again when they reach the NVIC:}
+
+    \vspace{2mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l@{}}
+        \toprule
+        \textbf{EXTI lines} & \textbf{NVIC channel} \\
+        \midrule
+        EXTI0 -- EXTI4   & one channel each: \texttt{EXTI0\_IRQn} \ldots\ \texttt{EXTI4\_IRQn} \\
+        EXTI5 -- EXTI9   & shared: \texttt{EXTI9\_5\_IRQn} \\
+        EXTI10 -- EXTI15 & shared: \texttt{EXTI15\_10\_IRQn} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{A shared handler must find the cause}
+        When several pins share one channel, the handler must read the \alert{pending register} to learn which pin fired. The user button on \texttt{PC13} uses \texttt{EXTI15\_10\_IRQn}.
+    \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{SYSCFG Selects the Port}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        The \textbf{SYSCFG} block chooses which port drives each EXTI line. It has four registers, each with four 4-bit fields.
+
+        \vspace{3mm}
+        \begin{center}
+        {\small
+        \striped
+        \begin{tabular}{@{}l l@{}}
+            \toprule
+            \textbf{Field value} & \textbf{Port} \\
+            \midrule
+            \texttt{0000} & Port A \\
+            \texttt{0001} & Port B \\
+            \texttt{0010} & Port C \\
+            \bottomrule
+        \end{tabular}}
+        \end{center}
+    \end{column}
+    \begin{column}{.48\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+RCC->APB2ENR |= (1U << 14);
+    // SYSCFG clock, on APB2
+
+// Map PC13 to EXTI13.
+// Line 13 is in EXTICR[3],
+// bits 7:4.
+SYSCFG->EXTICR[3] &= ~(0xFU << 4);
+SYSCFG->EXTICR[3] |=  (2U << 4);
+    // 2 = Port C
+\end{cc}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+
+%===============================================================================
+\section{Configuring an External Interrupt}
+%===============================================================================
+
 \begin{frame}[fragile]{The Configuration Sequence}
 \begin{cc}[basicstyle=\ttfamily\small, numbers=left]
 // 0. Clocks
@@ -522,8 +608,9 @@ NVIC_EnableIRQ(EXTI15_10_IRQn);
     \emph{which} line fired.}
 \end{frame}
 
+
 %===============================================================================
-\section{Writing a Handler}
+\section{Writing the ISR}
 %===============================================================================
 
 \begin{frame}[fragile]{The Handler}
@@ -550,6 +637,11 @@ void EXTI15_10_IRQHandler(void)
         \end{enumerate}
     \end{block}
 \end{frame}
+
+
+%===============================================================================
+\section{Sharing Data With an ISR}
+%===============================================================================
 
 \begin{frame}{Sharing Data With an ISR}
     \begin{columns}[T]
@@ -590,6 +682,56 @@ void EXTI15_10_IRQHandler(void)
         \texttt{uint32\_t}, which the processor always reads atomically.
     \end{block}
 \end{frame}
+
+
+%===============================================================================
+\section{Interrupt Priorities and Masking}
+%===============================================================================
+
+\begin{frame}{Interrupt Priorities}{How priority works on the STM32F446}
+    \begin{center}
+    {\footnotesize
+    \striped
+    \begin{tabular}{@{}l R{.7\textwidth}@{}}
+        \toprule
+        \textbf{Property} & \textbf{Rule} \\
+        \midrule
+        Direction & A \alert{lower} number is a \alert{higher} priority. Priority 0 beats priority 5. \\
+        Implemented bits & 4 bits: 16 levels (0--15), in the top of each 8-bit priority byte. \\
+        Set with & \texttt{NVIC\_SetPriority(IRQn, level)}. A negative \texttt{IRQn} (e.g.\ \texttt{SysTick\_IRQn}) sets a core exception. \\
+        Default & 0, the highest configurable level, until you change it. \\
+        Preemption & A request preempts the running handler only if its number is strictly lower. \\
+        Equal priority & The new request waits, pending. If two are pending, the lower IRQ number runs first. \\
+        Fixed exceptions & Reset ($-3$), NMI ($-2$) and HardFault ($-1$) outrank every configurable level. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    {\small \emph{Example.} ADC handler at priority 2, button handler at priority 1: a button press preempts the ADC handler. Swap the numbers, and the button waits. Give the most urgent handler the lowest number, and keep every handler short.}
+\end{frame}
+
+\begin{frame}{Masking Interrupts}{Three levels of ``not now''}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.62\textwidth}@{}}
+        \toprule
+        \textbf{Mask} & \textbf{What it blocks} \\
+        \midrule
+        \textbf{PRIMASK} & All interrupts except NMI and HardFault. Set by \texttt{\_\_disable\_irq()}. \\
+        \textbf{BASEPRI} & Only interrupts \emph{below} a chosen priority. Urgent handlers still run. \\
+        \textbf{FAULTMASK} & Everything, even HardFault. Used only in fault recovery. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{Use the finest tool that works}
+        \texttt{PRIMASK} is blunt: it also delays the urgent handlers. \texttt{BASEPRI} lets you protect a shared variable from a low-priority interrupt without blocking a critical one.
+    \end{block}
+\end{frame}
+
 
 %===============================================================================
 \section{Under the Hood}
@@ -672,6 +814,71 @@ void EXTI15_10_IRQHandler(void)
     race. \alert{This is the same design idea as GPIO's \texttt{BSRR}}.}
 \end{frame}
 
+
+%===============================================================================
+\section{Interrupts in Practice}
+%===============================================================================
+
+\begin{frame}[fragile]{Extension: A Shared Interrupt Handler}{PC13 and PB10 both use \texttt{EXTI15\_10\_IRQn}}
+    \begin{columns}[T]
+    \begin{column}{.56\textwidth}
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
+void EXTI15_10_IRQHandler(void) {
+    if (EXTI->PR & (1U << 13)) { // PC13?
+        GPIOA->ODR ^= (1U << 5);
+        EXTI->PR = (1U << 13);
+    }
+
+    if (EXTI->PR & (1U << 10)) { // PB10?
+        GPIOA->ODR ^= (1U << 4);
+        EXTI->PR = (1U << 10);
+    }
+}
+\end{cc}
+    \end{column}
+    \begin{column}{.4\textwidth}
+        \textbf{Test each flag on its own}
+        {\small
+        \begin{itemize}\itemsep1pt
+            \item Two pins can become pending at nearly the same time.
+            \item Use two \texttt{if} statements, \alert{not} \texttt{else if}.
+            \item Clear each flag you serviced. Write 1 to its \texttt{PR} bit.
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Debouncing in an Interrupt System}
+    \leavevmode
+    A bouncing switch can raise \alert{one interrupt for every bounce}. A delay loop inside an ISR is not acceptable: it blocks every lower-priority interrupt.
+
+    \vspace{3mm}
+    \begin{block}{Debounce by timestamp}
+        Record the time of the last accepted event. Ignore any interrupt that arrives within the bounce window after it.
+    \end{block}
+
+    \vspace{3mm}
+    {\small This needs a \alert{millisecond time base} you can trust. A hardware counter supplies it. We build one in Chapter 10.}
+\end{frame}
+
+\begin{frame}{An Interrupt, Viewed at Five Levels}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.62\textwidth}@{}}
+        \toprule
+        \textbf{Level} & \textbf{Representation} \\
+        \midrule
+        Physical hardware & Falling edge on the PC13 pad; the EXTI edge detector fires \\
+        Register & \texttt{EXTI->PR} bit 13 becomes 1; the NVIC dispatches \\
+        C & \texttt{void EXTI15\_10\_IRQHandler(void) \{ ... \}} \\
+        Assembly & Hardware pushes R0--R3, R12, LR, PC, xPSR; branches to the vector \\
+        Machine code & The handler's address, low bit set, in the vector table \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
 \begin{frame}[fragile]{Sleeping Between Events}
     \leavevmode
     {\small Once an event is interrupt-driven, the main loop often has
@@ -699,6 +906,11 @@ while (1) {
     {\small A battery-powered sensor node can sleep almost all the
     time and wake only when a reading is due.}
 \end{frame}
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
 
 \begin{frame}{Summary}
 	\begin{columns}[c]
