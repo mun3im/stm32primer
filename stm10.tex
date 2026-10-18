@@ -74,6 +74,57 @@
 \section{Timer Architecture}
 %===============================================================================
 
+\begin{frame}{Where Does the Timer Clock Come From?}
+    \leavevmode
+    ``The clock'' is not one signal. The system clock is divided into several clocks, and they need not run at the same frequency.
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{tikzpicture}[node distance=6mm]
+        \node[cpublk] (sys) {System clock};
+        \node[blk, right=14mm of sys, yshift=8mm] (cpu) {CPU core};
+        \node[blk, right=14mm of sys, yshift=-8mm] (bus) {Peripheral bus (APB)};
+        \node[blk, right=10mm of bus] (cnt) {Timer counter};
+        \draw[flow] (sys.east) -- (cpu.west);
+        \draw[flow] (sys.east) -- (bus.west);
+        \draw[flow] (bus) -- node[lbl, above] {$f_{\text{clk}}$} (cnt);
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{1mm}
+    {\small A timer counts the clock of \alert{the bus it is attached to}. Appendix B lists which timer sits on which bus. On this board the default is 16\,MHz everywhere, so the numbers agree. They will not agree once the clock tree is changed.}
+\end{frame}
+
+\begin{frame}{The Timer Chain and Its Registers}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+        \textbf{A chain of stages}
+        {\small
+        \begin{enumerate}\itemsep1pt
+            \item The peripheral clock supplies raw ticks, for example 16\,MHz.
+            \item The \alert{prescaler} slows them down.
+            \item The \alert{counter} counts the slower ticks.
+            \item The \alert{auto-reload} register sets how many counts make one cycle.
+            \item Reaching it gives an \alert{update event}. The counter restarts at zero.
+            \item The event can interrupt the CPU or drive another timer function.
+        \end{enumerate}}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \textbf{Four registers that matter}
+        {\small
+        \begin{itemize}\itemsep1pt
+            \item \texttt{PSC}: divides the clock by $\text{PSC}+1$. A value of 0 must mean divide-by-1.
+            \item \texttt{CNT}: the current count. Read it to measure elapsed time.
+            \item \texttt{ARR}: the final count. At the end the counter wraps to zero.
+            \item \texttt{CCRx}: the threshold for capture, output compare and PWM.
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    {\small \alert{Everything else in this chapter is a variation on step 6:} what the update event, or a related compare event, is used for.}
+\end{frame}
+
 \begin{frame}{Prescaler and Auto-Reload}
     \begin{center}
     \begin{tikzpicture}[x=10mm, y=9mm]
@@ -101,6 +152,11 @@
     {\small The \alert{$+1$} is because a value of 0 means ``divide by 1'' --- a
     counter that reloads at 0 still counts one tick.}
 \end{frame}
+
+
+%===============================================================================
+\section{Timing Calculations}
+%===============================================================================
 
 \begin{frame}{A Timing Calculation}
     \begin{columns}[T]
@@ -142,6 +198,81 @@
     \end{block}
 \end{frame}
 
+\begin{frame}{Worked Example: A 1\,ms Tick}
+    \leavevmode
+    {\small Design a timer that interrupts every 1\,ms from a 16\,MHz clock. Use $T_{\text{update}} = \dfrac{(\text{PSC}+1)(\text{ARR}+1)}{f_{\text{clock}}}$.}
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        {\small
+        $(\text{PSC}+1)(\text{ARR}+1) = f_{\text{clock}}\,T$
+
+        \vspace{1mm}
+        $= 16\times10^{6}\times10^{-3} = 16{,}000$
+
+        \vspace{2mm}
+        Many pairs work. \alert{Pick a convenient tick first.} Choose $\text{PSC}+1 = 16$. The timer clock is then 1\,MHz: one tick per microsecond.}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        {\small
+        $\text{ARR}+1 = \dfrac{16{,}000}{16} = 1000$
+
+        \vspace{2mm}
+        \alert{$\text{PSC} = 15,\quad \text{ARR} = 999$}}
+
+        \vspace{2mm}
+        {\ttfamily\scriptsize
+        TIM2->PSC = 15; \\
+        TIM2->ARR = 999;}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    \begin{block}{Why a 1\,MHz tick is convenient}
+        The counter finishes a cycle after 1000 ticks, so the period is exactly 1\,ms. And the \texttt{ARR} value matches the period in microseconds directly.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Worked Example: A 0.5\,s Blink}
+    \leavevmode
+    {\small For a 500\,ms period from 16\,MHz:}
+
+    \vspace{1mm}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        {\small
+        $(\text{PSC}+1)(\text{ARR}+1) = 16\times10^{6}\times 0.5 = 8{,}000{,}000$
+
+        \vspace{2mm}
+        \texttt{ARR} is 16 bits, so it holds at most 65535. The prescaler must take enough of the division to keep \texttt{ARR} in range.}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        {\small
+        Choose $\text{PSC}+1 = 1600$, so $\text{PSC} = 1599$.
+
+        \vspace{1mm}
+        The timer clock is 10\,kHz.
+
+        \vspace{1mm}
+        $\text{ARR}+1 = \dfrac{8{,}000{,}000}{1600} = 5000$
+
+        \vspace{1mm}
+        \alert{$\text{ARR} = 4999$}}
+    \end{column}
+    \end{columns}
+
+    \vspace{3mm}
+    \begin{block}{Always check the width of \texttt{ARR}}
+        If the value you need does not fit in 16 bits, \alert{increase the prescaler}. Here both values fit comfortably.
+    \end{block}
+\end{frame}
+
+
+%===============================================================================
+\section{A Periodic Timer Interrupt}
+%===============================================================================
+
 \begin{frame}[fragile]{A Periodic Timer Interrupt}
 \begin{cc}[basicstyle=\ttfamily\small]
 RCC->APB1ENR |= (1U << 0);      // TIM2 clock
@@ -164,6 +295,34 @@ void TIM2_IRQHandler(void)
     {\small The CPU is now \alert{free} between interrupts --- it can sleep, or do
     real work, and the LED still blinks at exactly 1\,Hz.}
 \end{frame}
+
+
+%===============================================================================
+\section{Why Deterministic Timing Matters}
+%===============================================================================
+
+\begin{frame}{Why Deterministic Timing Matters}
+    \leavevmode
+    Once configured, a hardware timer keeps counting at a fixed rate \alert{whatever the CPU is doing}. Its period depends only on \texttt{PSC} and \texttt{ARR}. A software delay changes whenever the workload changes.
+
+    \vspace{3mm}
+    \begin{block}{Timing as a property of hardware, not of software}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item Several activities can share one processor without one's timing depending on another's workload.
+            \item The CPU stays free to do other work between events.
+            \item An action can happen at a truly \alert{uniform} rate, not merely ``often enough''.
+        \end{itemize}}
+    \end{block}
+
+    \vspace{3mm}
+    {\small TIM2 solved one job: blink this LED at this rate. A program also needs a shared sense of \alert{elapsed time}. That is a different job with its own hardware: SysTick, next.}
+\end{frame}
+
+
+%===============================================================================
+\section{SysTick: The System Time Base}
+%===============================================================================
 
 \begin{frame}[fragile]{SysTick}{The system time base}
     \begin{columns}[T]
@@ -267,7 +426,7 @@ void TIM2_IRQHandler(void)
 
 
 %===============================================================================
-\section{Alternate Functions}
+\section{Alternate Function Selection}
 %===============================================================================
 
 \begin{frame}[plain]{Routing a Pin to a Peripheral}
@@ -315,7 +474,7 @@ GPIOA->AFR[0] |= (1U << (5*4));
 
 
 %===============================================================================
-\section{PWM}
+\section{Pulse Width Modulation}
 %===============================================================================
 
 \begin{frame}{Pulse Width Modulation}
@@ -345,6 +504,30 @@ GPIOA->AFR[0] |= (1U << (5*4));
         and an LED looks \alert{dimmed}, a motor runs \alert{slower}, a heater
         delivers \alert{less power}. The average is what the load responds to.
     \end{block}
+\end{frame}
+
+\begin{frame}{LED Brightness Control with PWM}
+	\centering
+\includegraphics[width=0.92\textwidth]{assets/led_control_pwm.jpg}
+\end{frame}
+
+\begin{frame}{Choosing a PWM Frequency}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.62\textwidth}@{}}
+        \toprule
+        \textbf{Load} & \textbf{Guidance} \\
+        \midrule
+        \textbf{LEDs} & Above about 100\,Hz avoids visible flicker. 1\,kHz is a common choice. \\
+        \textbf{DC motors} & Above about 20\,kHz puts the switching tone beyond human hearing. \\
+        \textbf{Servos} & About 50\,Hz, with pulse widths of 1--2\,ms. Here the pulse width \emph{is} the command, not an average voltage. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    {\small These are conventions, not universal limits. \alert{The device's datasheet decides.}}
 \end{frame}
 
 \begin{frame}[fragile]{Configuring PWM}
@@ -416,11 +599,6 @@ TIM2->CR1   |= (1U << 0);        // start
 		anywhere in the loop.}
 \end{frame}
 
-\begin{frame}{LED Brightness Control with PWM}
-	\centering
-\includegraphics[width=0.92\textwidth]{assets/led_control_pwm.jpg}
-\end{frame}
-
 \begin{frame}{One PWM Output, Three Applications}
     \begin{center}
     \begin{tikzpicture}[x=10mm, y=10mm]
@@ -472,38 +650,121 @@ TIM2->CR1   |= (1U << 0);        // start
     \end{block}
 \end{frame}
 
-\begin{frame}{Summary}
-	\begin{columns}[c]
-		\begin{column}{.62\textwidth}
-			\begin{center}
-				\begin{tikzpicture}[x=10mm, y=7.8mm]
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n0) at (0,0.00) {Software delay depends on optimizer and clock};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n1) at (0,-1.05) {A timer is a hardware counter};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n2) at (0,-2.10) {$f = f_{\text{CK}}/((\text{PSC}{+}1)(\text{ARR}{+}1))$};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n3) at (0,-3.15) {SysTick gives a portable millisecond base};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n4) at (0,-4.20) {Alternate function: \texttt{MODER}=10 plus \texttt{AFR}};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n5) at (0,-5.25) {PWM: ARR sets frequency, CCR sets duty};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n6) at (0,-6.30) {Duty cycle sets average output};
-					\node[cpublk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize, align=center] (n7) at (0,-7.65) {A digital pin gives\\an analog effect};
-					\foreach \a/\b in {0/1,1/2,2/3,3/4,4/5,5/6,6/7}{\draw[flow] (n\a) -- (n\b);}
-				\end{tikzpicture}
-			\end{center}
-		\end{column}
-		\begin{column}{.34\textwidth}
-			{\scriptsize
-				\textbf{Terminology covered}\\[1mm]
-				\begin{itemize}
-					\item Prescaler (PSC), reload (ARR)
-					\item SysTick
-					\item Alternate function, \texttt{AFR}
-					\item PWM, duty cycle, \texttt{CCR}
-				\end{itemize}
-				\vspace{3mm}
-				\textbf{Next: Chapter 11}\\[1mm]
-				\emph{ADC and Analog Interfacing}\\[1mm]
-				We made an analog effect. Next, we measure a real one.}
-		\end{column}
-	\end{columns}
+
+%===============================================================================
+\section{Input Capture and Output Compare}
+%===============================================================================
+
+\begin{frame}{Input Capture and Output Compare}{Three uses of one timer chain}
+    \begin{center}
+    \begin{tikzpicture}[node distance=8mm]
+        \node[cpublk, minimum width=22mm] (timer) {Timer};
+        \node[blk, below=12mm of timer, xshift=-36mm, minimum width=28mm] (upd) {Update event};
+        \node[blk, below=12mm of timer, minimum width=28mm] (cmp) {Compare event};
+        \node[blk, below=12mm of timer, xshift=36mm, minimum width=28mm] (cap) {Capture event};
+        \draw[flow] (timer) -- (upd);
+        \draw[flow] (timer) -- (cmp);
+        \draw[flow] (timer) -- (cap);
+        \node[lbl, below=3mm of upd, align=center] {\textbf{Schedule}: an interrupt};
+        \node[lbl, below=3mm of cmp, align=center] {\textbf{Generate}: PWM};
+        \node[lbl, below=3mm of cap, align=center] {\textbf{Measure}: edge timing};
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{1mm}
+    {\small
+    \textbf{Output compare:} an event or a pin toggle when the counter reaches \texttt{CCRx}. PWM is a special case.
+
+    \vspace{1mm}
+    \textbf{Input capture:} when an edge arrives, the timer \alert{copies the counter into \texttt{CCRx}}. The timestamp is taken in hardware, so interrupt latency does not affect it. Two captures give an interval: a frequency, a pulse width or a duty cycle.}
+\end{frame}
+
+
+%===============================================================================
+\section{Engineering Case Study: Sampling Audio}
+%===============================================================================
+
+\begin{frame}{Case Study: Sampling Audio at 16\,kHz}
+    \leavevmode
+    A keyword-spotting device listens all the time and wakes only for a word like ``hey, board''. Speech needs frequencies up to about 4\,kHz, so it is sampled at \alert{16\,kHz}:
+
+    \vspace{1mm}
+    \begin{center}
+    $T_s = \dfrac{1}{16{,}000\,\text{Hz}} = 62.5\,\mu\text{s}$
+    \end{center}
+
+    \vspace{1mm}
+    \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        {\small With a 1\,MHz tick ($\text{PSC}=15$):
+
+        $\text{ARR}+1 = \dfrac{1\,\text{MHz}}{16\,\text{kHz}} = 62.5$
+
+        \vspace{1mm}
+        Not an integer. This prescaler \alert{cannot} give exactly 16\,kHz.}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        {\small
+        \begin{itemize}\itemsep1pt
+            \item $\text{ARR}=61$: about 16.13\,kHz
+            \item $\text{ARR}=62$: about 15.87\,kHz
+            \item Each is about 0.8\% off.
+            \item \alert{Exact:} $\text{PSC}=0$ (16\,MHz tick) and $\text{ARR}=999$ gives 16\,kHz.
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    {\small \emph{Design rule:} a lower prescaler gives finer control of the period.}
+\end{frame}
+
+\begin{frame}{Why the Interval Must Be Uniform, Not Merely Frequent}
+    \leavevmode
+    {\small A delay loop tuned to average 62.5\,\textmu s would still fail. Three properties of sampled audio explain why:}
+
+    \vspace{2mm}
+    \begin{columns}[T]
+    \begin{column}{.32\textwidth}
+        \begin{block}{The samples define the timing}
+            {\small The pipeline assumes a constant interval. A late sample is not marked as late, so the waveform is \alert{time-distorted}.}
+        \end{block}
+    \end{column}
+    \begin{column}{.32\textwidth}
+        \begin{block}{Jitter becomes signal error}
+            {\small Varying intervals add error that appears as extra spectral content. It \alert{cannot be removed afterwards}.}
+        \end{block}
+    \end{column}
+    \begin{column}{.32\textwidth}
+        \begin{block}{The deadline never ends}
+            {\small At 16\,kHz there are only \alert{1000 cycles} between samples on a 16\,MHz CPU. A missed one is lost: the signal has moved on.}
+        \end{block}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Budgeting the 1000 Cycles}
+    \leavevmode
+    Within 1000 cycles the system must take a sample \emph{and} leave time for later processing. A keyword-spotting pipeline might buffer 20--30\,ms of audio (320--480 samples), compute features, then run a small neural network.
+
+    \vspace{3mm}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.6\textwidth}@{}}
+        \toprule
+        \textbf{Part} & \textbf{Its job} \\
+        \midrule
+        \textbf{Timer} & Sets the sampling rate. \\
+        \textbf{ISR} & Does the minimum: acquire the sample, store it, return. \\
+        \textbf{Main loop} & Does the expensive work, on a buffer the ISR has filled. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{An ISR that takes longer than 62.5\,\textmu s cannot finish before the next sample is due}
+        A hardware timer makes the sampling interval a property of the \alert{hardware}, not of whatever the software happens to be doing. The same split is used at system level in Chapter 14.
+    \end{block}
 \end{frame}
 
 
@@ -944,6 +1205,45 @@ void delay(uint32_t ms) {
     \end{block}
 \end{frame}
 }
+
+
+%===============================================================================
+\section{Summary}
+%===============================================================================
+
+\begin{frame}{Summary}
+	\begin{columns}[c]
+		\begin{column}{.62\textwidth}
+			\begin{center}
+				\begin{tikzpicture}[x=10mm, y=7.8mm]
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n0) at (0,0.00) {Software delay depends on optimizer and clock};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n1) at (0,-1.05) {A timer is a hardware counter};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n2) at (0,-2.10) {$f = f_{\text{CK}}/((\text{PSC}{+}1)(\text{ARR}{+}1))$};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n3) at (0,-3.15) {SysTick gives a portable millisecond base};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n4) at (0,-4.20) {Alternate function: \texttt{MODER}=10 plus \texttt{AFR}};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n5) at (0,-5.25) {PWM: ARR sets frequency, CCR sets duty};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n6) at (0,-6.30) {Duty cycle sets average output};
+					\node[cpublk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize, align=center] (n7) at (0,-7.65) {A digital pin gives\\an analog effect};
+					\foreach \a/\b in {0/1,1/2,2/3,3/4,4/5,5/6,6/7}{\draw[flow] (n\a) -- (n\b);}
+				\end{tikzpicture}
+			\end{center}
+		\end{column}
+		\begin{column}{.34\textwidth}
+			{\scriptsize
+				\textbf{Terminology covered}\\[1mm]
+				\begin{itemize}
+					\item Prescaler (PSC), reload (ARR)
+					\item SysTick
+					\item Alternate function, \texttt{AFR}
+					\item PWM, duty cycle, \texttt{CCR}
+				\end{itemize}
+				\vspace{3mm}
+				\textbf{Next: Chapter 11}\\[1mm]
+				\emph{ADC and Analog Interfacing}\\[1mm]
+				We made an analog effect. Next, we measure a real one.}
+		\end{column}
+	\end{columns}
+\end{frame}
 
 \end{document}
 
