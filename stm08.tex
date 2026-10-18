@@ -587,7 +587,6 @@ int main(void) {
 	GPIOC->MODER &= ~(3U << (13*2));        // PC13 input (button)
 	GPIOC->PUPDR &= ~(3U << (13*2));
 	GPIOC->PUPDR |=  (1U << (13*2));        // pull-up
-
 	while (1) {
 		GPIOA->BSRR = (1U << (5+16));   // LED off
 		delay_ms(2000);                 // wait before the cue
@@ -748,7 +747,7 @@ int main(void) {
 		}
 	\end{cc}
 
-	\vspace{2mm}
+	\vspace{0.5mm}
 	\begin{block}{One lit bit, walking back and forth}
 		Only one output pin is ever high at a time; everything else is
 		cleared first with a single \alert{atomic} \texttt{BSRR} write,

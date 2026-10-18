@@ -367,7 +367,7 @@ q + 1;        // 0x20000101  (+1)
 				into a few large regions:
 			}
 
-			\vspace{2mm}
+			\vspace{1mm}
 			\begin{center}
 				\begin{tikzpicture}[
 					x=1mm, y=1mm,
@@ -411,8 +411,8 @@ q + 1;        // 0x20000101  (+1)
 			{\small
 				\textbf{Why three main kinds of block?}
 
-				\vspace{2mm}
-				\begin{itemize}\itemsep4pt
+				\vspace{1mm}
+				\begin{itemize}\itemsep1pt
 					\item \textbf{Flash} is \alert{non-volatile}: it keeps the
 					program after power is removed, so the chip has something
 					to run at every reset. It reads fast but writes slowly,
@@ -429,13 +429,13 @@ q + 1;        // 0x20000101  (+1)
 					it \alert{changes the hardware}.
 				\end{itemize}
 
-				\vspace{2mm}
+				\vspace{1mm}
 				{\footnotesize\itshape You will spend 99\% of your time
 				in the three colored bands above. The grey ``other''
 				regions are reserved, bit-band aliases, or external bus
 				space --- advanced topics you can safely ignore.}
 
-				\vspace{2mm}
+				\vspace{1mm}
 				A pointer, as we just saw, is only a number. So what
 				happens when that number points into the peripheral
 				region?
@@ -500,9 +500,9 @@ volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
     {\small This is the conceptual spine of the whole book: how an
     ordinary C variable becomes a way to control real hardware.}
 
-    \vspace{3mm}
+    \vspace{2mm}
     \begin{center}
-    \begin{tikzpicture}[x=10mm, y=11mm]
+    \begin{tikzpicture}[x=10mm, y=10mm]
         \node[blk,    minimum width=34mm] (var)  at (0,2.4)  {C variable};
         \node[blk,    minimum width=34mm] (addr) at (0,1.2) {Address};
         \node[blk,    minimum width=34mm] (loc)  at (0,0)    {Memory location};
@@ -777,7 +777,7 @@ const uint8_t sine_table[256] = {
     global/static storage, Flash, SRAM. \textbf{Should understand:} the
     heap.}
 
-    \vspace{1mm}
+    \vspace{0mm}
     \begin{columns}[T]
     \begin{column}{.4\textwidth}
         \begin{center}
@@ -817,7 +817,7 @@ const uint8_t sine_table[256] = {
             \item Chapter 7 builds an entire chapter on it
         \end{itemize}}
 
-        \vspace{1mm}
+        \vspace{0mm}
         \textbf{The heap}
         {\small
         \begin{itemize}\itemsep1pt
@@ -831,7 +831,7 @@ const uint8_t sine_table[256] = {
     \end{column}
     \end{columns}
 
-    \vspace{2mm}
+    \vspace{0.5mm}
     \begin{block}{Stack overflow --- a classic embedded failure}
         The downward-growing stack can collide with the upward-growing
         global data. This \alert{silently corrupts variables}. The

@@ -126,7 +126,7 @@ if (sensor_value == 0) { turn_on_led(); }
         \bottomrule
     \end{tabular}
     \end{center}
-    \vspace{3mm}
+    \vspace{1.5mm}
     \begin{block}{Complexity does not disappear --- it moves}
         RISC moves complexity out of the hardware decoder and into the compiler. The result is a set of simple instructions that pipeline cleanly, and behave in a predictable way.
     \end{block}
@@ -493,28 +493,28 @@ if (sensor_value == 0) { turn_on_led(); }
 \end{frame}
 
 \begin{frame}{ARM Does Not Make Chips}{Why there is an ST logo on an ARM core}
-	\small
+	\footnotesize
     \begin{columns}[c]
     \begin{column}{.42\textwidth}
         \begin{center}
-        \includegraphics[width=\textwidth, height=.66\textheight, keepaspectratio]%
+        \includegraphics[width=\textwidth, height=.48\textheight, keepaspectratio]%
             {assets/arm-in-soc.png}
         \end{center}
     \end{column}
     \begin{column}{.54\textwidth}
         ARM is \alert{fabless}: it designs processor cores and licenses the design to others. It owns no chip factory itself.
-        \vspace{2mm}
-        \begin{description}
+        \vspace{0.5mm}
+        \begin{description}\itemsep0pt
             \item [\textbf{Core licence}]  A chip maker puts an ARM core into its own design, then adds its own memory, peripherals, and analog circuits (ST, NXP, Microchip, Nordic, \ldots).
             \item [\textbf{Architecture licence}] A company designs its \emph{own} core that still runs the ARM instruction set. Fewer than ten such licences exist. Apple's M-series is one example.
         \end{description}
-        \vspace{2mm}
-        {\small On your bench: ARM designed the \alert{Cortex-M4 core}. \alert{ST} added the flash, SRAM, GPIO, timers, ADC, and UART around it. The finished product is the \textbf{STM32F446RE}.}
+        \vspace{0.5mm}
+        {\footnotesize On your bench: ARM designed the \alert{Cortex-M4 core}. \alert{ST} added the flash, SRAM, GPIO, timers, ADC, and UART around it. The finished product is the \textbf{STM32F446RE}.}
     \end{column}
     \end{columns}
-    \vspace{2mm}
+    \vspace{0.5mm}
     \begin{block}{The hierarchy to keep straight}
-        {\small \textbf{ARM} defines the instruction-set architecture and licenses cores. \textbf{Cortex} names families of processor cores built around it. For embedded systems, the family we use is \alert{Cortex-M}.}
+        {\footnotesize \textbf{ARM} defines the instruction-set architecture and licenses cores. \textbf{Cortex} names families of processor cores built around it. For embedded systems, the family we use is \alert{Cortex-M}.}
     \end{block}
 \end{frame}
 
@@ -1143,7 +1143,7 @@ int z = x + y;    // at 0x2004
     \leavevmode
     Four names are easy to confuse: ARM, Cortex-M4, STM32, Nucleo. Each name is a different layer of the same stack.
 
-    \vspace{3mm}
+    \vspace{1mm}
     \begin{center}
     \begin{tikzpicture}[node distance=4mm]
         \node[blk,    minimum width=88mm] (arm)    {\textbf{ARM} --- defines and licenses the architecture and processor IP};
@@ -1154,7 +1154,7 @@ int z = x + y;    // at 0x2004
     \end{tikzpicture}
     \end{center}
 
-    \vspace{2mm}
+    \vspace{1mm}
     {\small\centering Every slide from here on sits at one of these four levels. Keeping them separate is the best way to avoid confusing ``ARM,'' ``the chip,'' and ``the board.''\par}
 \end{frame}
 }
