@@ -19,7 +19,9 @@
 \RequirePackage{styles/lstlangarm}
 \RequirePackage{styles/lstcommon}
 
-\lstset{basicstyle=\small\ttfamily}
+% keepspaces=true: without it a listing box is cut short and the text below
+% overlaps its last line (seen with tab-indented asm listings).
+\lstset{basicstyle=\small\ttfamily, keepspaces=true}
 
 % Slide-only keys. Redefining the empty `codebase' hook from lstcommon makes
 % armasm and arminst pick these up too.

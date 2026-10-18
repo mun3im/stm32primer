@@ -574,7 +574,7 @@ skip	SUBS   r2, #1
 	than one place. Rather than copying them, place them in one block and
 	\alert{call} that block whenever it is needed.}
 
-	\vspace{3mm}
+	\vspace{1mm}
 	\begin{cc}
 uint32_t read_gpioport(void) {
     return GPIOA->IDR;
@@ -587,13 +587,13 @@ uint32_t read_gpioport(void) {
 uint32_t state = read_gpioport();
 	\end{cc}
 
-	\vspace{2mm}
+	\vspace{0mm}
 	{\small The same idea applies in assembly: the instructions that read the
 	port live in one place, and the program branches there whenever the
 	value is needed --- with one new requirement. A subroutine must
 	\alert{return to the instruction after the call}.}
 
-	\vspace{2mm}
+	\vspace{1mm}
 	\begin{block}{This is how assembly actually shows up in real firmware}
 		Almost nobody writes a whole project in assembly. The usual pattern
 		is \alert{C code --- \texttt{main()} and everything it calls ---
