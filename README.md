@@ -9,7 +9,7 @@ chapter of the course book. They cover the ARM Cortex-M4 on the STM32F446RE
 
 | Path | What it is |
 |---|---|
-| `stm01.pdf` ... `stm14.pdf` | The built slides, ready to use. This folder holds only the PDFs (and this README). |
+| `Slides/stm01.pdf` ... `Slides/stm14.pdf` | The built slides, ready to use. The `Slides/` folder holds only the PDFs. |
 | `src/stm01.tex` ... `src/stm14.tex` | The slide sources. One deck per chapter. |
 | `src/styles/` | The Flux beamer theme (`navy` style, a deep dark blue added to `beamercolorthemeflux.sty`) and the code-listing setup. |
 | `src/styles/stmcommon.sty` | The preamble every deck loads: fonts, the `navy` theme choice, packages, colours and the TikZ block styles. |
@@ -55,7 +55,7 @@ pdflatex stm02.tex
 You need a TeX Live installation with `beamer`, `tikz`, `listings` and the
 `roboto` and `beramono` fonts. Run the command from `src/`,
 because the decks load `styles/` and `assets/` by relative path. The PDF is
-written next to the source. Copy it up to the repository root to publish it.
+written next to the source. `make` also copies it to `Slides/`.
 
 ## How a deck is organised
 
