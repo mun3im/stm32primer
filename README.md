@@ -9,14 +9,14 @@ chapter of the course book. They cover the ARM Cortex-M4 on the STM32F446RE
 
 | Path | What it is |
 |---|---|
-| `stm01.tex` ... `stm14.tex` | The slide sources. One deck per chapter. |
-| `stm01.pdf` ... `stm14.pdf` | The built slides, ready to use. |
-| `styles/` | The Flux beamer theme (`navy` style, a deep dark blue added to `styles/beamercolorthemeflux.sty`) and the code-listing setup. |
-| `styles/lstlangarm.sty` | The ARM assembly language for `listings` (vendor file, unchanged). |
-| `styles/stmcommon.sty` | The preamble every deck loads: fonts, the `navy` theme choice, packages, colours and the TikZ block styles. |
-| `styles/lstcommon.sty` | Listing settings shared with the book: C as the default language, `language=ARM`, and the `armasm` and `arminst` styles. |
-| `styles/lstslides.sty` | Slide-only part: colours, font size, the `myc` style and the `asm` and `cc` listing environments. |
-| `assets/` | The images and figures the decks include. |
+| `stm01.pdf` ... `stm14.pdf` | The built slides, ready to use. This folder holds only the PDFs (and this README). |
+| `src/stm01.tex` ... `src/stm14.tex` | The slide sources. One deck per chapter. |
+| `src/styles/` | The Flux beamer theme (`navy` style, a deep dark blue added to `beamercolorthemeflux.sty`) and the code-listing setup. |
+| `src/styles/stmcommon.sty` | The preamble every deck loads: fonts, the `navy` theme choice, packages, colours and the TikZ block styles. |
+| `src/styles/lstcommon.sty` | Listing settings shared with the book: C as the default language, `language=ARM`, and the `armasm` and `arminst` styles. |
+| `src/styles/lstslides.sty` | Slide-only part: colours, font size, the `myc` style and the `asm` and `cc` listing environments. |
+| `src/styles/lstlangarm.sty` | The ARM assembly language for `listings` (vendor file, unchanged). |
+| `src/assets/` | All the images and figures the decks include. |
 
 Only the files needed to read and rebuild the slides are here.
 
@@ -24,36 +24,38 @@ Only the files needed to read and rebuild the slides are here.
 
 | Deck | Pages | Chapter |
 |---|---|---|
-| `stm01` | 52 | From Digital Systems to Microcontrollers |
-| `stm02` | 53 | The ARM Cortex-M4 Programmer's Model |
+| `stm01` | 61 | From Digital Systems to Microcontrollers |
+| `stm02` | 58 | The ARM Cortex-M4 Programmer's Model |
 | `stm03` | 40 | Memory, Addressing and Pointers |
-| `stm04` | 23 | Embedded C and CMSIS |
-| `stm05` | 49 | ARM Assembly Fundamentals |
-| `stm06` | 36 | Data Processing |
-| `stm07` | 46 | Control Flow, Functions and the Stack |
-| `stm08` | 26 | General Purpose Input Output |
-| `stm09` | 30 | Interrupts and Event-Driven Programming |
-| `stm10` | 33 | Timers, Timing and PWM |
-| `stm11` | 14 | ADC and Analog Interfacing |
-| `stm12` | 23 | UART Communication |
-| `stm13` | 19 | Synchronous Serial Interfaces: SPI and I²C |
-| `stm14` | 19 | Designing, Building and Verifying an Embedded System |
+| `stm04` | 42 | Embedded C and CMSIS |
+| `stm05` | 52 | ARM Assembly Fundamentals |
+| `stm06` | 44 | Data Processing |
+| `stm07` | 54 | Control Flow, Functions and the Stack |
+| `stm08` | 35 | General Purpose Input Output |
+| `stm09` | 48 | Interrupts and Event-Driven Programming |
+| `stm10` | 53 | Timers, Timing and PWM |
+| `stm11` | 32 | ADC and Analog Interfacing |
+| `stm12` | 34 | UART Communication |
+| `stm13` | 42 | Synchronous Serial Interfaces: SPI and I²C |
+| `stm14` | 45 | Designing, Building and Verifying an Embedded System |
 
 Page counts include the section-divider pages that beamer inserts.
 
 ## Build
 
-Each deck is a standalone file. Compile it twice so the table of contents
-resolves:
+Each deck is a standalone file in `src/`. Compile it from there, twice, so the
+table of contents resolves:
 
 ```bash
+cd src
 pdflatex stm02.tex
 pdflatex stm02.tex
 ```
 
 You need a TeX Live installation with `beamer`, `tikz`, `listings` and the
-`roboto` and `beramono` fonts. Run the command from the repository root,
-because the decks load `styles/` and `assets/` by relative path.
+`roboto` and `beramono` fonts. Run the command from `src/`,
+because the decks load `styles/` and `assets/` by relative path. The PDF is
+written next to the source. Copy it up to the repository root to publish it.
 
 ## How a deck is organised
 
