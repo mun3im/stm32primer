@@ -9,7 +9,8 @@ chapter of the course book. They cover the ARM Cortex-M4 on the STM32F446RE
 
 | Path | What it is |
 |---|---|
-| `Slides/stm01.pdf` ... `Slides/stm14.pdf` | The built slides, ready to use. The `Slides/` folder holds only the PDFs. |
+| `Slides/stm01.pdf` ... `Slides/stm14.pdf` | The built slides, ready to use. The `Slides/` folder holds only the PDFs and its own `README.md`. |
+| `Slides/README.md` | The list of decks, with chapter titles and page counts. |
 | `src/stm01.tex` ... `src/stm14.tex` | The slide sources. One deck per chapter. |
 | `src/styles/` | The Flux beamer theme (`navy` style, a deep dark blue added to `beamercolorthemeflux.sty`) and the code-listing setup. |
 | `src/styles/stmcommon.sty` | The preamble every deck loads: fonts, the `navy` theme choice, packages, colours and the TikZ block styles. |
@@ -23,24 +24,7 @@ Only the files needed to read and rebuild the slides are here.
 
 ## Decks
 
-| Deck | Pages | Chapter |
-|---|---|---|
-| `stm01` | 61 | From Digital Systems to Microcontrollers |
-| `stm02` | 58 | The ARM Cortex-M4 Programmer's Model |
-| `stm03` | 40 | Memory, Addressing and Pointers |
-| `stm04` | 42 | Embedded C and CMSIS |
-| `stm05` | 52 | ARM Assembly Fundamentals |
-| `stm06` | 44 | Data Processing |
-| `stm07` | 54 | Control Flow, Functions and the Stack |
-| `stm08` | 35 | General Purpose Input Output |
-| `stm09` | 48 | Interrupts and Event-Driven Programming |
-| `stm10` | 53 | Timers, Timing and PWM |
-| `stm11` | 32 | ADC and Analog Interfacing |
-| `stm12` | 34 | UART Communication |
-| `stm13` | 42 | Synchronous Serial Interfaces: SPI and I²C |
-| `stm14` | 45 | Designing, Building and Verifying an Embedded System |
-
-Page counts include the section-divider pages that beamer inserts.
+The decks, their chapters and page counts are listed in [`Slides/README.md`](Slides/README.md).
 
 ## Build
 
