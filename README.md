@@ -17,6 +17,7 @@ chapter of the course book. They cover the ARM Cortex-M4 on the STM32F446RE
 | `src/styles/lstslides.sty` | Slide-only part: colours, font size, the `myc` style and the `asm` and `cc` listing environments. |
 | `src/styles/lstlangarm.sty` | The ARM assembly language for `listings` (vendor file, unchanged). |
 | `src/assets/` | All the images and figures the decks include. |
+| `src/OVERLEAF.md` | How to rebuild the slides on Overleaf. |
 
 Only the files needed to read and rebuild the slides are here.
 
