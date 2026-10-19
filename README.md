@@ -1,4 +1,4 @@
-# stm32slides
+# stm32primer
 
 Beamer slide decks for **SKEE3223**, *Introduction to ARM Cortex-M
 Microprocessors* (Universiti Teknologi Malaysia). There is one deck for each
