@@ -4,7 +4,7 @@ Every `lstlisting` in the book with more than five non-blank lines, copied exact
 `c/` holds C (`.c`), `arm/` holds ARM assembly (`.s`). Files are numbered in the order they appear in the chapter.
 Many are fragments that rely on surrounding text (for example, a function without `main`); each file's header says so and gives the source line.
 
-Regenerate after editing the book with `python3 tools/extract_snippets.py`; it updates files in place. Listings come from `chapterN.tex` and `appendix.tex` in the current release's source folder.
+Listings come from `chapterN.tex` and `appendix.tex` in the current release's source folder.
 
 | Folder | File | Caption |
 |---|---|---|
