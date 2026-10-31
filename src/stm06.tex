@@ -129,8 +129,7 @@ STR   R1, [R0]          ; write back
 
         \vspace{1mm}
         \begin{cc}
-total = a + b - c;
-        \end{cc}
+total = a + b - c;        \end{cc}
     \end{column}
     \begin{column}{.5\textwidth}
         \textbf{In assembly}
@@ -146,8 +145,7 @@ total = a + b - c;
 	ADD  R3, R0, R1 ; R3 = a + b
 	SUB  R3, R3, R2 ; R3 = (a+b) - c
 	LDR  R4, =total
-	STR  R3, [R4]
-        \end{asm}
+	STR  R3, [R4]        \end{asm}
     \end{column}
     \end{columns}
 

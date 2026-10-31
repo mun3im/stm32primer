@@ -250,15 +250,19 @@ HERE    B    HERE            ; infinite loop to halt
     {\small Take \texttt{c = a + b}, with all three variables in memory and
     \texttt{R1} already holding the base address of the block that contains
     them:}
+        \begin{cc}
+	c = a + b;
+\end{cc}
 
-    \vspace{2mm}
+\begin{center}
+	$\downarrow$
+\end{center}
     \begin{center}
-    \begin{asm}[basicstyle=\footnotesize\ttfamily]
+    \begin{asm}[basicstyle=\small\ttfamily]
 	LDR   R0, [R1]        ; load a  (memory -> register)
 	LDR   R2, [R1, #4]    ; load b  (memory -> register)
 	ADD   R0, R0, R2      ; process (register + register)
-	STR   R0, [R1, #8]    ; store c (register -> memory)
-    \end{asm}
+	STR   R0, [R1, #8]    ; store c (register -> memory) \end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -321,8 +325,7 @@ HERE    B    HERE            ; infinite loop to halt
         \begin{cc}
 int f(int a, int b) {
     return a + b;
-}
-        \end{cc}
+}        \end{cc}
 
         \vspace{2mm}
         {\footnotesize Arguments arrive in \texttt{R0} and \texttt{R1} by
@@ -334,8 +337,7 @@ int f(int a, int b) {
         \vspace{1mm}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
 	ADD   R0, R0, R1
-	BX    LR
-        \end{asm}
+	BX    LR        \end{asm}
 
         \vspace{3mm}
         {\small Same addition. \alert{Two instructions} instead of four.}
@@ -357,7 +359,7 @@ int f(int a, int b) {
 
 \begin{frame}{The Load and Store Family}
     \begin{center}
-    {\small
+    {\normalsize
     \striped
     \begin{tabular}{@{}l l R{.50\textwidth}@{}}
         \toprule
@@ -391,7 +393,7 @@ int f(int a, int b) {
     \end{center}
 
     \vspace{1mm}
-    {\small \textbf{Left:} \texttt{LDR R1, [R0]} with \texttt{R0 = 0x40020014}
+    {\small \textbf{Left:} \texttt{LDR R1, [R0]} with \texttt{R0 = 0x20000100}
     and memory bytes \texttt{EE FF C0 00}. Little-endian: the lowest-address
     byte becomes the \alert{least-significant} byte, giving
     \texttt{R1 = 0x00C0FFEE}.}
@@ -432,18 +434,16 @@ int f(int a, int b) {
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-	MOV  R0, #0x11223344
-	STRB R0, [R1]
-        \end{asm}
+	LDR  R0, =0x11223344
+	STRB R0, [R1]        \end{asm}
 
         \vspace{2mm}
         {\small Stores only \texttt{0x44}. The upper 24 bits are ignored.}
     \end{column}
     \begin{column}{.48\textwidth}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-	MOV  R0, #0x12345678
-	STRH R0, [R1]
-        \end{asm}
+	LDR  R0, =0x12345678
+	STRH R0, [R1]        \end{asm}
 
         \vspace{2mm}
         {\small Stores only \texttt{0x5678}. The upper 16 bits are ignored.}
@@ -453,7 +453,7 @@ int f(int a, int b) {
 
 \begin{frame}{Common Memory Access Instructions}
     \begin{center}
-    {\small
+    {\normalsize
     \striped
     \begin{tabular}{@{}l l l l@{}}
         \toprule
@@ -539,9 +539,9 @@ int f(int a, int b) {
     \begin{columns}[T]
     \begin{column}{.52\textwidth}
 \begin{asm}[basicstyle=\ttfamily\small]
-LDR   R0, [R1]
-LDRB  R2, [R1]
-LDRSB R3, [R1]
+	LDR   R0, [R1]
+	LDRB  R2, [R1]
+	LDRSB R3, [R1]
 \end{asm}
     \end{column}
     \begin{column}{.44\textwidth}
@@ -608,8 +608,8 @@ LDRSB R3, [R1]
 
         \vspace{3mm}
         \begin{block}{Seen in a disassembly}
-            {\small \texttt{ADD R0, R1, R2} --- 16-bit Thumb\\
-            \texttt{ADD R8, R9, R10} --- 32-bit Thumb-2}
+            {\small \texttt{ADDS R0, R1, R2} --- 16-bit Thumb\\
+            \texttt{ADDS R8, R9, R10} --- 32-bit Thumb-2}
 
             \vspace{1mm}
             {\small Same operation, but \alert{double} the Flash footprint.}
@@ -709,8 +709,7 @@ LDRSB R3, [R1]
 	MOV R0, R1       ; R0 = R1
 	MOV R0, #25      ; R0 = 25
 	MVN R0, #0       ; R0 = 0xFFFFFFFF
-	MVN R0, R1       ; R0 = ~R1  (one's complement)
-    \end{asm}
+	MVN R0, R1       ; R0 = ~R1  (one's complement)    \end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -730,8 +729,7 @@ LDRSB R3, [R1]
     \vspace{2mm}
     \begin{center}
     \begin{asm}[basicstyle=\large\ttfamily]
-	LDR R0, =0x40020014
-    \end{asm}
+	LDR R0, =0x40020014    \end{asm}
     \end{center}
 
     \vspace{3mm}
@@ -762,11 +760,10 @@ LDRSB R3, [R1]
 
     \vspace{2mm}
     \begin{center}
-    \begin{asm}[basicstyle=\footnotesize\ttfamily]
+    \begin{asm}[basicstyle=\small\ttfamily]
 ; build 0x40020014 (GPIOA->ODR), one halfword at a time
 	MOVW R0, #0x0014   ; R0 = 0x00000014, high half cleared
-	MOVT R0, #0x4002   ; R0 = 0x40020014, high half set, low half kept
-    \end{asm}
+	MOVT R0, #0x4002   ; R0 = 0x40020014, high half set, low half kept    \end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -789,8 +786,7 @@ LDRSB R3, [R1]
     \begin{asm}[basicstyle=\normalsize\ttfamily]
 	MOVW R3, #0x0014
 	MOVT R3, #0x4002   ; "R3 is being given a 32-bit address"
-	LDR  R2, [R3]      ; "...and now something is read through it"
-    \end{asm}
+	LDR  R2, [R3]      ; "...and now something is read through it"    \end{asm}
     \end{center}
 
     \vspace{3mm}
@@ -832,20 +828,18 @@ LDRSB R3, [R1]
 
         \vspace{1mm}
         \begin{cc}
-int c;
-c = a + b;
-        \end{cc}
+	int c;
+	c = a + b;        \end{cc}
 
         \vspace{3mm}
         \textbf{The listing}
 
         \vspace{1mm}
-        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+        \begin{asm}[basicstyle=\normalsize\ttfamily]
 	LDR  R3, [R7, #4]
 	LDR  R2, [R7, #8]
 	ADD  R3, R3, R2
-	STR  R3, [R7, #12]
-        \end{asm}
+	STR  R3, [R7, #12]        \end{asm}
     \end{column}
     \begin{column}{.5\textwidth}
         \textbf{Reading it back}
@@ -873,7 +867,7 @@ c = a + b;
 
 \begin{frame}{One Operation, Viewed at Five Levels}
     \begin{center}
-    {\small
+    {\normalsize
     \striped
     \begin{tabular}{@{}l R{.65\textwidth}@{}}
         \toprule
@@ -989,10 +983,10 @@ c = a + b;
 			\def\memx{5.2}
 			\def\memy{3.0}
 			\foreach \i/\val/\addr in {%
-				0/{0xEE}/{0x40020014},
-				1/{0xFF}/{0x40020015},
-				2/{0xC0}/{0x40020016},
-				3/{0x00}/{0x40020017}}{
+				0/{0xEE}/{0x20000100},
+				1/{0xFF}/{0x20000101},
+				2/{0xC0}/{0x20000102},
+				3/{0x00}/{0x20000103}}{
 				\pgfmathsetmacro{\y}{\memy-\i*\rh}
 				\draw[draw=accentline, fill=accentfill, thick]
 				(\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
@@ -1023,7 +1017,7 @@ c = a + b;
 		\end{tikzpicture}%\
 	}
 	\begin{itemize}
-		\item Assume R0 = 0x40020014, and the \alert{memory word} at 0x40020014 holds 0x00C0FFEE.
+		\item Assume R0 = 0x20000100, and the \alert{memory word} at 0x20000100 holds 0x00C0FFEE.
 		\item After \texttt{LDR R1, [R0]} runs, the destination register R1 holds 0x00C0FFEE.
 	\end{itemize}
 
@@ -1064,10 +1058,10 @@ c = a + b;
 
 			% --- Memory: 2 bytes, low address on top (LSB) ---
 			\foreach \i/\val/\addr/\written in {%
-				0/{0xEE}/{0x40020014}/1,
-				1/{0xFF}/{0x40020015}/1,
-				2/{0xC0}/{0x40020016}/0,
-				3/{0x00}/{0x40020017}/0}{
+				0/{0xEE}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/1,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
 				\pgfmathsetmacro{\y}{\memy-\i*\rh}
 				\ifnum\written=1
 				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
@@ -1105,7 +1099,7 @@ c = a + b;
 	\vspace{4mm}
 
 	\begin{itemize}
-		\item Assume R0 = 0x40020014, and the \alert{memory halfword} at 0x40020014 holds 0xFFEE.
+		\item Assume R0 = 0x20000100, and the \alert{memory halfword} at 0x20000100 holds 0xFFEE.
 		\item After \texttt{LDRH R1, [R0]} runs, the lower halfword of R1 holds 0xFFEE, and the top halfword is \alert{cleared}.
 	\end{itemize}
 \end{frame}
@@ -1143,10 +1137,10 @@ c = a + b;
 			% --- Memory: 1 byte ---
 			% --- Memory: only the low byte overwritten, others keep their old value ---
 			\foreach \i/\val/\addr/\written in {%
-				0/{0xEE}/{0x40020014}/1,
-				1/{0xFF}/{0x40020015}/0,
-				2/{0xC0}/{0x40020016}/0,
-				3/{0x00}/{0x40020017}/0}{
+				0/{0xEE}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/0,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
 				\pgfmathsetmacro{\y}{\memy-\i*\rh}
 				\ifnum\written=1
 				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
@@ -1183,7 +1177,7 @@ c = a + b;
 	\vspace{4mm}
 
 	\begin{itemize}
-		\item Assume R0 = 0x40020014, and the \alert{memory byte} at 0x40020014 holds 0xEE.
+		\item Assume R0 = 0x20000100, and the \alert{memory byte} at 0x20000100 holds 0xEE.
 		\item After \texttt{LDRB R1, [R0]} runs, the lowest byte of R1 holds 0xEE, and the remaining bytes are \alert{cleared}.
 	\end{itemize}
 \end{frame}
@@ -1223,10 +1217,10 @@ c = a + b;
 
 			% --- Memory: 2 bytes, same halfword 0xFF80 as LDRH (bit 15 = 1) ---
 			\foreach \i/\val/\addr/\written in {%
-				0/{0xEE}/{0x40020014}/1,
-				1/{0xFF}/{0x40020015}/1,
-				2/{0xC0}/{0x40020016}/0,
-				3/{0x00}/{0x40020017}/0}{
+				0/{0xEE}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/1,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
 				\pgfmathsetmacro{\y}{\memy-\i*\rh}
 				\ifnum\written=1
 				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
@@ -1264,7 +1258,7 @@ c = a + b;
 	\vspace{4mm}
 
 	\begin{itemize}
-		\item Assume R0 = 0x40020014, and the \alert{memory halfword} at 0x40020014 holds 0xEEFF.
+		\item Assume R0 = 0x20000100, and the \alert{memory halfword} at 0x20000100 holds 0xEEFF.
 		\item After \texttt{LDRH R1, [R0]} runs, the lower halfword of R1 holds 0xFFEE, and the top halfword holds the sign bit of the loaded halfword.
 	\end{itemize}
 \end{frame}
@@ -1304,10 +1298,10 @@ c = a + b;
 
 			% --- Memory: 1 byte, same source byte 0x80 as LDRB (bit 7 = 1) ---
 			\foreach \i/\val/\addr/\written in {%
-				0/{0xEE}/{0x40020014}/1,
-				1/{0xFF}/{0x40020015}/0,
-				2/{0xC0}/{0x40020016}/0,
-				3/{0x00}/{0x40020017}/0}{
+				0/{0xEE}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/0,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
 				\pgfmathsetmacro{\y}{\memy-\i*\rh}
 				\ifnum\written=1
 				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
@@ -1345,7 +1339,7 @@ c = a + b;
 	\vspace{4mm}
 
 	\begin{itemize}
-		\item Assume R0 = 0x40020014, and the \alert{memory byte} at 0x40020014 holds 0xEE.
+		\item Assume R0 = 0x20000100, and the \alert{memory byte} at 0x20000100 holds 0xEE.
 		\item After \texttt{LDRSB R1, [R0]} runs, the lowest byte of R1 holds 0xEE, and the remaining bytes hold the sign bit of the loaded byte.
 	\end{itemize}
 \end{frame}
@@ -1363,7 +1357,7 @@ c = a + b;
 		STR   R0, [R1]    ; store 32-bit word
 	\end{verbatim}
 	\centering
-	{\small\itshape Before: R1 = 0x11223344, \quad [0x40020014] = 0x00C0FFEE\par}
+	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
 	\vspace{2mm}
 	\resizebox{0.92\textwidth}{!}{%
 		\begin{tikzpicture}[x=10mm, y=8mm]
@@ -1378,10 +1372,10 @@ c = a + b;
 
 			% --- Memory: all four bytes overwritten, low address on top (LSB) ---
 			\foreach \i/\val/\addr in {%
-				0/{0x44}/{0x40020014},
-				1/{0x33}/{0x40020015},
-				2/{0x22}/{0x40020016},
-				3/{0x11}/{0x40020017}}{
+				0/{0x44}/{0x20000100},
+				1/{0x33}/{0x20000101},
+				2/{0x22}/{0x20000102},
+				3/{0x11}/{0x20000103}}{
 				\pgfmathsetmacro{\y}{\memy-\i*\rh}
 				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
 				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
@@ -1423,7 +1417,7 @@ c = a + b;
 		STRH R0, [R1]
 	\end{verbatim}
 	\centering
-	{\small\itshape Before: R1 = 0x11223344, \quad [0x40020014] = 0x00C0FFEE\par}
+	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
 	\vspace{2mm}
 	\resizebox{0.92\textwidth}{!}{%
 		\begin{tikzpicture}[x=10mm, y=8mm]
@@ -1448,10 +1442,10 @@ c = a + b;
 
 			% --- Memory: low 2 bytes overwritten, high 2 bytes keep their old value ---
 			\foreach \i/\val/\addr/\written in {%
-				0/{0x44}/{0x40020014}/1,
-				1/{0x33}/{0x40020015}/1,
-				2/{0xC0}/{0x40020016}/0,
-				3/{0x00}/{0x40020017}/0}{
+				0/{0x44}/{0x20000100}/1,
+				1/{0x33}/{0x20000101}/1,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
 				\pgfmathsetmacro{\y}{\memy-\i*\rh}
 				\ifnum\written=1
 				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
@@ -1487,8 +1481,8 @@ c = a + b;
 		\end{tikzpicture}%
 	}
 	\begin{itemize}
-		\item Assume R0 = 0x40020014, R1 = 0x11223344.
-		\item After \texttt{STRH R1, [R0]} runs, the \alert{memory halfword} at 0x40020014 holds 0x4433.
+		\item Assume R0 = 0x20000100, R1 = 0x11223344.
+		\item After \texttt{STRH R1, [R0]} runs, the \alert{memory halfword} at 0x20000100 holds 0x4433.
 	\end{itemize}
 \end{frame}
 }
@@ -1505,7 +1499,7 @@ c = a + b;
 		STRB R0, [R1]
 	\end{verbatim}
 	\centering
-	{\small\itshape Before: R1 = 0x11223344, \quad [0x40020014] = 0x00C0FFEE\par}
+	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
 	\vspace{2mm}
 	\resizebox{0.92\textwidth}{!}{%
 		\begin{tikzpicture}[x=10mm, y=8mm]
@@ -1530,10 +1524,10 @@ c = a + b;
 
 			% --- Memory: only the low byte overwritten, others keep their old value ---
 			\foreach \i/\val/\addr/\written in {%
-				0/{0x44}/{0x40020014}/1,
-				1/{0xFF}/{0x40020015}/0,
-				2/{0xC0}/{0x40020016}/0,
-				3/{0x00}/{0x40020017}/0}{
+				0/{0x44}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/0,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
 				\pgfmathsetmacro{\y}{\memy-\i*\rh}
 				\ifnum\written=1
 				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
@@ -1568,7 +1562,7 @@ c = a + b;
 		\end{tikzpicture}%
 	}
 	\begin{itemize}
-		\item After \texttt{STRB R1, [R0]} runs, the \alert{memory byte} at 0x40020014 holds 0x44.
+		\item After \texttt{STRB R1, [R0]} runs, the \alert{memory byte} at 0x20000100 holds 0x44.
 	\end{itemize}
 \end{frame}
 }

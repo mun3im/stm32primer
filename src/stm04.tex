@@ -51,7 +51,7 @@
 %===============================================================================
 
 \begin{frame}{Why This Chapter Matters}
-    \begin{columns}[T]
+    \begin{columns}[c]
     \begin{column}{.47\textwidth}
         {\normalsize This chapter joins the two halves of the book. You know C. You know how the processor and memory are organized. Now we connect them: a C variable becomes a register, a C structure becomes a peripheral, and one assignment becomes a voltage on a pin. This is where hardware first moves.}
     \end{column}
@@ -250,7 +250,7 @@ STR   R2, [SP, #8]   ; store z
 
 \begin{frame}{Principles of Good Embedded C}
     \begin{center}
-    {\small
+    {
     \striped
     \begin{tabular}{@{}l R{.62\textwidth}@{}}
         \toprule
@@ -273,7 +273,7 @@ STR   R2, [SP, #8]   ; store z
 
 \begin{frame}{What CMSIS Is}
     \leavevmode
-    {\small \textbf{C}ortex \textbf{M}icrocontroller \textbf{S}oftware
+    { \textbf{C}ortex \textbf{M}icrocontroller \textbf{S}oftware
     \textbf{I}nterface \textbf{S}tandard. This is ARM's layer between
     your C code and the silicon. It works the same way across
     different chip vendors.}
@@ -314,7 +314,7 @@ STR   R2, [SP, #8]   ; store z
 
     \vspace{2mm}
     \begin{center}
-    {\small
+    {
     \striped
     \begin{tabular}{@{}l R{.66\textwidth}@{}}
         \toprule
@@ -337,9 +337,9 @@ STR   R2, [SP, #8]   ; store z
 %===============================================================================
 
 \begin{frame}[fragile]{A Peripheral as a Struct}
-    \begin{columns}[T]
+    \begin{columns}[c]
     \begin{column}{.46\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
 typedef struct {
   __IO uint32_t MODER;
   __IO uint32_t OTYPER;
@@ -376,14 +376,14 @@ typedef struct {
 
     \vspace{2mm}
     \begin{center}
-    {\small
+    {
     \striped
     \begin{tabular}{@{}l l l R{.3\textwidth}@{}}
         \toprule
         \textbf{Qualifier} & \textbf{Access} & \textbf{Defined as} & \textbf{Example} \\
         \midrule
-        \texttt{\_\_I}  & read-only  & \texttt{volatile const} & \texttt{IDR}: set by outside signals \\
-        \texttt{\_\_O}  & write-only & \texttt{volatile}       & \texttt{BSRR}: a trigger \\
+        \texttt{\_\_I}  & read-only  & \texttt{volatile const} & suits \texttt{IDR}: set by hardware \\
+        \texttt{\_\_O}  & write-only & \texttt{volatile}       & suits \texttt{BSRR}: a trigger \\
         \texttt{\_\_IO} & read/write & \texttt{volatile}       & \texttt{MODER}, \texttt{ODR} \\
         \bottomrule
     \end{tabular}}
@@ -391,7 +391,7 @@ typedef struct {
 
     \vspace{3mm}
     \begin{block}{Every one of them includes \texttt{volatile}}
-        Writing to a read-only register is a \alert{compile-time error}. The reason for \texttt{volatile} is explained in the next section.
+        Writing to a \texttt{\_\_I} member is a \alert{compile-time error}. ST's header is looser: it declares every GPIO register \texttt{\_\_IO}, even \texttt{IDR} and \texttt{BSRR}. The reason for \texttt{volatile} is explained in the next section.
     \end{block}
 \end{frame}
 
@@ -425,7 +425,7 @@ typedef struct {
 \begin{frame}[fragile]{From Name to Address}
     \begin{columns}[c]
     \begin{column}{.48\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
 #define GPIOA_BASE  0x40020000UL
 
 #define GPIOA \
@@ -514,8 +514,8 @@ typedef struct {
         \textbf{1. Caching a value in a register}
 
         \vspace{1mm}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
-while ((*status & 1) == 0)
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
+while ((*status & (1U << 5)) == 0)
     ;   // waits forever without
         // volatile
 \end{lstlisting}
@@ -528,7 +528,7 @@ while ((*status & 1) == 0)
         \textbf{2. Discarding a ``redundant'' write}
 
         \vspace{1mm}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
 *reg = 1;
 *reg = 0;   // without volatile the
             // first write is deleted
@@ -760,7 +760,7 @@ GPIOA->MODER |= (1U << 10);   // want 01
 
 \begin{frame}{The Four Bit Operations}
     \begin{center}
-    {\small
+    {
     \striped
     \begin{tabular}{@{}l l l@{}}
         \toprule
@@ -793,7 +793,7 @@ GPIOA->MODER |= (1U << 10);   // want 01
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
         \textbf{Test a bit}
-\begin{cc}[basicstyle=\ttfamily\footnotesize]
+\begin{cc}[basicstyle=\ttfamily\normalsize]
 if ((GPIOC->IDR & (1U << 13)) == 0) {
     // PC13 is LOW:
     // the button is pressed
@@ -803,7 +803,7 @@ if ((GPIOC->IDR & (1U << 13)) == 0) {
     \end{column}
     \begin{column}{.48\textwidth}
         \textbf{Busy-wait on a flag}
-\begin{cc}[basicstyle=\ttfamily\footnotesize]
+\begin{cc}[basicstyle=\ttfamily\normalsize]
 while (!(USART1->SR & (1U << 7))) {
     // wait until the transmit
     // register is empty
@@ -816,7 +816,7 @@ while (!(USART1->SR & (1U << 7))) {
 
 \begin{frame}{One Register Write, Viewed at Four Levels}
     \begin{center}
-    {\small
+    {\normalsize
     \striped
     \begin{tabular}{@{}l R{.6\textwidth}@{}}
         \toprule
@@ -825,14 +825,14 @@ while (!(USART1->SR & (1U << 7))) {
         Physical hardware & The output latch and push-pull driver for pin PA5 \\
         Register & \texttt{GPIOA\_ODR} bit 5, at address \texttt{0x40020014} \\
         C & \texttt{GPIOA->ODR |= (1U \shl\ 5);} \\
-        Machine code & Three Thumb-2 encodings stored in Flash \\
+        Machine code & About four Thumb-2 encodings in Flash \\
         \bottomrule
     \end{tabular}}
     \end{center}
 
     \vspace{3mm}
     \begin{block}{One row is deliberately missing}
-        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. The next part of the course fills in that row.
+        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. The next three chapters fill in that row.
     \end{block}
 \end{frame}
 
@@ -842,9 +842,9 @@ while (!(USART1->SR & (1U << 7))) {
 %===============================================================================
 
 \begin{frame}[fragile]{A Complete Bare-Metal Program}
-    \begin{columns}[T]
+    \begin{columns}[c]
     \begin{column}{.56\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\normalsize]
 #include "stm32f446xx.h"
 
 int main(void)
@@ -918,7 +918,7 @@ int main(void)
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
         \textbf{A hosted program (on a PC)}
-\begin{cc}[basicstyle=\ttfamily\footnotesize]
+\begin{cc}[basicstyle=\ttfamily\normalsize]
 #include <stdio.h>
 
 int main(void) {
@@ -930,7 +930,7 @@ int main(void) {
     \end{column}
     \begin{column}{.48\textwidth}
         \textbf{A bare-metal program}
-\begin{cc}[basicstyle=\ttfamily\footnotesize]
+\begin{cc}[basicstyle=\ttfamily\normalsize]
 int main(void) {
     // setup: runs once
     //   clocks, pins, peripherals
