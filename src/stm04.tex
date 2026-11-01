@@ -319,7 +319,7 @@ STR   R2, [SP, #8]   ; store z
     \end{columns}
 
     \vspace{2mm}
-    {\small You need just one header: \texttt{\#include "stm32f446xx.h"}}
+    {\small You need just one header: \texttt{\#include "stm32f4xx.h"}, with \texttt{STM32F446xx} defined in the project settings.}
 \end{frame}
 
 \begin{frame}{The CMSIS Components}
@@ -927,7 +927,7 @@ while (!(USART1->SR & (1U << 7))) {
     \begin{columns}[c]
     \begin{column}{.56\textwidth}
 \begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
-#include "stm32f446xx.h"
+#include "stm32f4xx.h"
 
 int main(void)
 {
