@@ -82,7 +82,7 @@
     \end{center}
 
     \vspace{4mm}
-    \begin{block}{The one fact to carry out of this chapter}
+    \begin{block}{The one fact to remember from this chapter}
         \alert{The CPU has no special instruction for ``turn on an LED''.}
 
         \vspace{2mm}
@@ -144,12 +144,12 @@
 
 \begin{frame}{What Is the CPU?}
     \begin{itemize}\itemsep6pt
-        \item The CPU is the \alert{brain} of the computer. It works by
-              executing a \alert{program}.
+        \item The CPU runs the \alert{program}. The program tells it
+              what to do.
         \item \textbf{Program}: a sequence of instructions that performs
               a task.
             \begin{itemize}
-                \item Think of running a program like \alert{playing music}.
+                \item The CPU runs the instructions \alert{one after another}.
             \end{itemize}
         \item \textbf{Instruction}: a binary code for the simplest
               operation the processor can perform.
@@ -182,7 +182,7 @@
         \begin{itemize}\itemsep1pt
             \item Contents survive with \alert{no power}
             \item Holds the program: fixed at manufacture, or
-                  ``burned'' with a programmer
+                  ``written with a programmer
             \item \textbf{Flash} is the dominant type: NAND or NOR
             \item STM32 devices use \alert{NOR flash} for code
         \end{itemize}
@@ -873,11 +873,11 @@
 \section{Inside the CPU}
 %===============================================================================
 
-\begin{frame}{Two Halves: Execution Logic and Registers}{Roadmap: the factory behind the highways}
+\begin{frame}{Two Halves: Execution Logic and Registers}{Roadmap: inside the CPU}
     \leavevmode
-    {\small The buses are highways; the CPU is a \alert{factory}. It has a
-    \alert{receiving dock} (registers that face memory) and an
-    \alert{assembly line} (decoder, control unit, ALU).}
+    {\small The buses carry data to and from the CPU. Inside the CPU,
+    some \alert{registers face memory}. The \alert{decoder, control
+    unit, and ALU} do the work.}
 
     \vspace{3mm}
     \begin{center}

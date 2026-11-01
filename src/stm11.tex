@@ -15,7 +15,7 @@
 \begin{frame}{Why This Chapter Matters}
     \begin{columns}[T]
     \begin{column}{.47\textwidth}
-        {\normalsize Temperature, light, sound and force are continuous. A processor works only with numbers. The ADC crosses that gap. Using it well is an engineering problem: how fast to sample, how much resolution you need, and how much of the answer you can trust.}
+        {\normalsize Temperature, light, sound and force are continuous. A processor works only with numbers. The ADC connects these two worlds. Using it well is an engineering problem: how fast to sample, how much resolution you need, and how much of the answer you can trust.}
     \end{column}
     \begin{column}{.51\textwidth}
         \begin{block}{After this chapter, you can:}
@@ -95,7 +95,7 @@ voltage = ((float)raw * 3.3f) / 4095.0f;
         $2^{12} = 4096$ levels, \alert{0 to 4095}.}
 
         \vspace{2mm}
-        {\small The error is up to half a step --- inherent, not a defect.}
+        {\small The error is up to half a step. This is normal, not a defect.}
     \end{column}
     \end{columns}
 
@@ -401,7 +401,7 @@ while (1) {
     \end{center}
 
     \vspace{2mm}
-    {\small With the ADC at 16\,MHz, a 12-bit conversion takes 12 cycles plus the sampling time. Budget: 62.5\,\textmu s per sample (16\,kHz audio).}
+    {\small The ADC clock is \texttt{PCLK2} divided by at least 2: \alert{8\,MHz} at the default 16\,MHz. A 12-bit conversion takes 12 cycles plus the sampling time. Budget: 62.5\,\textmu s per sample (16\,kHz audio).}
 
     \vspace{1mm}
     \begin{center}
@@ -411,8 +411,8 @@ while (1) {
         \toprule
         \textbf{Sampling time} & \textbf{Cycles} & \textbf{$t_{\text{conv}}$} & \textbf{Share of 62.5\,\textmu s} \\
         \midrule
-        Shortest & $3 + 12 = 15$ & 0.94\,\textmu s & 1.5\% \\
-        Longest  & $480 + 12 = 492$ & 30.75\,\textmu s & \alert{about half} \\
+        Shortest & $3 + 12 = 15$ & 1.875\,\textmu s & 3\% \\
+        Longest  & $480 + 12 = 492$ & 61.5\,\textmu s & \alert{98\%} \\
         \bottomrule
     \end{tabular}}
     \end{center}
@@ -478,8 +478,8 @@ while (1) {
         Sampling & a held voltage & too slow for the signal; aliasing \\
         Quantization & an integer, 0--4095 & step size sets the floor on resolution \\
         Raw code & \texttt{0x136} & reference is not exactly 3.3\,V \\
-        Scaling & 0.2497\,V & float arithmetic, wrong constants \\
-        Engineering value & 24.97\,\textdegree C & calibration never applied \\
+        Scaling & 0.2498\,V & float arithmetic, wrong constants \\
+        Engineering value & 24.98\,\textdegree C & calibration never applied \\
         Reported measurement & ``25\,\textdegree C $\pm$ 0.5'' & quoted to more digits than justified \\
         \bottomrule
     \end{tabular}}
@@ -497,7 +497,7 @@ while (1) {
             {\small The smallest change the ADC can \alert{tell apart}.}
 
             \vspace{1mm}
-            {\small 12-bit: $3.3/4096 \approx 0.8$~mV.}
+            {\small 12-bit: $3.3/4095 \approx 0.8$~mV.}
         \end{block}
 
         \vspace{2mm}
@@ -628,7 +628,7 @@ float read_temperature_c(void) {
         Hardware    & Sample-and-hold capacitor; 12-cycle SAR comparison \\
         Register    & \texttt{ADC1->DR} contains \texttt{0x7C0} \\
         C           & \texttt{voltage = raw * 3.3f / 4095.0f;} \\
-        Engineering & 1.599~V, or 159.9~\textdegree{}C from an LM35 \\
+        Engineering & 1.599~V at the wiper; an LM35's 0.250~V scales to 25.0~\textdegree{}C \\
         \bottomrule
     \end{tabular}}
     \end{center}

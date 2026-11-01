@@ -385,6 +385,149 @@ endif
     \texttt{MOV} --- never zero, never both.\par}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{Greater Than, Less Than}{\texttt{BLE} and \texttt{BGE}: branch on the opposite}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \textbf{\texttt{if (x > y)}}
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
+if (x > y) {
+    z = x - y;
+}
+        \end{cc}
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+     CMP   R0, R1    ; x vs y
+     BLE   endif     ; x <= y: skip
+     SUB   R2, R0, R1
+endif
+        \end{asm}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \textbf{\texttt{if (x < y)}}
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
+if (x < y) {
+    x = y;
+}
+        \end{cc}
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+     CMP   R0, R1    ; x vs y
+     BGE   endif     ; x >= y: skip
+     MOV   R0, R1    ; x = y
+endif
+        \end{asm}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{The branch asks the opposite question}
+        \texttt{x > y} skips when \texttt{x <= y}, so \alert{\texttt{BLE}}.
+        \texttt{x < y} skips when \texttt{x >= y}, so \alert{\texttt{BGE}}.
+        Both are \alert{signed} branches.
+    \end{block}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}[fragile]{\texttt{if-else} with \texttt{BLE}}{The larger of two values}
+    \begin{columns}[T]
+    \begin{column}{.4\textwidth}
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
+if (x > y)
+    max = x;
+else
+    max = y;
+        \end{cc}
+    \end{column}
+    \begin{column}{.56\textwidth}
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+     CMP   R0, R1     ; x vs y
+     BLE   elsepart   ; x <= y: else
+
+     MOV   R2, R0     ; max = x
+     B     endif      ; skip else
+
+elsepart
+     MOV   R2, R1     ; max = y
+
+endif
+        \end{asm}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{Same pattern as \texttt{BNE}}
+        The conditional branch jumps to the else-block. The
+        unconditional branch skips it. Only the condition code changes.
+    \end{block}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}{Every Other \texttt{B\{cc\}} in Three Notes}
+    \begin{enumerate}\itemsep3mm
+        \item \alert{Branch on the opposite.} Write the C condition,
+              then branch on its opposite. The opposite pairs are
+              \texttt{EQ}/\texttt{NE}, \texttt{GT}/\texttt{LE},
+              \texttt{GE}/\texttt{LT}, \texttt{HI}/\texttt{LS}, and
+              \texttt{HS}/\texttt{LO}.
+        \item \alert{Read the name.} \texttt{G} is greater, \texttt{L} is
+              less, \texttt{T} is than, \texttt{E} is or equal. So
+              \texttt{BLE} is ``branch if less than or equal''. For
+              unsigned data, \texttt{HI} is higher, \texttt{LO} is lower,
+              \texttt{S} is same.
+        \item \alert{The data type picks the family.} Signed data uses
+              \texttt{GT}, \texttt{GE}, \texttt{LT}, \texttt{LE}.
+              Unsigned data uses \texttt{HI}, \texttt{HS}, \texttt{LO},
+              \texttt{LS}.
+    \end{enumerate}
+    \vspace{3mm}
+    \begin{block}{You now have all of Table~7.1}
+        No separate example is needed for each condition code.
+    \end{block}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}[fragile]{Signed or Unsigned?}{Same \texttt{CMP}, different branch}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \textbf{Signed: temperature}
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
+if (temp >= 50) {
+    alarm = 1;
+}
+        \end{cc}
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+     CMP   R0, #50
+     BLT   endif     ; temp < 50
+     MOV   R1, #1    ; alarm = 1
+endif
+        \end{asm}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \textbf{Unsigned: ADC reading}
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
+if (adc > 2048) {
+    high = 1;
+}
+        \end{cc}
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+     CMP   R0, #2048
+     BLS   endif     ; adc <= 2048
+     MOV   R1, #1    ; high = 1
+endif
+        \end{asm}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{The data type decides the family}
+        An ADC reading is never negative, so it is \texttt{uint16\_t}
+        and the compiler uses \alert{\texttt{BLS}}, not \texttt{BLE}.
+    \end{block}
+\end{frame}
+}
+
 \begin{frame}[fragile]{The \texttt{while} Construct}
     \begin{itemize}
         \item Implements both the \alert{while} and \alert{for} keywords in C
@@ -411,7 +554,7 @@ for (i = 1; i <= 5; i++)
 		MOV   r0, #0
 		MOV   r1, #1
 loop
- 	   CMP   r0, #5
+ 	   CMP   r1, #5    ; r1 holds i
  	   BGT   done
  	   ADD   r0, r0, r1
  	   ADD   r1, r1, #1
@@ -436,7 +579,7 @@ done
     \begin{columns}[T]
     \begin{column}{.46\textwidth}
         \begin{cc}
-int x = 0x5555;   // input
+unsigned int x = 0x5555;   // input
 int c = 0;
 for (; x != 0; x >>= 1)
     if (x & 1)
@@ -558,6 +701,59 @@ loop
         matter.
     \end{block}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Counting Loops with \texttt{BGE} and \texttt{BLE}}{Leave the loop on the opposite condition}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        \textbf{\texttt{for} loop: leave on \texttt{BGE}}
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
+sum = 0;
+for (i = 0; i < n; i++) {
+    sum = sum + i;
+}
+        \end{cc}
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+     MOV   R2, #0     ; sum
+     MOV   R0, #0     ; i
+loop
+     CMP   R0, R1     ; i vs n
+     BGE   done       ; i >= n
+     ADD   R2, R2, R0
+     ADD   R0, R0, #1
+     B     loop
+done
+        \end{asm}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        \textbf{Countdown: leave on \texttt{BLE}}
+        \begin{cc}[basicstyle=\footnotesize\ttfamily]
+sum = 0;
+while (n > 0) {
+    sum = sum + n;
+    n--;
+}
+        \end{cc}
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+     MOV   R1, #0     ; sum
+loop
+     CMP   R0, #0     ; n vs 0
+     BLE   done       ; n <= 0
+     ADD   R1, R1, R0
+     SUB   R0, R0, #1
+     B     loop
+done
+        \end{asm}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{Test at the top}
+        Both loops test before the body, so a loop with
+        \texttt{n = 0} does not run at all.
+    \end{block}
+\end{frame}
+}
 
 \begin{frame}[fragile]{Worked Example: Find Maximum}
     \begin{itemize}
@@ -728,7 +924,7 @@ uint32_t state = read_gpioport();
 				{
 					\Large
 					\begin{tabular}{@{}l@{}}
-						\texttt{~MOVW R1,\#0x0014}\\
+						\texttt{~MOVW R1,\#0x0010}\\
 						\texttt{~MOVT R1,\#0x4002}\\
 						\texttt{~LDR\ \ R0,[R1]}
 					\end{tabular}
@@ -780,7 +976,7 @@ uint32_t state = read_gpioport();
 	\vspace{2mm}
 	\begin{asm}[basicstyle=\small\ttfamily]
 read_gpioport
-		MOVW  R1, #0x0014   ; GPIOA_IDR low half
+		MOVW  R1, #0x0010   ; GPIOA_IDR low half
 		MOVT  R1, #0x4002   ; GPIOA_IDR high half
 		LDR   R0, [R1]      ; read GPIO input register
 		BX    LR            ; return, with result in R0
@@ -910,7 +1106,7 @@ foo
     \end{columns}
 
     \vspace{3mm}
-\begin{block}{Same convention, more work inside} \texttt{a*2} is the shift-instead-of-multiply trick from Chapter~6 --- the calling convention changes nothing about how the body is optimised. \texttt{R0} still carries the argument in and the result out, exactly as \texttt{read\_bit} showed; only the number of instructions in between has grown. \end{block}
+\begin{block}{Same convention, more work inside} \texttt{a*2} is the shift-instead-of-multiply method from Chapter~6 --- the calling convention changes nothing about how the body is optimised. \texttt{R0} still carries the argument in and the result out, exactly as \texttt{read\_bit} showed; only the number of instructions in between has grown. \end{block}
 \end{frame}
 
 \begin{frame}[fragile]{The Internals Can Change Without the Caller Knowing}
@@ -945,7 +1141,7 @@ loop
 \begin{frame}[fragile]{A Faster \texttt{popcount}: Same Signature}
     \leavevmode
     {\small One loop iteration per \alert{bit position} --- 32 in the worst
-    case. A well-known trick does better: \texttt{x \& (x - 1)} clears the
+    case. A well-known method does better: \texttt{x \& (x - 1)} clears the
     \alert{lowest set bit}, so the loop runs once per 1 bit, not once per
     position.}
 
@@ -1246,7 +1442,7 @@ ProcessData
 
     \vspace{3mm}
     \begin{block}{A return in disguise}
-        This pattern appears in a lot of compiler output. When you read a disassembly, treat \alert{\texttt{POP \{..., PC\}}} as a return.
+        This pattern appears often in compiler output. When you read a disassembly, treat \alert{\texttt{POP \{..., PC\}}} as a return.
     \end{block}
 \end{frame}
 
@@ -1607,17 +1803,17 @@ int weighted_sum(int a, int b,
 }
 \end{cc}
         \vspace{1mm}
-        {\small The first four arguments use \texttt{R0}--\texttt{R3}. The caller pushes the rest. The AAPCS keeps the stack \alert{8-byte aligned} at every call.}
+        {\small The first four arguments use \texttt{R0}--\texttt{R3}. The caller puts the rest on the stack. The AAPCS keeps the stack \alert{8-byte aligned} at every call.}
     \end{column}
     \begin{column}{.6\textwidth}
 \begin{asm}[basicstyle=\ttfamily\scriptsize]
 ; Caller: a..d already in R0-R3
-    PUSH  {R4}         ; align stack to 8 bytes
-    LDR   R4, =e_value
-    LDR   R4, [R4]
-    PUSH  {R4}         ; the fifth argument, e
+    SUB   SP, SP, #8   ; reserve 8 bytes: stays aligned
+    LDR   R12, =e_value ; R12 is scratch
+    LDR   R12, [R12]
+    STR   R12, [SP]    ; the fifth argument, e
     BL    weighted_sum
-    ADD   SP, SP, #8   ; caller cleans up
+    ADD   SP, SP, #8   ; caller releases it
 
 weighted_sum
     ADD   R0, R0, R1   ; a + b
@@ -1702,7 +1898,7 @@ done
         Register            & \texttt{R0}, \texttt{R1} carry the arguments; \texttt{LR} holds the return address \\
         C                   & \texttt{sum = AddNumbers(5, 10);} \\
         Assembly (call)     & \texttt{MOV R0, \#5} / \texttt{MOV R1, \#10} / \texttt{BL AddNumbers} \\
-        Assembly (callee)   & \texttt{PUSH \{LR\}} \ldots \texttt{POP \{PC\}} \\
+        Assembly (callee)   & \texttt{ADD R0, R0, R1} / \texttt{BX LR} (a leaf: LR is never saved) \\
         \bottomrule
     \end{tabular}}
     \end{center}

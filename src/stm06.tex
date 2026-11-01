@@ -31,7 +31,7 @@
 \begin{frame}[fragile]{Why This Chapter Matters}
     \begin{columns}[T]
     \begin{column}{.47\textwidth}
-        {\normalsize Every peripheral is controlled by setting and clearing single bits inside a 32-bit register, without disturbing neighbouring bits. Load, modify, store back: this is the most common pattern in embedded firmware. This chapter builds it from instructions. You will then know exactly what \verb+GPIOA->MODER |= (1U << 10)+ executes, and why.}
+        {\normalsize Every peripheral is controlled by setting and clearing single bits inside a 32-bit register, without changing neighbouring bits. Load, modify, store back: this is the most common pattern in embedded firmware. This chapter builds it from instructions. You will then know exactly what \verb+GPIOA->MODER |= (1U << 10)+ executes, and why.}
     \end{column}
     \begin{column}{.51\textwidth}
         \begin{block}{After this chapter, you can:}
@@ -129,8 +129,7 @@ STR   R1, [R0]          ; write back
 
         \vspace{1mm}
         \begin{cc}
-total = a + b - c;
-        \end{cc}
+total = a + b - c;        \end{cc}
     \end{column}
     \begin{column}{.5\textwidth}
         \textbf{In assembly}
@@ -146,8 +145,7 @@ total = a + b - c;
 	ADD  R3, R0, R1 ; R3 = a + b
 	SUB  R3, R3, R2 ; R3 = (a+b) - c
 	LDR  R4, =total
-	STR  R3, [R4]
-        \end{asm}
+	STR  R3, [R4]        \end{asm}
     \end{column}
     \end{columns}
 
@@ -811,7 +809,7 @@ total = 4 * a + b;
 \end{block}
 \end{frame}
 
-\begin{frame}[fragile]{Syntax Cheat Sheet}
+\begin{frame}[fragile]{Syntax Summary}
     \begin{columns}[b]
     \begin{column}{0.48\textwidth}
         \textbf{1. Simple offset}

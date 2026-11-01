@@ -15,7 +15,7 @@
 \begin{frame}{Why This Chapter Matters}
     \begin{columns}[T]
     \begin{column}{.47\textwidth}
-        {\normalsize Chapter~4 blinked an LED in C. Chapters~5--7 showed what that program became: load, mask, store, branch. This chapter closes the loop. The same \texttt{MODER}/\texttt{ODR} pattern is the base of every peripheral in this book. A GPIO pin is the simplest bridge between software and the physical world.}
+        {\normalsize Chapter~4 blinked an LED in C. Chapters~5--7 showed what that program became: load, mask, store, branch. This chapter brings both views together. The same \texttt{MODER}/\texttt{ODR} pattern is the basis of every peripheral in this book. A GPIO pin is the simplest link between software and the physical world.}
     \end{column}
     \begin{column}{.51\textwidth}
         \begin{block}{After this chapter, you can:}
@@ -77,7 +77,7 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
 
 \begin{frame}[plain]{Inside a GPIO Pin}
     \begin{center}
-    \includegraphics[width=.86\textwidth, height=.66\textheight, keepaspectratio]%
+    \includegraphics[width=.86\textwidth, height=.75\textheight, keepaspectratio]%
         {assets/gpio-pin.pdf}
     \end{center}
 
@@ -164,7 +164,7 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
 
 \begin{frame}{The Register Set}
     \begin{center}
-    {\small
+    {\normalsize
     \striped
     \begin{tabular}{@{}l l R{.50\textwidth}@{}}
         \toprule
@@ -174,8 +174,8 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
         \texttt{OTYPER}  & 1 & Output type: push-pull or open-drain \\
         \texttt{OSPEEDR} & 2 & Output slew rate \\
         \texttt{PUPDR}   & 2 & Pull-up, pull-down, or neither \\
-        \texttt{IDR}     & 1 & \alert{Input} data --- read the pin \\
-        \texttt{ODR}     & 1 & \alert{Output} data --- drive the pin \\
+        \texttt{IDR}     & 1 & {Input} data --- read the pin \\
+        \texttt{ODR}     & 1 & {Output} data --- drive the pin \\
         \texttt{BSRR}    & 2 & Atomic bit set / reset \\
         \texttt{AFR[2]}  & 4 & Which alternate function (Chapter 10) \\
         \bottomrule
@@ -183,11 +183,13 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
     \end{center}
 
     \vspace{2mm}
-    \begin{block}{Bits per pin tells you how to build the mask}
-        One bit wide: mask \texttt{1}, at position $n$.
-        Two bits wide: mask \texttt{3}, at position $2n$.
-        Four bits wide: mask \texttt{0xF}, at position $4n$.
-    \end{block}
+\begin{block}{Mask width and bit position}
+	1-bit field: mask \texttt{1}, shifted by $n$.
+
+	2-bit field: mask \texttt{3}, shifted by $2n$.
+
+	4-bit field: mask \texttt{0xF}, shifted by $4n$.
+\end{block}
 \end{frame}
 
 \begin{frame}[plain]{\texttt{MODER} --- Selecting the Mode}
@@ -269,8 +271,8 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
     \end{column}
     \begin{column}{.5\textwidth}
         {\ttfamily\footnotesize
-        GPIOA->BSRR = (1U << 5);~~~~~~// PA5 on \\
-        GPIOA->BSRR = (1U << (5+16));~// PA5 off}
+        GPIOA->BSRR = (1U <{<} 5);~~~~~~// PA5 on \\
+        GPIOA->BSRR = (1U <{<} (5+16));~// PA5 off}
 
         \vspace{2mm}
         {\small One \alert{write}, no read. Note the \texttt{=} instead of
@@ -328,8 +330,28 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
 
 
 %===============================================================================
-\section{Peripheral Clock Gating}
+\section{Enabling the GPIO Port}
 %===============================================================================
+
+{\beamerextras
+	\begin{frame}{Enabling a GPIO Pin: The Conceptual Steps}
+		\begin{center}
+			\begin{tikzpicture}[x=10mm, y=9mm]
+				\node[blk, minimum width=58mm, minimum height=6mm, inner sep=1.5pt, font=\scriptsize] (n0) at (0,0.00) {1. Enable the port's clock (\texttt{RCC->AHBxENR})};
+				\node[blk, minimum width=58mm, minimum height=6mm, inner sep=1.5pt, font=\scriptsize] (n1) at (0,-1.1) {2. Set the pin's mode in \texttt{MODER} (input / output / AF / analog)};
+				\node[blk, minimum width=58mm, minimum height=6mm, inner sep=1.5pt, font=\scriptsize] (n2) at (0,-2.2) {3. If output: choose type in \texttt{OTYPER} (push-pull / open-drain)};
+				\node[blk, minimum width=58mm, minimum height=6mm, inner sep=1.5pt, font=\scriptsize] (n3) at (0,-3.3) {4. If needed: set pull resistor in \texttt{PUPDR} (none / up / down)};
+				\node[cpublk, minimum width=58mm, minimum height=6mm, inner sep=1.5pt, font=\scriptsize] (n4) at (0,-4.4) {5. Use the pin: write \texttt{ODR}/\texttt{BSRR}, or read \texttt{IDR}};
+				\foreach \a/\b in {0/1,1/2,2/3,3/4}{\draw[flow] (n\a) -- (n\b);}
+			\end{tikzpicture}
+		\end{center}
+
+		\vspace{2mm}
+		\begin{block}{Order matters}
+			Step 1 must come first: a peripheral with no clock \alert{ignores every write}. Steps 2--4 configure the pin \emph{before} it is ever touched in the main loop --- step 5 only ever reads or writes \texttt{IDR}/\texttt{ODR}/\texttt{BSRR} once setup is done.
+		\end{block}
+	\end{frame}
+}
 
 \begin{frame}[plain]{Peripheral Clock Gating}
     \begin{center}
@@ -358,9 +380,11 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
     \begin{columns}[T]
     \begin{column}{.5\textwidth}
         \textbf{With \texttt{ODR}}
-\begin{cc}[basicstyle=\ttfamily\scriptsize]
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
 #include "stm32f4xx.h"
-void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
+void delay_ms(uint32_t ms) {
+    for (uint32_t i=0;i<ms*4000;i++) __NOP();
+}
 int main(void) {
     RCC->AHB1ENR |= (1U << 0);
     GPIOA->MODER &= ~(3U << 10);
@@ -376,9 +400,11 @@ int main(void) {
     \end{column}
     \begin{column}{.46\textwidth}
         \textbf{With \texttt{BSRR}}
-\begin{cc}[basicstyle=\ttfamily\scriptsize]
+\begin{cc}[basicstyle=\ttfamily\footnotesize]
 #include "stm32f4xx.h"
-void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
+void delay_ms(uint32_t ms) {
+    for (uint32_t i=0;i<ms*4000;i++) __NOP();
+}
 int main(void) {
     RCC->AHB1ENR |= (1U << 0);
     GPIOA->MODER &= ~(3U << 10);
@@ -467,7 +493,7 @@ int main(void) {
 
     \vspace{2mm}
     {\small The button is \alert{active low}: pressed reads \texttt{0}.
-    When released, the $\sim$40~k$\Omega$ pull-up holds the pin HIGH.
+    When released, a pull-up holds the pin HIGH (the Nucleo has one on the board; the code adds the $\sim$40~k$\Omega$ internal one).
     When pressed, the switch gives a low-resistance path to ground.
     That path wins.}
 \end{frame}
@@ -486,7 +512,7 @@ int main(void) {
 
 \begin{frame}[plain]{Experiment 4: Why a Button Needs Debouncing}
     \begin{center}
-    \includegraphics[width=.82\textwidth, height=.56\textheight, keepaspectratio]%
+    \includegraphics[width=.9\textwidth, height=.56\textheight, keepaspectratio]%
         {assets/keybounce.pdf}
     \end{center}
 
@@ -600,14 +626,90 @@ int main(void) {
 		GPIOA->BSRR = (1U << (5+16));   // acknowledge
 		delay_ms(1000);
 	}
-}
-	\end{cc}
+}	\end{cc}
 
 	{\small This measurement is only as accurate as \texttt{delay\_ms},
 		a calibrated software loop. Its timing shifts with compiler
 		optimization and clock speed. \alert{A hardware counter would make it
 			exact.}}
 \end{frame}
+
+% stm08_todo.tex -- unreviewed slide material dropped during the
+% 2026-10-07 sync of stm08.tex to chapter 8.
+%
+% See CLAUDE.md section "The book is the superset" for the parking rule.
+% NOT part of any build.
+%
+% Reason dropped: this experiment is not in chapter 8. Chapter 8 numbers
+% its Experiment 5 as "A Four-Bit Binary Counter". Knight Rider is a
+% popular variant of the same idea -- promote to the book at the next
+% edition, or discard.
+
+{\beamerextras
+\begin{frame}[fragile]{Experiment 6: Knight Rider LED Chaser}
+	\begin{cc}[basicstyle=\ttfamily\scriptsize]
+#include "stm32f4xx.h"
+void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
+
+int main(void) {
+	RCC->AHB1ENR |= (1U << 1);      // enable GPIOB clock
+	GPIOB->MODER &= ~(0xFFFFU);     // clear PB0..PB7
+	GPIOB->MODER |=  (0x5555U);     // PB0..PB7 as outputs (01 each)
+
+	int pos = 0, dir = 1;
+	while (1) {
+		GPIOB->BSRR = (0xFFU << 16);   // all eight LEDs off
+		GPIOB->BSRR = (1U << pos);     // light only the current one
+
+		if (pos == 7 || pos == 0) dir = -dir;  // bounce at the ends
+		pos += dir;
+
+		delay_ms(80);
+	}
+}	\end{cc}
+
+	\vspace{0.5mm}
+	\begin{block}{One lit bit, walking back and forth}
+		Only one output pin is ever high at a time; everything else is
+		cleared first with a single \alert{atomic} \texttt{BSRR} write,
+		then the new bit is set with a second write. \texttt{pos} does
+		the work a hardware shift register would do in an all-analogue
+		version of this circuit --- flipping \texttt{dir} at each end
+		turns a shift into a \alert{bounce}.
+	\end{block}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}[fragile]{GPIO Init: Inputs with Pull-Ups and Outputs}
+	\begin{cc}[basicstyle=\ttfamily\scriptsize]
+void GPIO_Init(void)
+{
+    /* Enable GPIOA and GPIOC clocks */
+    RCC->AHB1ENR |= (1U << 0) | (1U << 2);
+
+    /* Configure PA1 and PA2 as inputs */
+    GPIOA->MODER &= ~((3U << 2) | (3U << 4));
+
+    /* Enable internal pull-up resistors for PA1 and PA2 */
+    GPIOA->PUPDR &= ~((3U << 2) | (3U << 4));
+    GPIOA->PUPDR |=  ((1U << 2) | (1U << 4));
+
+    /* Configure PC0-PC7 as outputs */
+    GPIOC->MODER &= ~0x0000FFFFU;
+    GPIOC->MODER |=  0x00005555U;
+}	\end{cc}
+
+	\vspace{0.5mm}
+	\begin{block}{Two pins, one register, same pattern}
+		PA1 and PA2 each need a \alert{clear-then-set} on two \texttt{MODER}
+		bits and two \texttt{PUPDR} bits --- clearing first avoids OR-ing
+		into whatever the reset value left behind. PC0--PC7 is the same
+		idea done for eight pins at once: one 16-bit clear mask, one
+		16-bit set mask, instead of eight separate two-bit edits.
+	\end{block}
+\end{frame}
+}
 
 \begin{frame}[plain]{Experiment 7: A Seven-Segment Display}
     \begin{columns}[c]
@@ -684,6 +786,68 @@ int main(void) {
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{A Lookup Table for a 7-Segment Display}
+	\begin{cc}[basicstyle=\ttfamily\scriptsize]
+void Display_7Segment(uint8_t number)
+{
+    const uint8_t segment[10] =
+    {
+        0x3F,  /* 0 */
+        0x06,  /* 1 */
+        0x5B,  /* 2 */
+        0x4F,  /* 3 */
+        0x66,  /* 4 */
+        0x6D,  /* 5 */
+        0x7D,  /* 6 */
+        0x07,  /* 7 */
+        0x7F,  /* 8 */
+        0x6F   /* 9 */
+    };
+
+    GPIOC->ODR = (GPIOC->ODR & ~0xFFU) | segment[number];
+}	\end{cc}
+
+	\vspace{0.5mm}
+	\begin{block}{Trading logic for memory}
+		Each byte in \texttt{segment[]} is a precomputed bit pattern for
+		the seven segments, driven on the same PC0--PC7 bus just set up
+		as outputs. The \texttt{\&\ \textasciitilde{}0xFF} / OR pattern
+		touches only the low byte of \texttt{ODR}, so any other pins on
+		port C stay untouched --- the same \alert{read-modify-write}
+		discipline used everywhere else in this chapter.
+	\end{block}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}{Segment Mapping for \texttt{Display\_7Segment}}
+	\begin{columns}[c]
+		\begin{column}{.5\textwidth}
+			\begin{itemize}
+				\item PC0 $\rightarrow$ a
+				\item PC1 $\rightarrow$ b
+				\item PC2 $\rightarrow$ c
+				\item PC3 $\rightarrow$ d
+				\item PC4 $\rightarrow$ e
+				\item PC5 $\rightarrow$ f
+				\item PC6 $\rightarrow$ g
+				\item PC7 $\rightarrow$ decimal point (dp)
+			\end{itemize}
+		\end{column}
+		\begin{column}{.5\textwidth}
+			\begin{block}{Why this matters}
+				This mapping is what makes the \texttt{segment[]} table
+				unambiguous: each bit position names one physical segment.
+				The hex patterns assume \alert{active-HIGH} outputs ---
+				correct for a \alert{common-cathode} display, where a '1'
+				sinks current through that segment's LED.
+			\end{block}
+		\end{column}
+	\end{columns}
+\end{frame}
+}
+
 \begin{frame}{Driving a Pin, Viewed at Five Levels}
     \begin{center}
     {\small
@@ -706,58 +870,6 @@ int main(void) {
         This is the first time \alert{every level} of the course model is filled in by something you built yourself. Read it as one chain, from the voltage on the pin up to the C statement.
     \end{block}
 \end{frame}
-
-
-%===============================================================================
-\section{Beamer Extras}
-%===============================================================================
-
-% stm08_todo.tex -- unreviewed slide material dropped during the
-% 2026-10-07 sync of stm08.tex to chapter 8.
-%
-% See CLAUDE.md section "The book is the superset" for the parking rule.
-% NOT part of any build.
-%
-% Reason dropped: this experiment is not in chapter 8. Chapter 8 numbers
-% its Experiment 5 as "A Four-Bit Binary Counter". Knight Rider is a
-% popular variant of the same idea -- promote to the book at the next
-% edition, or discard.
-
-{\beamerextras
-\begin{frame}[fragile]{Experiment 6: Knight Rider LED Chaser}
-	\begin{cc}[basicstyle=\ttfamily\scriptsize]
-		#include "stm32f4xx.h"
-		void delay_ms(uint32_t ms) { for (uint32_t i=0;i<ms*4000;i++) __NOP(); }
-
-		int main(void) {
-			RCC->AHB1ENR |= (1U << 1);      // enable GPIOB clock
-			GPIOB->MODER &= ~(0xFFFFU);     // clear PB0..PB7
-			GPIOB->MODER |=  (0x5555U);     // PB0..PB7 as outputs (01 each)
-
-			int pos = 0, dir = 1;
-			while (1) {
-				GPIOB->BSRR = (0xFFU << 16);   // all eight LEDs off
-				GPIOB->BSRR = (1U << pos);     // light only the current one
-
-				if (pos == 7 || pos == 0) dir = -dir;  // bounce at the ends
-				pos += dir;
-
-				delay_ms(80);
-			}
-		}
-	\end{cc}
-
-	\vspace{0.5mm}
-	\begin{block}{One lit bit, walking back and forth}
-		Only one output pin is ever high at a time; everything else is
-		cleared first with a single \alert{atomic} \texttt{BSRR} write,
-		then the new bit is set with a second write. \texttt{pos} does
-		the work a hardware shift register would do in an all-analogue
-		version of this circuit --- flipping \texttt{dir} at each end
-		turns a shift into a \alert{bounce}.
-	\end{block}
-\end{frame}
-}
 
 
 %===============================================================================

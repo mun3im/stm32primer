@@ -65,7 +65,7 @@ while (1) { __WFI(); }          // sleep until an interrupt
         \midrule
         Who calls the handler? & The vector table and NVIC \\
         Why is \texttt{EXTI15\_10} the name? & EXTI lines are shared \\
-        Why clear \texttt{PR}? & Under the hood: pending flags \\
+        Why clear \texttt{PR}? & How it works: pending flags \\
         What does \texttt{WFI} do? & Interrupts in practice \\
         \bottomrule
     \end{tabular}}
@@ -800,13 +800,13 @@ void EXTI15_10_IRQHandler(void) {
 
     \vspace{3mm}
     \begin{block}{Use the finest tool that works}
-        \texttt{PRIMASK} is blunt: it also delays the urgent handlers. \texttt{BASEPRI} lets you protect a shared variable from a low-priority interrupt without blocking a critical one.
+        \texttt{PRIMASK} blocks everything: it also delays the urgent handlers. \texttt{BASEPRI} lets you protect a shared variable from a low-priority interrupt without blocking a critical one.
     \end{block}
 \end{frame}
 
 
 %===============================================================================
-\section{Under the Hood}
+\section{How It Works Inside}
 %===============================================================================
 
 \begin{frame}{The Exception Stack Frame}

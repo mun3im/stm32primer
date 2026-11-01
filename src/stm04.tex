@@ -51,9 +51,9 @@
 %===============================================================================
 
 \begin{frame}{Why This Chapter Matters}
-    \begin{columns}[T]
+    \begin{columns}[c]
     \begin{column}{.47\textwidth}
-        {\normalsize This chapter joins the two halves of the book. You know C. You know how the processor and memory are organized. Now we connect them: a C variable becomes a register, a C structure becomes a peripheral, and one assignment becomes a voltage on a pin. This is where hardware first moves.}
+        {\normalsize This chapter connects two things you already know: C, and how the processor and memory work. A C variable can be a register. A C structure can be a peripheral. One line of C can set a voltage on a pin. This chapter shows how.}
     \end{column}
     \begin{column}{.51\textwidth}
         \begin{block}{After this chapter, you can:}
@@ -74,7 +74,7 @@
 {\beamerextras
 \begin{frame}[fragile]{The Payoff}{One line, one voltage}
     \leavevmode
-    By the end of this chapter you will know \alert{exactly} how this one line of C changes a voltage on a physical pin:
+    By the end of this chapter, you will know exactly how this one line of C changes a voltage on a physical pin:
 
     \vspace{2mm}
     \begin{center}
@@ -140,16 +140,22 @@ GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
             \alert{instructions}, not C.
 
             \vspace{2mm}
-            Chapters 5--7 exist so this disassembly window is readable,
-            not frightening.
+            Chapters 5--7 teach you to read that disassembly window.
         \end{block}
 
         \vspace{3mm}
         {\small The linker adds \alert{startup code}. It sets the
-        stack pointer, zeroes your global variables, and calls
-        \texttt{main()}, all before any line you wrote runs.}
+        stack pointer, clears your global variables to zero, and calls
+        \texttt{main()}. All of this runs before any line you wrote.}
     \end{column}
     \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{Where this leaves us}
+        The compiler handles the instruction-level detail. We can
+        write most code in C. We use assembly only when we need to
+        read or control what the compiler generated.
+    \end{block}
 \end{frame}
 
 \begin{frame}[fragile]{A C Statement, Compiled}{What the compiler writes for you}
@@ -186,14 +192,21 @@ STR   R2, [SP, #8]   ; store z
 \end{asm}
     \end{column}
     \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{C is translated into instructions}
+        The compiler decides which registers to use, which memory
+        accesses to make, and which instructions to emit. \alert{You
+        write what to do; the compiler writes how to do it.}
+    \end{block}
 \end{frame}
 
 \begin{frame}{Function Calls}
     \leavevmode
-    A \alert{function} is an idea in the C language. The processor has no built-in notion of one.
+    A \alert{function} is an idea in the C language. The processor has no built-in idea of a function.
 
     \vspace{3mm}
-    When one function calls another and later resumes, the compiler uses registers, memory and a \alert{calling convention}. The convention fixes three things:
+    When one function calls another, and later resumes, the compiler uses registers, memory, and a \alert{calling convention}. The convention fixes three things:
 
     \vspace{1mm}
     \begin{center}
@@ -212,7 +225,9 @@ STR   R2, [SP, #8]   ; store z
 
     \vspace{2mm}
     \begin{block}{C and assembly can mix}
-        If both follow the same convention, C can call a function written in assembly, and the reverse. Chapters 5--7 show how.
+        If both follow the same convention, C can call an assembly
+        function, and assembly can call a C function. Chapters 5--7
+        show how.
     \end{block}
 \end{frame}
 
@@ -241,16 +256,15 @@ STR   R2, [SP, #8]   ; store z
 
     \vspace{3mm}
     \begin{block}{What C gives you, and what it does not}
-        C gives you the same hardware access as assembly, with far
-        less bookkeeping. What it does \emph{not} give you is
-        \alert{protection}. There is no runtime check to catch a bad
-        pointer.
+        C gives you the same hardware access as assembly, with much
+        less bookkeeping. C does \emph{not} give you \alert{protection}.
+        There is no runtime check to catch a bad pointer.
     \end{block}
 \end{frame}
 
-\begin{frame}{Principles of Good Embedded C}
+\begin{frame}{Principles of Good Embedded C}{Reference: five habits, not five new ideas}
     \begin{center}
-    {\small
+    {
     \striped
     \begin{tabular}{@{}l R{.62\textwidth}@{}}
         \toprule
@@ -271,9 +285,9 @@ STR   R2, [SP, #8]   ; store z
 \section{The CMSIS Framework}
 %===============================================================================
 
-\begin{frame}{What CMSIS Is}
+\begin{frame}{What CMSIS Is}{Where does the name \texttt{GPIOA} come from?}
     \leavevmode
-    {\small \textbf{C}ortex \textbf{M}icrocontroller \textbf{S}oftware
+    { \textbf{C}ortex \textbf{M}icrocontroller \textbf{S}oftware
     \textbf{I}nterface \textbf{S}tandard. This is ARM's layer between
     your C code and the silicon. It works the same way across
     different chip vendors.}
@@ -314,7 +328,7 @@ STR   R2, [SP, #8]   ; store z
 
     \vspace{2mm}
     \begin{center}
-    {\small
+    {
     \striped
     \begin{tabular}{@{}l R{.66\textwidth}@{}}
         \toprule
@@ -336,10 +350,10 @@ STR   R2, [SP, #8]   ; store z
 \section{The Three Pillars of CMSIS Register Access}
 %===============================================================================
 
-\begin{frame}[fragile]{A Peripheral as a Struct}
-    \begin{columns}[T]
+\begin{frame}[fragile]{Pillar 1: A Peripheral as a Struct}
+    \begin{columns}[c]
     \begin{column}{.46\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
 typedef struct {
   __IO uint32_t MODER;
   __IO uint32_t OTYPER;
@@ -376,22 +390,25 @@ typedef struct {
 
     \vspace{2mm}
     \begin{center}
-    {\small
+    {
     \striped
     \begin{tabular}{@{}l l l R{.3\textwidth}@{}}
         \toprule
         \textbf{Qualifier} & \textbf{Access} & \textbf{Defined as} & \textbf{Example} \\
         \midrule
-        \texttt{\_\_I}  & read-only  & \texttt{volatile const} & \texttt{IDR}: set by outside signals \\
-        \texttt{\_\_O}  & write-only & \texttt{volatile}       & \texttt{BSRR}: a trigger \\
+        \texttt{\_\_I}  & read-only  & \texttt{volatile const} & suits \texttt{IDR}: set by hardware \\
+        \texttt{\_\_O}  & write-only & \texttt{volatile}       & suits \texttt{BSRR}: a trigger \\
         \texttt{\_\_IO} & read/write & \texttt{volatile}       & \texttt{MODER}, \texttt{ODR} \\
         \bottomrule
     \end{tabular}}
     \end{center}
 
     \vspace{3mm}
-    \begin{block}{Every one of them includes \texttt{volatile}}
-        Writing to a read-only register is a \alert{compile-time error}. The reason for \texttt{volatile} is explained in the next section.
+    \begin{block}{Every qualifier includes \texttt{volatile}}
+        Writing to a \texttt{\_\_I} member is a \alert{compile-time
+        error}. ST's header is less strict: it marks every GPIO
+        register \texttt{\_\_IO}, even \texttt{IDR} and \texttt{BSRR}.
+        The next section explains why \texttt{volatile} matters.
     \end{block}
 \end{frame}
 
@@ -422,10 +439,10 @@ typedef struct {
     \end{center}
 \end{frame}
 
-\begin{frame}[fragile]{From Name to Address}
+\begin{frame}[fragile]{Pillar 3: From Name to Address}
     \begin{columns}[c]
     \begin{column}{.48\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
 #define GPIOA_BASE  0x40020000UL
 
 #define GPIOA \
@@ -461,7 +478,7 @@ typedef struct {
     \end{columns}
 \end{frame}
 
-\begin{frame}[plain]{The CMSIS Chain}{Silicon at the bottom, your code at the top}
+\begin{frame}[plain]{The CMSIS Chain}{Hardware at the bottom, your code at the top}
     \begin{center}
     \begin{tikzpicture}[x=8mm, y=6.5mm]
     \foreach \i/\role/\what/\acc in {%
@@ -475,7 +492,7 @@ typedef struct {
               minimum width=76mm, minimum height=8mm, anchor=west,
               font=\scriptsize, inner sep=4pt, align=left] (L\i) at (1.4,\y) {\what};
       \else
-        \node[draw=Gray, fill=Gray!8, thick, rounded corners=2pt,
+        \node[draw=memline, fill=memfill, thick, rounded corners=2pt,
               minimum width=76mm, minimum height=8mm, anchor=west,
               font=\scriptsize, inner sep=4pt, align=left] (L\i) at (1.4,\y) {\what};
       \fi
@@ -493,14 +510,21 @@ typedef struct {
     }
     \node[lbl, anchor=west, text=primary, align=left, font=\scriptsize] at (11.3,0) {silicon};
     \node[lbl, anchor=west, text=primary, align=left, font=\scriptsize] at (11.3,5.5) {what you type};
-    \draw[decorate, decoration={brace, amplitude=4pt}, draw=Gray]
+    \draw[decorate, decoration={brace, amplitude=4pt}, draw=memline]
         (11.0,4.1) -- (11.0,1.35);
     \node[lbl, anchor=west, align=left, font=\scriptsize] at (11.3,2.7)
         {supplied by\\the vendor's\\header file};
     \end{tikzpicture}
     \end{center}
     \vspace{1mm}
-    {\small\centering You only need to think about the top and bottom layers: the hardware exists, and your code names its registers. The two middle layers are a struct and a cast. They are written once, in a header file that you never edit.\par}
+    {\small\centering You only need to think about the top and bottom layers. The hardware exists. Your code names its registers. The two middle layers are a struct and a cast. CMSIS writes them once, in a header file you never edit.\par}
+
+    \vspace{2mm}
+    \begin{block}{A peripheral is a C structure}
+        The structure maps C members to hardware register addresses.
+        We can now access the registers. Next: make sure the compiler
+        does not optimise those accesses away.
+    \end{block}
 \end{frame}
 
 
@@ -508,14 +532,14 @@ typedef struct {
 \section{The volatile Keyword}
 %===============================================================================
 
-\begin{frame}[fragile]{\texttt{volatile}}{Two optimisations it prevents}
+\begin{frame}[fragile]{\texttt{volatile}}{Hardware can change a value the compiler cannot see}
     \begin{columns}[T]
     \begin{column}{.5\textwidth}
         \textbf{1. Caching a value in a register}
 
         \vspace{1mm}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
-while ((*status & 1) == 0)
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
+while ((*status & (1U << 5)) == 0)
     ;   // waits forever without
         // volatile
 \end{lstlisting}
@@ -528,7 +552,7 @@ while ((*status & 1) == 0)
         \textbf{2. Discarding a ``redundant'' write}
 
         \vspace{1mm}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
 *reg = 1;
 *reg = 0;   // without volatile the
             // first write is deleted
@@ -551,6 +575,14 @@ while ((*status & 1) == 0)
         program changes it. For a status register updated by
         hardware, that assumption is wrong.
     \end{block}
+
+    \vspace{2mm}
+    \begin{block}{Hardware can change a value by itself}
+        \texttt{volatile} stops the compiler from assuming a hardware
+        register keeps its old value. We can now access the registers
+        safely. Next: change one bit at a time, not the whole
+        register.
+    \end{block}
 \end{frame}
 
 
@@ -560,9 +592,10 @@ while ((*status & 1) == 0)
 
 \begin{frame}[fragile]{Building a Mask: The Shift}
     \leavevmode
-    Every bit idiom starts with \texttt{1U \shl\ n}. Begin with \texttt{1U}:
-    only bit 0 is set. Shift it left by $n$, and the \alert{only} set
-    bit is now bit $n$. This value is called a \textbf{mask}.
+    Every bit idiom starts with \texttt{1U \shl\ n}. Start with
+    \texttt{1U}: only bit 0 is set. Shift it left by $n$. Now the
+    \alert{only} set bit is bit $n$. This value is called a
+    \textbf{mask}.
 
     \vspace{2mm}
     \begin{center}
@@ -595,9 +628,9 @@ while ((*status & 1) == 0)
 
 \begin{frame}{Why the \texttt{U} Suffix}
     \leavevmode
-    A plain \texttt{1} is signed. Its top bit is the sign bit. C treats
-    signed and unsigned shifts differently, and this difference
-    matters exactly here.
+    A plain \texttt{1} is signed. Its top bit is the sign bit. C
+    treats signed and unsigned shifts differently. This difference
+    matters here.
 
     \vspace{2mm}
     \begin{center}
@@ -697,6 +730,30 @@ while ((*status & 1) == 0)
     {\small\centering \texttt{GPIOA->ODR \^{}= (1U \shl\ 5);} --- the same statement run twice returns the register to its starting value, which is why one line suffices to blink an LED.\par}
 \end{frame}
 
+\begin{frame}{The Four Bit Operations}
+    \begin{center}
+    {
+    \striped
+    \begin{tabular}{@{}l l l@{}}
+        \toprule
+        \textbf{Goal} & \textbf{In C} & \textbf{Compiles to} \\
+        \midrule
+        Set bit $n$    & \texttt{REG |= (1U \shl\ n);}      & \texttt{ORR} \\
+        Clear bit $n$  & \texttt{REG \&= \textasciitilde(1U \shl\ n);} & \texttt{BIC} \\
+        Toggle bit $n$ & \texttt{REG \^{}= (1U \shl\ n);}   & \texttt{EOR} \\
+        Test bit $n$   & \texttt{if (REG \& (1U \shl\ n))}  & \texttt{TST} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{3mm}
+    \begin{block}{Four idioms, one bit at a time}
+        Each of these changes \alert{only the bit you name}. A
+        multi-bit field is different: the bits you want to set may
+        already hold other values.
+    \end{block}
+\end{frame}
+
 \begin{frame}{Multi-Bit Fields: Clear, Then Set}
     \leavevmode
     OR alone cannot clear a bit. Say \texttt{MODER} bits 11:10 read
@@ -753,62 +810,53 @@ GPIOA->MODER |= (1U << 10);   // want 01
 
     \vspace{2mm}
     \visible<2->{\begin{block}{The answer}
-        OR can only turn bits on. \texttt{11} OR \texttt{01} is still \alert{\texttt{11}}: PA5 stays analog. Clear the field first: \texttt{MODER \&= \textasciitilde(3U << 10);}, then OR in \texttt{01}.
+        OR can only turn bits on. \texttt{11} OR \texttt{01} is still \alert{\texttt{11}}: PA5 stays analog. Clear the field first: \texttt{MODER \&= \textasciitilde(3U <{}< 10);}, then OR in \texttt{01}.
     \end{block}}
 \end{frame}
 }
 
-\begin{frame}{The Four Bit Operations}
-    \begin{center}
-    {\small
-    \striped
-    \begin{tabular}{@{}l l l@{}}
-        \toprule
-        \textbf{Goal} & \textbf{In C} & \textbf{Compiles to} \\
-        \midrule
-        Set bit $n$    & \texttt{REG |= (1U \shl\ n);}      & \texttt{ORR} \\
-        Clear bit $n$  & \texttt{REG \&= \textasciitilde(1U \shl\ n);} & \texttt{BIC} \\
-        Toggle bit $n$ & \texttt{REG \^{}= (1U \shl\ n);}   & \texttt{EOR} \\
-        Test bit $n$   & \texttt{if (REG \& (1U \shl\ n))}  & \texttt{TST} \\
-        \bottomrule
-    \end{tabular}}
-    \end{center}
+\begin{frame}{Read--Modify--Write}
+    \leavevmode
+    A peripheral register holds settings for \alert{many} pins. You
+    must keep the bits you are not changing. \texttt{|=} and
+    \texttt{\&=} do this automatically. A plain \texttt{=} would wipe
+    out every other setting.
 
     \vspace{3mm}
-    \begin{block}{Read--modify--write}
-        A peripheral register holds settings for \alert{many} pins.
-        You must keep the bits you are not changing. \texttt{|=} and
-        \texttt{\&=} do this automatically. A plain \texttt{=} would
-        wipe out every other setting.
-    \end{block}
-
-    \vspace{2mm}
     {\small A multi-bit field needs a \alert{mask}: first clear it
     with \texttt{\&= \textasciitilde(3U \shl\ pos)}, then set it with
     \texttt{|= (value \shl\ pos)}. The mask is always ``all ones for this
     field.''}
+
+    \vspace{3mm}
+    \begin{block}{Change only the bits you intend to change}
+        Use masks and read--modify--write operations to preserve
+        every other setting in the register.
+    \end{block}
 \end{frame}
 
 \begin{frame}[fragile]{Testing Bits and Busy-Wait Polling}
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
         \textbf{Test a bit}
-\begin{cc}[basicstyle=\ttfamily\footnotesize]
+\begin{cc}[basicstyle=\ttfamily\normalsize]
 if ((GPIOC->IDR & (1U << 13)) == 0) {
     // PC13 is LOW:
     // the button is pressed
 }
 \end{cc}
+\vspace{1em}
         {\small Mask the bit you want. Compare the result with zero.}
     \end{column}
     \begin{column}{.48\textwidth}
         \textbf{Busy-wait on a flag}
-\begin{cc}[basicstyle=\ttfamily\footnotesize]
+\begin{cc}[basicstyle=\ttfamily\normalsize]
 while (!(USART1->SR & (1U << 7))) {
     // wait until the transmit
     // register is empty
 }
 \end{cc}
+\vspace{1em}
         {\small The loop re-reads the register each time. This works only because the register is \texttt{volatile}.}
     \end{column}
     \end{columns}
@@ -816,7 +864,7 @@ while (!(USART1->SR & (1U << 7))) {
 
 \begin{frame}{One Register Write, Viewed at Four Levels}
     \begin{center}
-    {\small
+    {\normalsize
     \striped
     \begin{tabular}{@{}l R{.6\textwidth}@{}}
         \toprule
@@ -825,14 +873,14 @@ while (!(USART1->SR & (1U << 7))) {
         Physical hardware & The output latch and push-pull driver for pin PA5 \\
         Register & \texttt{GPIOA\_ODR} bit 5, at address \texttt{0x40020014} \\
         C & \texttt{GPIOA->ODR |= (1U \shl\ 5);} \\
-        Machine code & Three Thumb-2 encodings stored in Flash \\
+        Machine code & About four Thumb-2 encodings in Flash \\
         \bottomrule
     \end{tabular}}
     \end{center}
 
     \vspace{3mm}
     \begin{block}{One row is deliberately missing}
-        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. The next part of the course fills in that row.
+        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. The next three chapters fill in that row.
     \end{block}
 \end{frame}
 
@@ -841,10 +889,44 @@ while (!(USART1->SR & (1U << 7))) {
 \section{A Complete Bare-Metal Program}
 %===============================================================================
 
-\begin{frame}[fragile]{A Complete Bare-Metal Program}
+\begin{frame}{The Clock Must Come First}{One rule before we write the complete program}
     \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+        {\ttfamily\normalsize RCC->AHB1ENR |= (1U \shl\ 0);}
+
+        \vspace{3mm}
+        \begin{itemize}
+            \item Every peripheral starts with its \alert{clock
+                  disabled}, to save power.
+            \item A peripheral with no clock does not respond to
+                  writes. They are simply \alert{lost}.
+            \item \texttt{RCC} is the Reset and Clock Control
+                  peripheral. GPIOA is bit 0 of \texttt{AHB1ENR}.
+        \end{itemize}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        \begin{block}{The classic first bug}
+            You write the GPIO configuration. The code compiles and
+            runs. But \alert{nothing happens}. No fault, no error: the
+            writes went nowhere, because the clock was off.
+
+            \vspace{2mm}
+            \alert{Enable the clock first.} Always.
+        \end{block}
+    \end{column}
+    \end{columns}
+
+    \vspace{2mm}
+    \begin{block}{Enable the clock before configuring a peripheral}
+        A peripheral does not work until its clock is enabled. We now
+        have every piece. Next: one complete program.
+    \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{A Complete Bare-Metal Program}{Every piece, in one program}
+    \begin{columns}[c]
     \begin{column}{.56\textwidth}
-\begin{lstlisting}[language=C, basicstyle=\ttfamily\footnotesize]
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\small]
 #include "stm32f446xx.h"
 
 int main(void)
@@ -886,32 +968,24 @@ int main(void)
     \end{columns}
 \end{frame}
 
-\begin{frame}{The Clock Must Come First}
-    \begin{columns}[T]
-    \begin{column}{.5\textwidth}
-        {\ttfamily\normalsize RCC->AHB1ENR |= (1U \shl\ 0);}
+\begin{frame}{Reading the Program, Step by Step}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l l R{.42\textwidth}@{}}
+        \toprule
+        \textbf{Step} & \textbf{Statement} & \textbf{Takeaway} \\
+        \midrule
+        1. Enable the clock & \texttt{RCC->AHB1ENR |= (1U << 0);} & The peripheral clock must be enabled first \\
+        2. Configure the pin & \texttt{MODER \&= \ldots; MODER |= \ldots;} & Each GPIO pin has a two-bit configuration field \\
+        3. Control the output & \texttt{GPIOA->ODR \^{}= (1U << 5);} & XOR toggles the selected bit without changing the others \\
+        4. Add a delay & \texttt{for (volatile int i=0; \ldots)} & The compiler must not remove a delay loop whose iterations have no observable effect \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
 
-        \vspace{3mm}
-        \begin{itemize}
-            \item Every peripheral starts with its \alert{clock
-                  disabled}, to save power.
-            \item A peripheral with no clock does not respond to
-                  writes. They are simply \alert{lost}.
-            \item \texttt{RCC} is the Reset and Clock Control
-                  peripheral. GPIOA is bit 0 of \texttt{AHB1ENR}.
-        \end{itemize}
-    \end{column}
-    \begin{column}{.46\textwidth}
-        \begin{block}{The classic first bug}
-            You write the GPIO configuration. The code compiles and
-            runs. But \alert{nothing happens}. No fault, no error: the
-            writes went nowhere, because the clock was off.
-
-            \vspace{2mm}
-            \alert{Enable the clock first.} Always.
-        \end{block}
-    \end{column}
-    \end{columns}
+    \vspace{2mm}
+    {\small\centering Four lines, four ideas from this chapter. Every line is needed.\par}
 \end{frame}
 
 \begin{frame}[fragile]{The Shape of an Embedded Program}
@@ -926,6 +1000,7 @@ int main(void) {
     return 0;   // back to the OS
 }
 \end{cc}
+\vspace{1em}
         {\small It runs, returns, and the OS cleans up.}
     \end{column}
     \begin{column}{.48\textwidth}
@@ -941,17 +1016,25 @@ int main(void) {
     }
 }
 \end{cc}
+\vspace{1em}
         {\small No OS. \texttt{main} must never return.}
     \end{column}
     \end{columns}
 
-    \vspace{2mm}
-    \begin{block}{Two consequences of having no operating system}
-        \alert{No library to fall back on:} \texttt{printf} needs a screen and an OS. Output means driving a peripheral yourself. \alert{Nothing cleans up:} the hardware stays in whatever state you leave it.
-    \end{block}
+\textbf{Two consequences of having no operating system} \\
+ \alert{No standard library:} \texttt{printf} needs a screen
+ and an OS. To produce output, you must drive a peripheral
+ yourself.\\ \alert{No cleanup:} the hardware stays in whatever
+ state you leave it.
 
-    \vspace{1mm}
+%    \vspace{1mm}
     {\small \emph{If you know Arduino:} \texttt{setup()} is the code above the loop, and \texttt{loop()} is its body.}
+
+ %   \vspace{2mm}
+    \begin{block}{One question left}
+        Every example so far began inside \texttt{main()}. You never
+        call \texttt{main()} yourself. \alert{So what calls it?}
+    \end{block}
 \end{frame}
 
 
@@ -959,7 +1042,7 @@ int main(void) {
 \section{What Happens When the STM32 Starts Up}
 %===============================================================================
 
-\begin{frame}{What Happens When the STM32 Starts Up}{You never call \texttt{main}. Who does?}
+\begin{frame}{What Happens When the STM32 Starts Up}{What calls \texttt{main}?}
     \leavevmode
     \begin{center}
     \begin{tikzpicture}[node distance=5mm, font=\small]
@@ -976,20 +1059,66 @@ int main(void) {
     \vspace{1mm}
     {\small
     \begin{enumerate}\itemsep2pt
-        \item \textbf{Reset.} The core starts from the 16\,MHz internal oscillator. This is why every example assumes 16\,MHz.
-        \item \textbf{Read the vector table} at \texttt{0x08000000}. Word 0 goes into \texttt{SP}. Word 1 goes into \texttt{PC}. No software has run, yet the CPU has a stack and a start address.
-        \item \textbf{Run \texttt{Reset\_Handler}.} This startup code copies initialised variables from Flash to SRAM, clears the rest to zero, and calls \texttt{SystemInit()}.
+        \item \textbf{Reset.} The core starts from the 16\,MHz internal oscillator. This is why every example in this book uses 16\,MHz.
+        \item \textbf{Read the vector table} at \texttt{0x08000000}. Word 0 goes into \texttt{SP}. Word 1 goes into \texttt{PC}. No software has run yet, but the CPU already has a stack and a start address.
+        \item \textbf{Run \texttt{Reset\_Handler}.} This startup code copies initial values from Flash to SRAM, sets the rest of SRAM to zero, and calls \texttt{SystemInit()}.
         \item \textbf{Call \texttt{main()}.} Now your code runs.
     \end{enumerate}}
 
     \vspace{1mm}
-    {\small A global such as \texttt{int count = 5;} is ready when \texttt{main} starts, because startup code copied it. If \texttt{main} returned, there would be nowhere to go.}
+    {\small A global such as \texttt{int count = 5;} is ready when \texttt{main} starts, because startup code copied it there. If \texttt{main} ever returned, there would be nowhere to return to.}
+
+    \vspace{2mm}
+    \begin{block}{\texttt{main()} is not the starting point}
+        Startup code prepares the system first. Then it calls
+        \texttt{main()}. This is the same startup code from the first
+        diagram in this chapter.
+    \end{block}
 \end{frame}
 
 
 %===============================================================================
 \section{Summary}
 %===============================================================================
+
+\begin{frame}[fragile]{From C to Hardware}{The question from the start of this chapter, answered}
+    \leavevmode
+    One C statement becomes a physical output:
+
+    \vspace{2mm}
+    \begin{center}
+    \begin{minipage}{.9\textwidth}
+\begin{cc}[basicstyle=\ttfamily\small]
+GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
+\end{cc}
+    \end{minipage}
+    \end{center}
+
+    \vspace{2mm}
+    {\small \textbf{What makes it work:}}
+    \begin{center}
+    {\small
+    \striped
+    \begin{tabular}{@{}l R{.56\textwidth}@{}}
+        \toprule
+        \textbf{Piece} & \textbf{Role} \\
+        \midrule
+        Compiler & Converts C into processor instructions \\
+        CMSIS & Maps a C structure to the hardware registers \\
+        \texttt{volatile} & Preserves every access to a hardware register \\
+        Bit manipulation & Changes only the intended register bits \\
+        Clock configuration & Makes the peripheral operational \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    \begin{block}{Not an abstract expression}
+        \texttt{GPIOA->ODR \^{}= (1U \shl\ 5);} is a sequence of
+        processor operations. It changes the state of a \alert{real
+        output pin}. This one line uses every idea in this chapter.
+    \end{block}
+\end{frame}
 
 \begin{frame}{Summary}
 	\begin{columns}[c]

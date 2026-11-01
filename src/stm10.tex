@@ -128,7 +128,7 @@ TIM2->ARR = 999;     // 1000 ticks = 1 s
     \end{center}
 
     \vspace{1mm}
-    {\small A timer counts the clock of \alert{the bus it is attached to}. Appendix B lists which timer sits on which bus. On this board the default is 16\,MHz everywhere, so the numbers agree. They will not agree once the clock tree is changed.}
+    {\small A timer counts the clock of \alert{the bus it is attached to}. Appendix B lists which timer sits on which bus. On this board the default is 16\,MHz everywhere, so the numbers agree. They will not agree once the clock tree is changed: a bus prescaler above 1 gives its timers \emph{twice} the bus clock.}
 \end{frame}
 
 \begin{frame}{The Timer Chain and Its Registers}
@@ -352,7 +352,7 @@ NVIC_EnableIRQ(TIM2_IRQn);
 void TIM2_IRQHandler(void)
 {
     if (TIM2->SR & (1U << 0)) { // update flag?
-        TIM2->SR &= ~(1U << 0); // clear it
+        TIM2->SR = ~(1U << 0);  // clear UIF (write 0)
         GPIOA->ODR ^= (1U << 5);
     }
 }
@@ -383,7 +383,7 @@ void TIM2_IRQHandler(void)
     \end{block}
 
     \vspace{3mm}
-    {\small TIM2 solved one job: blink this LED at this rate. A program also needs a shared sense of \alert{elapsed time}. That is a different job with its own hardware: SysTick, next.}
+    {\small TIM2 solved one job: blink this LED at this rate. A program also needs a shared measure of \alert{elapsed time}. That is a different job with its own hardware: SysTick, next.}
 \end{frame}
 
 
@@ -437,7 +437,7 @@ void TIM2_IRQHandler(void)
 			for (volatile int i = 0; i < n * 4000; i++)
 			;
 			/* Wrong in three ways: drifts with optimisation level
-			and clock frequency, burns 100% CPU, and any ISR that
+			and clock frequency, uses 100% of the CPU, and any ISR that
 			fires makes it longer than requested. Do not use this
 			in real designs. */
 		}
@@ -753,7 +753,7 @@ TIM2->CR1   |= (1U << 0);        // start
 
 \begin{frame}{Case Study: Sampling Audio at 16\,kHz}
     \leavevmode
-    A keyword-spotting device listens all the time and wakes only for a word like ``hey, board''. Speech needs frequencies up to about 4\,kHz, so it is sampled at \alert{16\,kHz}:
+    A keyword-spotting device listens all the time and wakes only for a word like ``hey, board''. Keyword spotting keeps speech frequencies up to about 8\,kHz, so it is sampled at \alert{16\,kHz}:
 
     \vspace{1mm}
     \begin{center}
@@ -1118,7 +1118,7 @@ TIM2->CR1   |= (1U << 0);        // start
 
         \vspace{2mm}
         {\small Three writes, in that order, is what \texttt{SysTick\_Config()}
-        does under the hood.}
+        does inside.}
     \end{column}
     \begin{column}{.48\textwidth}
         \begin{block}{Read COUNT, from the top}

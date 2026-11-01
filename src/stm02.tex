@@ -101,7 +101,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \begin{block}{These layers are independent}
         One ISA can be built by many different microarchitectures. This is why code written for one ISA can run on physically different chips. It is the commercial foundation of the whole ARM ecosystem.
         \vspace{1mm}
-        The term ``32-bit'' can describe the ISA, the ALU width, or the address bus. On the Cortex-M4, these three meanings happen to be the same. But they are still three separate, independent facts.
+        The term ``32-bit'' can describe the ISA (32-bit registers), the ALU width, or the address bus. (Thumb-2 instructions themselves are 16 or 32 bits long.) On the Cortex-M4, these three meanings happen to be the same. But they are still three separate, independent facts.
     \end{block}
 \end{frame}
 
@@ -276,7 +276,7 @@ if (sensor_value == 0) { turn_on_led(); }
 \end{asm}
 
         \textbf{Predict}
-        {\footnotesize \texttt{CMP} subtracts \texttt{R1} from \texttt{R0} and throws the difference away. Here $5 - 5 = 0$, so the \alert{Z (Zero) flag} is set. The N, C, V flags are 0. This is why a C \texttt{if (x == y)} works.}
+        {\footnotesize \texttt{CMP} subtracts \texttt{R1} from \texttt{R0} and discards the difference. Here $5 - 5 = 0$, so the \alert{Z (Zero) flag} is set. The N, C, V flags are 0. This is why a C \texttt{if (x == y)} works.}
     \end{column}
     \end{columns}
 
@@ -626,12 +626,12 @@ if (sensor_value == 0) { turn_on_led(); }
     \begin{columns}[T]
     \begin{column}{.32\textwidth}
         \begin{block}{Powered by leakage}
-            {\small The story goes that an early ARM test board ran with its power connection missing. The chip was running on stray current leaking through its I/O lines. The design sipped so little power that nobody noticed.}
+            {\small The story goes that an early ARM test board ran with its power connection missing. The chip was running on stray current leaking through its I/O lines. The design used so little power that nobody noticed.}
         \end{block}
     \end{column}
     \begin{column}{.32\textwidth}
         \begin{block}{Thumb in your pocket}
-            {\small Thumb (1994) squeezed instructions to 16 bits to save memory. The ARM7TDMI core that used it ran the Game Boy Advance, and many phones of that time.}
+            {\small Thumb (1994) made instructions 16 bits long to save memory. The ARM7TDMI core that used it ran the Game Boy Advance, and many phones of that time.}
         \end{block}
     \end{column}
     \begin{column}{.32\textwidth}
@@ -701,7 +701,7 @@ if (sensor_value == 0) { turn_on_led(); }
 		        Instruction set  & 64-bit, 32-bit, Thumb & 32-bit, Thumb & Thumb only \\
 				Interrupts  & Software-managed & Deterministic, software-managed & Hardware-managed \\
 				Pipeline & Long & Long to medium & {Short} \\
-				Cache & Multi-level & Yes & {None} \\
+				Cache & Multi-level & Yes & {None (M7: small)} \\
 				Found in & Phones, tablets, servers & Storage, industrial, automotive & IoT, sensors, control \\
 				\bottomrule
 		\end{tabular}}
@@ -881,7 +881,7 @@ if (sensor_value == 0) { turn_on_led(); }
 	{\small \texttt{SP} is really two banked registers, \texttt{MSP} and \texttt{PSP}, chosen by \texttt{CONTROL}. The mask registers (\texttt{PRIMASK}, \texttt{FAULTMASK}, \texttt{BASEPRI}) control interrupts. Not every Cortex-M core has them; Chapter~9 comes back to this.}
 \end{frame}
 
-\begin{frame}{A Debugging Gotcha: Reading the PC}
+\begin{frame}{A Common Debugging Mistake: Reading the PC}
     \begin{block}{The surprise}
         \texttt{MOV R0, PC} does \alert{not} give you the address of that
         \texttt{MOV}. It gives that address \alert{+ 4}.
@@ -897,7 +897,7 @@ if (sensor_value == 0) { turn_on_led(); }
             \item ``The current instruction'' has no clear meaning on
                   a pipelined machine.
             \item So the PC runs ahead. On the Cortex-M4, it runs
-                  exactly one instruction ahead.
+                  4 bytes ahead: two 16-bit instructions.
         \end{itemize}
     \end{column}
     \begin{column}{.42\textwidth}
@@ -1036,7 +1036,7 @@ int z = x + y;    // at 0x2004
 		\end{tabular}}
 	\end{center}
 	\vspace{2mm}
-	{\small \textbf{This is how a processor makes decisions:} the C statement \texttt{if (x == y)} works by subtracting, throwing away the difference, and testing the \textbf{Z} flag. \textbf{C} is the carry-out of the final full adder. \textbf{V} is the XOR of the carries into and out of the MSB. These are circuits you have already built.}
+	{\small \textbf{This is how a processor makes decisions:} the C statement \texttt{if (x == y)} works by subtracting, discarding the difference, and testing the \textbf{Z} flag. \textbf{C} is the carry-out of the final full adder. \textbf{V} is the XOR of the carries into and out of the MSB. These are circuits you have already built.}
 \end{frame}
 
 
@@ -1156,7 +1156,7 @@ int z = x + y;    // at 0x2004
 			at ({\rx+\rw/2},{\ltop+0.2}) {What the F446RE actually populates};
 			\foreach \i/\addr/\nm/\sz/\hl in {%
 				0/{0xE000 E000}/{Private peripherals}/{NVIC, SysTick, debug}/1,
-				1/{0x4002 3800}/{AHB1}/{RCC, GPIOA--GPIOH}/1,
+				1/{0x4002 0000}/{AHB1}/{GPIOA--GPIOH, RCC}/1,
 				2/{0x4001 0000}/{APB2}/{USART1, ADC1, SYSCFG, EXTI}/1,
 				3/{0x4000 0000}/{APB1}/{TIM2--TIM5, USART2, SPI2, I\textsuperscript{2}C}/1,
 				4/{0x2000 0000}/{SRAM}/{128 KB --- variables, stack}/0,
@@ -1180,7 +1180,7 @@ int z = x + y;    // at 0x2004
 		\end{tikzpicture}
 	\end{center}
 	\vspace{1mm}
-	{\small\centering \emph{Now let's see where the real STM32 resources live.} ARM \alert{fixes} this layout for every Cortex-M device. This is why the NVIC sits at the same address on every vendor's chip.\par}
+	{\small\centering \emph{Now we look at where the real STM32 resources live.} ARM \alert{fixes} this layout for every Cortex-M device. This is why the NVIC sits at the same address on every vendor's chip.\par}
 \end{frame}
 
 \begin{frame}{Memory-Mapped I/O}{The idea the rest of the course rests on}
@@ -1200,7 +1200,7 @@ int z = x + y;    // at 0x2004
     \end{tabular}
     \end{center}
     \vspace{3mm}
-    {\small Same instruction, same registers, different address. And one of those addresses lights a real LED on \texttt{PA5}. That is the whole trick. Chapter~8 is where you put it to use.}
+    {\small Same instruction, same registers, different address. And one of those addresses lights a real LED on \texttt{PA5}. That is the whole idea. Chapter~8 is where you put it to use.}
 \end{frame}
 
 \begin{frame}{Two Buses, Two Speeds}{AMBA: AHB for fast, APB for slow}
@@ -1375,7 +1375,7 @@ int z = x + y;    // at 0x2004
         \textbf{T} & \textbf{6} \\
         32-bit MCU & Foundation & high perf.\ + & 64 pins & 512\,KB &
         plastic & $-40$ to \\
-                   &            & DSP with FPU &        & flash   & TQFP   & $+85\,^\circ$C \\
+                   &            & DSP with FPU &        & flash   & LQFP   & $+85\,^\circ$C \\
     \end{tabular}}
     \end{center}
     \vspace{1mm}

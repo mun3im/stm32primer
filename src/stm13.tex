@@ -171,7 +171,7 @@ uint8_t id = sensor_read_reg(0x00);    // DEVID register
     \end{column}
     \begin{column}{.48\textwidth}
         \begin{block}{A wrong mode looks like a wiring fault}
-            {\small Data arrives shifted by one bit, or read at the wrong instant. It looks plausible but is wrong. \alert{Mode 0 is the most common.} The slave's datasheet states the mode.}
+            {\small Data arrives shifted by one bit, or read at the wrong instant. It looks plausible but is wrong. \alert{Mode 0 is the most common}, but the ADXL345 needs mode 3. The slave's datasheet states the mode.}
         \end{block}
     \end{column}
     \end{columns}
@@ -287,7 +287,8 @@ uint8_t id = sensor_read_reg(0x00);    // DEVID register
         SPI2->CR1 = (1U << 2)~~~~~~~// MSTR \\
         ~~~~~~~~~~| (3U << 3)~~~~~~~// BR: /16 \\
         ~~~~~~~~~~| (1U << 9)~~~~~~~// SSM \\
-        ~~~~~~~~~~| (1U << 8);~~~~~~// SSI \\
+        ~~~~~~~~~~| (1U << 8)~~~~~~~// SSI \\
+        ~~~~~~~~~~| (3U << 0);~~~~~~// CPOL=CPHA=1: mode 3 \\
         SPI2->CR1 |= (1U << 6);~~~~~// SPE}
     \end{column}
     \begin{column}{.46\textwidth}
@@ -447,7 +448,7 @@ float accel_to_g(int16_t raw) {
         {\small A smaller resistor gives faster edges, but draws more current whenever a device pulls the line low.
 
         \vspace{2mm}
-        With $C_b = 100$\,pF, a 4.7\,k$\Omega$ pull-up gives about 400\,ns. That suits 100\,kHz, but is marginal at 400\,kHz, where 1\,k$\Omega$ is better.}
+        With $C_b = 100$\,pF, a 4.7\,k$\Omega$ pull-up gives about 400\,ns. That suits 100\,kHz (limit 1000\,ns), but is too slow for 400\,kHz (limit 300\,ns); 2.2\,k$\Omega$ gives about 190\,ns.}
     \end{column}
     \begin{column}{.48\textwidth}
         \begin{block}{The most common I\textsuperscript{2}C fault}

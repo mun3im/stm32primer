@@ -110,7 +110,7 @@ Raw:   2048             // LED bar on PB0-PB3 shows the level
         \toprule
         \textbf{Structure} & \textbf{Use when} & \textbf{Cost} \\
         \midrule
-        \textbf{Blocking poll} & Never, in a real system & Burns the CPU; blocks everything else \\
+        \textbf{Blocking poll} & Never, in a real system & Uses all the CPU time; blocks everything else \\
         \textbf{Timed poll} & The activity has a known period and loose jitter & Simple; jitter is the loop time \\
         \textbf{Interrupt} & The event is external and the deadline is tight & Needs care with shared data \\
         \textbf{DMA} & Bulk data, no per-byte decision & Setup cost; fewest CPU cycles \\
@@ -145,9 +145,9 @@ Raw:   2048             // LED bar on PB0-PB3 shows the level
         \draw[busline] (adc.north |- bus) -- (exti.north |- bus);
         \foreach \p in {adc,tim,gpio,usart,exti}{\draw[flow] (\p.north |- bus) -- (\p.north);}
         \node[lbl, below=4mm of adc,   align=center] {potentiometer\\or sensor};
-        \node[lbl, below=4mm of tim,   align=center, text=accentline] {1~kHz tick\\{\scriptsize (internal)}};
+        \node[lbl, below=4mm of tim,   align=center, text=accentline] {10~Hz ADC\\{\scriptsize trigger (internal)}};
         \node[lbl, below=4mm of gpio,  align=center] {4 LED\\bar};
-        \node[lbl, below=4mm of usart, align=center] {PC terminal\\9600 8N1};
+        \node[lbl, below=4mm of usart, align=center] {PC, via USB-\\serial, 9600 8N1};
         \node[lbl, below=4mm of exti,  align=center] {button\\PC13};
         \foreach \p in {adc,gpio,usart,exti}{\draw[flow] (\p.south) -- ++(0,-0.5);}
         \draw[flow, draw=accentline, dashed] (tim.south) -- ++(0,-0.5);
@@ -162,9 +162,9 @@ Raw:   2048             // LED bar on PB0-PB3 shows the level
     \begin{enumerate}\itemsep1pt
         \item Sample the ADC at exactly \alert{10~Hz}.
         \item Display the level as a 4-LED bar.
-        \item Transmit each reading over UART as text.
+        \item Transmit each reading as text over USART1 (PB6/PB7, USB-serial adapter).
         \item Button press toggles report between \alert{raw counts} and \alert{millivolts}.
-        \item Never miss a sample. Never block.
+        \item Never miss a sample. No interrupt handler may block.
     \end{enumerate}}
 \end{frame}
 
@@ -372,6 +372,7 @@ static void adc_init(void) {
     ADC1->SMPR2 |=  (7U << 0);   // 480 cycles
     ADC1->CR1   |=  (1U << 5);   // EOCIE
     ADC1->CR2   |=  (1U << 0);   // ADON
+    ADC1->CR2   |=  (6U << 24) | (1U << 28); // TIM2 TRGO
     NVIC_SetPriority(ADC_IRQn, 1);
     NVIC_EnableIRQ(ADC_IRQn);
 }
@@ -439,7 +440,7 @@ static void leds_show_bar(uint16_t raw) {
     \end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{The Complete Program (5)}{\texttt{main()}: setup and two of the three tasks}
+\begin{frame}[fragile]{The Complete Program (5)}{\texttt{main()}: setup, the sampling timer, and the button task}
     \begin{columns}[T]
     \begin{column}{.6\textwidth}
 \begin{cc}[basicstyle=\ttfamily\scriptsize]
@@ -451,13 +452,13 @@ int main(void) {
     __enable_irq();
     uart_print("\r\nSensor Monitor ready.\r\n");
 
-    uint32_t next_sample = 0;
+    RCC->APB1ENR |= (1U << 0);   // TIM2: 10 Hz trigger
+    TIM2->PSC = 1599;            // 16 MHz / 1600 = 10 kHz
+    TIM2->ARR = 999;             // 10 kHz / 1000 = 10 Hz
+    TIM2->CR2 = (2U << 4);       // TRGO on update
+    TIM2->CR1 |= (1U << 0);      // start sampling
     while (1) {
-        /* Task 1: start a conversion every 100 ms */
-        if ((msTicks - next_sample) >= 100) {
-            next_sample += 100;       // no drift
-            ADC1->CR2 |= (1U << 30);  // SWSTART
-        }
+        /* Task 1: none; TIM2 starts each conversion */
 
         /* Task 2: a result arrived (next slide) */
 
@@ -476,12 +477,12 @@ int main(void) {
         \textbf{Read it as three \texttt{if}s}
         {\small
         \begin{itemize}\itemsep2pt
-            \item \texttt{(msTicks - next\_sample) >= 100}: a sample is \alert{due}.
+            \item Sampling: \alert{TIM2} starts each conversion in hardware.
             \item \texttt{adc\_ready}: a result \alert{arrived}.
             \item \texttt{button\_flag}: the user \alert{pressed}.
         \end{itemize}}
         \vspace{1mm}
-        {\small Each branch finishes quickly and returns to the top. \alert{No branch waits for another.}}
+        {\small Each branch returns to the top. Even the slow UART branch \alert{cannot delay a sample}.}
     \end{column}
     \end{columns}
 \end{frame}
@@ -535,7 +536,7 @@ if (adc_ready) {
         \toprule
         \textbf{Decision} & \textbf{Why} \\
         \midrule
-        \textbf{The schedule does not drift} & \texttt{next\_sample += 100} steps by a fixed amount. \texttt{msTicks + 100} would add any delay from the rest of the loop, and the rate would slowly fall below 10\,Hz. That breaks the uniform interval Nyquist relies on. \\
+        \textbf{Sampling neither drifts nor jitters} & TIM2's update event starts each conversion in hardware. A software start would wait behind every 20\,ms UART message, and the interval would wander. That breaks the uniform interval Nyquist relies on. \\
         \textbf{A minimal critical section} & \texttt{adc\_result} and \texttt{adc\_ready} are read and cleared with interrupts off, so the ISR cannot overwrite the value between the two accesses. Only three statements are protected. UART printing happens outside. \\
         \textbf{Priorities follow urgency} & ADC priority 1, button priority 3. A conversion result is lost if not read before the next one. A button press can wait. \\
         \textbf{Integer maths, no FPU} & \texttt{(raw * 3300) / 4095}: multiply first to keep precision. $4095\times3300$ fits in 32 bits. Dividing first would truncate to zero. \\
@@ -548,7 +549,7 @@ if (adc_ready) {
 {\beamerextras
 \begin{frame}[fragile]{Spot the Bug}{The sampling rate drifts}
     \leavevmode
-    A student replaces the sampling line. The system works, but over a few minutes the measured rate falls below 10\,Hz.
+    Suppose conversions were started in software by timed polling (Level~2). A student changes the line, and over a few minutes the rate falls below 10\,Hz.
 
     \vspace{2mm}
     \begin{columns}[T]
@@ -566,14 +567,14 @@ if (msTicks >= next_sample) {
         \begin{itemize}\itemsep2pt
             \item What is the interval between two samples?
             \item What does the extra delay add up to?
-            \item What was the original line?
+            \item What should the line be?
         \end{itemize}}
     \end{column}
     \end{columns}
 
     \vspace{2mm}
     \visible<2->{\begin{block}{The answer}
-        The interval is $100\,\text{ms}$ \emph{plus} however late the loop reached the test. That error \alert{accumulates}. The original, \texttt{next\_sample += 100;}, steps by a fixed amount, so lateness never adds up.
+        The interval is $100\,\text{ms}$ \emph{plus} however late the loop reached the test. That error \alert{accumulates}. The correct form, \texttt{next\_sample += 100;}, steps by a fixed amount, so lateness never adds up.
     \end{block}}
 \end{frame}
 }
@@ -834,7 +835,7 @@ if (msTicks >= next_sample) {
             2 & M2: debounced EXTI input drives the output through a \texttt{volatile} flag \\
             3 & M3: UART debug link at a known baud rate \\
             4 & M4: integration in one non-blocking loop \\
-            5 & Enhancement chosen, brought up, integrated \\
+            5 & Enhancement chosen, tested alone, integrated \\
             6 & Demonstration and written report \\
             \bottomrule
         \end{tabular}}

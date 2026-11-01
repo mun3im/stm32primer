@@ -10,8 +10,8 @@ The built slide decks, one PDF per chapter of the course book. This folder holds
 | [`stm04`](stm04.pdf) | 42 | Embedded C and CMSIS |
 | [`stm05`](stm05.pdf) | 52 | ARM Assembly Fundamentals |
 | [`stm06`](stm06.pdf) | 44 | Data Processing |
-| [`stm07`](stm07.pdf) | 54 | Control Flow, Functions and the Stack |
-| [`stm08`](stm08.pdf) | 35 | General Purpose Input Output |
+| [`stm07`](stm07.pdf) | 59 | Control Flow, Functions and the Stack |
+| [`stm08`](stm08.pdf) | 38 | General Purpose Input Output |
 | [`stm09`](stm09.pdf) | 48 | Interrupts and Event-Driven Programming |
 | [`stm10`](stm10.pdf) | 53 | Timers, Timing and PWM |
 | [`stm11`](stm11.pdf) | 32 | ADC and Analog Interfacing |
