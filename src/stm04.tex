@@ -140,7 +140,7 @@ GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
             \alert{instructions}, not C.
 
             \vspace{2mm}
-            Chapters 5--7 teach you to read that disassembly window.
+            Chapters 5--7 taught you to read that disassembly window.
         \end{block}
 
         \vspace{3mm}
@@ -227,7 +227,7 @@ STR   R2, [SP, #8]   ; store z
     \begin{block}{C and assembly can mix}
         If both follow the same convention, C can call an assembly
         function, and assembly can call a C function. Chapters 5--7
-        show how.
+        showed how.
     \end{block}
 \end{frame}
 
@@ -880,7 +880,7 @@ while (!(USART1->SR & (1U << 7))) {
 
     \vspace{3mm}
     \begin{block}{One row is deliberately missing}
-        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. The next three chapters fill in that row.
+        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. You learned that row in Chapters 5--7.
     \end{block}
 \end{frame}
 
@@ -1148,9 +1148,9 @@ GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
 					\item Peripheral clock enable
 				\end{itemize}
 				\vspace{3mm}
-				\textbf{Next: Chapter 5}\\[1mm]
-				\emph{ARM Assembly Fundamentals}\\[1mm]
-				We read what this C compiles to.}
+				\textbf{Next: Chapter 8}\\[1mm]
+				\emph{General Purpose Input Output}\\[1mm]
+				We use these ideas to drive real pins.}
 		\end{column}
 	\end{columns}
 \end{frame}

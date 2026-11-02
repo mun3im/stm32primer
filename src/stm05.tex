@@ -206,6 +206,36 @@ HERE    B    HERE            ; infinite loop to halt
     return to, so an infinite loop is the normal, correct way to stop.}
 \end{frame}
 
+{\beamerextras
+\begin{frame}{Common Assembler Directives}
+    \begin{center}
+    {\footnotesize
+    \striped
+    \begin{tabular}{@{}l l l l@{}}
+        \toprule
+        \textbf{Directive} & \textbf{Example} & \textbf{What it does} & \textbf{C equivalent} \\
+        \midrule
+        \texttt{AREA}   & \texttt{AREA prog, CODE, READONLY} & code section (Flash)    & --- \\
+                        & \texttt{AREA vars, DATA, READWRITE} & data section (SRAM)    & --- \\
+        \texttt{ENTRY}  & \texttt{ENTRY}               & first instruction to run            & \texttt{main()} \\
+        \texttt{END}    & \texttt{END}                 & end of source file    & --- \\
+        \texttt{EQU}    & \texttt{LED\_PIN EQU 5}      & name a constant           & \texttt{\#define} \\
+        \texttt{RN}     & \texttt{SUM RN R3}           & name for a register                & --- \\
+        \texttt{DCB/DCW/DCD} & \texttt{x DCD 7} & store 8/16/32-bit data            & \texttt{uint32\_t x = 7;} \\
+        \texttt{SPACE}  & \texttt{buf SPACE 64}        & reserve bytes, no value          & \texttt{uint8\_t buf[64];} \\
+        \texttt{ALIGN}  & \texttt{ALIGN 4}             & next 4-byte boundary      & --- \\
+        \texttt{EXPORT} & \texttt{EXPORT \_\_main}     & make a label public        & non-\texttt{static} \\
+        \texttt{IMPORT} & \texttt{IMPORT delay}        & use another file's label         & \texttt{extern} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{2mm}
+    {\small Directives produce no instructions. Only \texttt{DCB}/\texttt{DCW}/\texttt{DCD} and \texttt{SPACE} take up memory.
+    These are Keil (armasm) names. GNU \texttt{as} uses \texttt{.equ}, \texttt{.word}, \texttt{.global} and so on.}
+\end{frame}
+}
+
 \begin{frame}{Tracing the Three Instructions}
     \begin{center}
     {\small
@@ -227,6 +257,133 @@ HERE    B    HERE            ; infinite loop to halt
         reads as ``R3 becomes R1 plus R2.'' Right to left.
     \end{block}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Keil or GNU? Same Program, Two Assemblers}
+    \begin{columns}[T]
+    \begin{column}{.48\textwidth}
+        {\small\textbf{Keil armasm} (this book)}
+        \begin{asm}[basicstyle=\scriptsize\ttfamily]
+VAL1    RN   R1
+VAL2    RN   R2
+SUM     RN   R3
+MY_CONST EQU 0x25
+
+        AREA prog, CODE, READONLY
+        ENTRY
+__main
+        MOV  VAL1, #MY_CONST
+        MOV  VAL2, #0x34
+        ADD  SUM, VAL1, VAL2
+
+HERE    B    HERE        ; stop
+        END
+        \end{asm}
+    \end{column}
+    \begin{column}{.48\textwidth}
+        {\small\textbf{GNU as} (STM32CubeIDE)}
+        \begin{asm}[basicstyle=\scriptsize\ttfamily, morecomment={[l]{@}}]
+        .syntax unified
+        .thumb
+VAL1    .req r1
+VAL2    .req r2
+SUM     .req r3
+        .equ MY_CONST, 0x25
+
+        .text
+        .global main
+        .thumb_func
+main:
+        MOV  VAL1, #MY_CONST
+        MOV  VAL2, #0x34
+        ADD  SUM, VAL1, VAL2
+HERE:   B    HERE        @ stop
+        \end{asm}
+    \end{column}
+    \end{columns}
+
+    \vspace{1mm}
+    \begin{block}{Why it matters}
+        The \alert{instructions} are identical. Only directives, labels and comments differ.
+        The book uses Keil syntax. STM32CubeIDE uses GCC, so it expects GNU syntax.
+        Paste book code into CubeIDE unchanged, and it will not assemble.
+    \end{block}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}{Keil to GNU: A Translation Table}
+    \begin{center}
+    {\scriptsize
+    \striped
+    \begin{tabular}{@{}l l l@{}}
+        \toprule
+        \textbf{Purpose} & \textbf{Keil armasm} & \textbf{GNU as} \\
+        \midrule
+        Comment          & \texttt{; text}                    & \texttt{@ text} \quad or \quad \texttt{/* text */} \\
+        Label            & \texttt{HERE} \quad (column 1, no colon) & \texttt{HERE:} \quad (colon required) \\
+        Code / data section & \texttt{AREA p, CODE, READONLY} / \texttt{DATA, READWRITE} & \texttt{.text} / \texttt{.data} \\
+        Constant         & \texttt{X EQU 5}                   & \texttt{.equ X, 5} \\
+        Register name    & \texttt{SUM RN R3}                 & \texttt{SUM .req r3} \\
+        Data             & \texttt{DCB} / \texttt{DCW} / \texttt{DCD} & \texttt{.byte} / \texttt{.hword} / \texttt{.word} \\
+        Reserve bytes    & \texttt{SPACE 64}                  & \texttt{.space 64} \\
+        Align            & \texttt{ALIGN 4}                   & \texttt{.balign 4} \\
+        Make public      & \texttt{EXPORT f}                  & \texttt{.global f} \ + \ \texttt{.thumb\_func} \\
+        Use external     & \texttt{IMPORT f}                  & nothing needed \\
+        Entry point      & \texttt{ENTRY}                     & none: the startup file calls \texttt{main} \\
+        End of file      & \texttt{END}                       & \texttt{.end} \quad (optional) \\
+        Instruction set  & Thumb by default                   & \texttt{.syntax unified} \ + \ \texttt{.thumb} \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+
+    \vspace{1mm}
+    {\small Two traps:
+    \begin{itemize}\itemsep0pt
+        \item On ARM, GNU \texttt{.align 2} means $2^2 = 4$ bytes, not 2. Use \texttt{.balign 4} to say what you mean.
+        \item Leave out \texttt{.thumb\_func}, and a call from C can jump to the wrong mode and cause a HardFault.
+    \end{itemize}}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}[fragile]{Using the Assembler in STM32CubeIDE}
+    \begin{columns}[T]
+    \begin{column}{.52\textwidth}
+        {\small
+        \begin{enumerate}\itemsep1pt
+            \item Create an STM32 project for the NUCLEO-F446RE.
+            \item Right-click \texttt{Core/Src} $\rightarrow$ New $\rightarrow$ File, name it \texttt{add2.s}.
+                  {\scriptsize(\texttt{.S}, capital S, runs the C preprocessor first, so \texttt{\#define} works.)}
+            \item Write the function in GNU syntax (right).
+            \item In \texttt{main.c}, declare and call it:\\
+                  \texttt{extern int add2(int a, int b);}\\
+                  \texttt{r = add2(0x25, 0x34);}
+            \item Build, then Debug. Open \textbf{Window $\rightarrow$ Show View $\rightarrow$ Disassembly} and \textbf{Registers}.
+                  Turn on \textbf{Instruction Stepping Mode} to step one instruction at a time.
+        \end{enumerate}}
+    \end{column}
+    \begin{column}{.44\textwidth}
+        \begin{asm}[basicstyle=\scriptsize\ttfamily, morecomment={[l]{@}}]
+@ add2.s
+        .syntax unified
+        .thumb
+        .text
+        .global add2
+        .thumb_func
+add2:                 @ a in R0, b in R1
+        ADD  r0, r0, r1
+        BX   lr       @ result in R0
+        \end{asm}
+
+        {\scriptsize Arguments arrive in R0--R3 and the result goes back in R0. Chapter 7 explains this rule (AAPCS).\par}
+
+        \vspace{2mm}
+        {\scriptsize\textbf{Free example:} \texttt{Core/Startup/startup\_stm32f446retx.s} in every project is GNU assembly. Open it and read it.\par}
+    \end{column}
+    \end{columns}
+\end{frame}
+}
 
 
 %===============================================================================
@@ -357,6 +514,17 @@ int f(int a, int b) {
 \section{Memory Transfer Instructions}
 %===============================================================================
 
+% \bw, \rh, \regx, \regy, \memx, \memy are shared across every bit-level
+% TikZ frame below. Must sit OUTSIDE any \begin{frame}[fragile], because
+% Beamer's .vrb save-and-reread tokenizes the TikZ later, by which time
+% a \def made inside an earlier fragile frame is no longer visible.
+\def\bw{1.0}
+\def\rh{0.62}
+\def\regx{0.7}
+\def\regy{4.3}
+\def\memx{5.2}
+\def\memy{3.0}
+
 \begin{frame}{The Load and Store Family}
     \begin{center}
     {\normalsize
@@ -385,6 +553,28 @@ int f(int a, int b) {
     \end{block}
 \end{frame}
 
+{\beamerextras
+\begin{frame}{Load Group of Instructions}
+	\begin{itemize}
+		\item An LDR-type instruction fetches data from memory and puts
+		the value into the destination register, \texttt{Rd}.
+		\item Syntax: \\ %\verb|LDR Rd, [Rn, #offset]|
+		\begin{center}
+			{\ttfamily\normalsize
+				\begin{tabular}{@{}l l@{}}
+					LDR  Rd, [Rn, \#offset] \\
+			\end{tabular}}
+			\vspace{3mm}
+		\end{center}
+		\begin{itemize}
+			\item \texttt{Rd}: destination register, where the loaded value is stored
+			\item \texttt{Rn}: base register, holding the memory address
+			\item \texttt{\#offset}: optional offset, added to the base register to compute the memory address
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+}
+
 \begin{frame}[fragile]{Word Transfers: \texttt{LDR} and \texttt{STR}}
     \begin{center}
     \includegraphics[width=.44\textwidth, keepaspectratio]{assets/inst-ldr.pdf}
@@ -403,6 +593,129 @@ int f(int a, int b) {
     The least-significant byte (\texttt{0x44}) goes to the lowest memory
     address. The same rule, in reverse.}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{LDR: Loading a Word from Memory (Little-Endian)}
+	\begin{verbatim}
+		LDR  R1, [R0]    ; load word
+	\end{verbatim}
+
+	\centering
+	\resizebox{0.92\textwidth}{!}{%
+		\begin{tikzpicture}[x=10mm, y=8mm]
+
+			\def\bw{1.0}    % width of one byte box
+			\def\rh{0.62}   % row height (matches the stack-frame diagram)
+
+			% --- Register R1: four contiguous byte boxes ---
+			\def\regx{0.7}
+			\def\regy{4.3}
+			\foreach \i/\val in {0/{0x00},1/{0xC0},2/{0xFF},3/{0xEE}}{
+				\pgfmathsetmacro{\x}{\regx+\i*\bw}
+				\draw[draw=blkline, fill=blkfill, thick]
+				(\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
+			}
+			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
+
+			% --- Memory: four stacked byte boxes, addresses increasing downward ---
+			\def\memx{5.2}
+			\def\memy{3.0}
+			\foreach \i/\val/\addr in {%
+				0/{0xEE}/{0x20000100},
+				1/{0xFF}/{0x20000101},
+				2/{0xC0}/{0x20000102},
+				3/{0x00}/{0x20000103}}{
+				\pgfmathsetmacro{\y}{\memy-\i*\rh}
+				\draw[draw=accentline, fill=accentfill, thick]
+				(\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
+				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
+			}
+			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
+
+			% --- Arrows: bytes flow up from memory into the register (LDR) ---
+			\draw[flow, draw=accentline] (\memx,{\memy-0*\rh-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
+			\draw[flow, draw=accentline] (\memx,{\memy-1*\rh-\rh/2}) -| ({\regx+2*\bw+\bw/2},{\regy-\rh});
+			\draw[flow, draw=accentline] (\memx,{\memy-2*\rh-\rh/2}) -| ({\regx+1*\bw+\bw/2},{\regy-\rh});
+			\draw[flow, draw=accentline] (\memx,{\memy-3*\rh-\rh/2}) -| ({\regx+0*\bw+\bw/2},{\regy-\rh});
+
+			% --- Address axis, to the right of the address column ---
+			\def\axisx{8.9}
+			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
+			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-4*\rh-0.05});
+			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
+			at ({\axisx-0.15},{\memy-2*\rh}) {increasing address};
+
+			% --- Brace naming the whole word ---
+			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
+			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-4*\rh});
+			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
+			at ({\axisx+0.85},{\memy-2*\rh}) {4 bytes\\1 word\\loaded by\\\texttt{LDR}};
+
+		\end{tikzpicture}%\
+	}
+	\begin{itemize}
+		\item Assume R0 = 0x20000100, and the \alert{memory word} at 0x20000100 holds 0x00C0FFEE.
+		\item After \texttt{LDR R1, [R0]} runs, the destination register R1 holds 0x00C0FFEE.
+	\end{itemize}
+
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}[fragile]{STR: Storing a Word to Memory}
+	\begin{verbatim}
+		STR   R1, [R0]    ; store 32-bit word
+	\end{verbatim}
+	\centering
+	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
+	\vspace{2mm}
+	\resizebox{0.92\textwidth}{!}{%
+		\begin{tikzpicture}[x=10mm, y=8mm]
+
+			% --- Register R1: all four bytes are stored ---
+			\foreach \p/\val in {0/{0x11}, 1/{0x22}, 2/{0x33}, 3/{0x44}}{
+				\pgfmathsetmacro{\x}{\regx+\p*\bw}
+				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
+			}
+			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
+
+			% --- Memory: all four bytes overwritten, low address on top (LSB) ---
+			\foreach \i/\val/\addr in {%
+				0/{0x44}/{0x20000100},
+				1/{0x33}/{0x20000101},
+				2/{0x22}/{0x20000102},
+				3/{0x11}/{0x20000103}}{
+				\pgfmathsetmacro{\y}{\memy-\i*\rh}
+				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
+				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
+			}
+			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
+
+			% --- Arrows: all four bytes flow down from register into memory ---
+			\draw[flow, draw=blkline] ({\regx+3*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-0*\rh-\rh/2});
+			\draw[flow, draw=blkline] ({\regx+2*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-1*\rh-\rh/2});
+			\draw[flow, draw=blkline] ({\regx+1*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-2*\rh-\rh/2});
+			\draw[flow, draw=blkline] ({\regx+0*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-3*\rh-\rh/2});
+
+			% --- Address axis + brace ---
+			\def\axisx{9.1}
+			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
+			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-4*\rh-0.05});
+			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
+			at ({\axisx-0.15},{\memy-2*\rh}) {increasing address};
+			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
+			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-4*\rh});
+			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
+			at ({\axisx+0.85},{\memy-2*\rh}) {4 bytes\\written by\\\texttt{STR}\\(old value\\is lost)};
+
+		\end{tikzpicture}%
+	}
+\end{frame}
+}
 
 \begin{frame}[fragile]{Byte and Halfword Loads: Zero Extension}
     \leavevmode
@@ -423,6 +736,153 @@ int f(int a, int b) {
     {\small \texttt{LDRB} fills the upper 24 bits with zero;
     \texttt{LDRH} fills the upper 16 bits with zero.}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{LDRB Instruction}
+	\resizebox{0.92\textwidth}{!}{%
+		\begin{tikzpicture}[x=10mm, y=8mm]
+
+			% --- Register R1: only byte0 loaded ---
+			\foreach \p/\val/\loaded in {0/{0x00}/0, 1/{0x00}/0, 2/{0x00}/0, 3/{0xEE}/1}{
+				\pgfmathsetmacro{\x}{\regx+\p*\bw}
+				\ifnum\loaded=1
+				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\else
+				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
+			}
+			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
+
+			% under-brace: zero-extended upper 3 bytes
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
+			({\regx},{\regy-\rh-0.1}) -- ({\regx+3*\bw},{\regy-\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
+			at ({\regx+1.5*\bw},{\regy-\rh-0.7}) {bits 31:8 = 0\\(zero-extended)};
+
+			% --- Memory: 1 byte ---
+			% --- Memory: only the low byte overwritten, others keep their old value ---
+			\foreach \i/\val/\addr/\written in {%
+				0/{0xEE}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/0,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
+				\pgfmathsetmacro{\y}{\memy-\i*\rh}
+				\ifnum\written=1
+				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\else
+				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
+				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
+			}
+			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
+
+			% --- Arrow: 1 byte flows up into byte0 ---
+			\draw[flow, draw=accentline] (\memx,{\memy-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
+
+			% --- Address axis + brace ---
+			\def\axisx{9.1}
+			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
+			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-\rh-0.05});
+			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
+			at ({\axisx-0.15},{\memy-0.5*\rh}) {addr.};
+			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
+			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-\rh});
+			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
+			at ({\axisx+0.85},{\memy-0.5*\rh}) {1 byte\\loaded by\\\texttt{LDRB}};
+
+			% under-brace: unchanged memory bytes
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
+			({\memx-0.1},{\memy-1*\rh}) -- ({\memx-0.1},{\memy-4*\rh});
+			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
+			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.35}) {not\\copied};
+
+		\end{tikzpicture}%
+	}
+	\vspace{4mm}
+
+	\begin{itemize}
+		\item Assume R0 = 0x20000100, and the \alert{memory byte} at 0x20000100 holds 0xEE.
+		\item After \texttt{LDRB R1, [R0]} runs, the lowest byte of R1 holds 0xEE, and the remaining bytes are \alert{cleared}.
+	\end{itemize}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}[fragile]{LDRH Instruction}
+	\begin{verbatim}
+		LDRH  R1, [R0]    ; load halfword
+	\end{verbatim}
+	\resizebox{0.92\textwidth}{!}{%
+		\begin{tikzpicture}[x=10mm, y=8mm]
+
+			% --- Register R1: byte3..byte0 left to right; only byte1,byte0 loaded ---
+			\foreach \p/\val/\loaded in {0/{0x00}/0, 1/{0x00}/0, 2/{0xFF}/1, 3/{0xEE}/1}{
+				\pgfmathsetmacro{\x}{\regx+\p*\bw}
+				\ifnum\loaded=1
+				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\else
+				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
+			}
+			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
+
+			% under-brace: zero-extended upper half
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
+			({\regx},{\regy-\rh-0.1}) -- ({\regx+2*\bw},{\regy-\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
+			at ({\regx+\bw},{\regy-\rh-0.7}) {bits 31:16 = 0\\(zero-extended)};
+
+			% --- Memory: 2 bytes, low address on top (LSB) ---
+			\foreach \i/\val/\addr/\written in {%
+				0/{0xEE}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/1,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
+				\pgfmathsetmacro{\y}{\memy-\i*\rh}
+				\ifnum\written=1
+				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\else
+				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
+				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
+			}
+			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
+
+			% --- Arrows: 2 bytes flow up into byte1,byte0 ---
+			\draw[flow, draw=accentline] (\memx,{\memy-0*\rh-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
+			\draw[flow, draw=accentline] (\memx,{\memy-1*\rh-\rh/2}) -| ({\regx+2*\bw+\bw/2},{\regy-\rh});
+
+			% --- Address axis + brace ---
+			\def\axisx{9.1}
+			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
+			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-2*\rh-0.05});
+			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
+			at ({\axisx-0.15},{\memy-1*\rh}) {increasing address};
+			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
+			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-2*\rh});
+			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
+			at ({\axisx+0.85},{\memy-1*\rh}) {2 bytes\\loaded by\\\texttt{LDRH}};
+
+			% under-brace: unchanged memory bytes
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
+			({\memx-.1},{\memy-2*\rh}) -- ({\memx-.1},{\memy-4*\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
+			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.7}) {not\\copied};
+
+		\end{tikzpicture}%
+	}
+	\vspace{4mm}
+
+	\begin{itemize}
+		\item Assume R0 = 0x20000100, and the \alert{memory halfword} at 0x20000100 holds 0xFFEE.
+		\item After \texttt{LDRH R1, [R0]} runs, the lower halfword of R1 holds 0xFFEE, and the top halfword is \alert{cleared}.
+	\end{itemize}
+\end{frame}
+}
 
 \begin{frame}[fragile]{Byte and Halfword Stores}
     \leavevmode
@@ -451,6 +911,156 @@ int f(int a, int b) {
     \end{columns}
 \end{frame}
 
+{\beamerextras
+\begin{frame}[fragile]{STRB: Storing a Byte to Memory}
+	\begin{verbatim}
+		STRB R1, [R0]
+	\end{verbatim}
+	\centering
+	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
+	\vspace{2mm}
+	\resizebox{0.92\textwidth}{!}{%
+		\begin{tikzpicture}[x=10mm, y=8mm]
+
+			% --- Register R1: only byte0 (low byte) is stored ---
+			\foreach \p/\val/\used in {0/{0x11}/0, 1/{0x22}/0, 2/{0x33}/0, 3/{0x44}/1}{
+				\pgfmathsetmacro{\x}{\regx+\p*\bw}
+				\ifnum\used=1
+				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\else
+				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
+			}
+			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
+
+			% under-brace: upper 3 bytes not stored
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
+			({\regx},{\regy-\rh-0.1}) -- ({\regx+3*\bw},{\regy-\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
+			at ({\regx+1.5*\bw},{\regy-\rh-0.55}) {bits 31:8\\(not stored)};
+
+			% --- Memory: only the low byte overwritten, others keep their old value ---
+			\foreach \i/\val/\addr/\written in {%
+				0/{0x44}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/0,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
+				\pgfmathsetmacro{\y}{\memy-\i*\rh}
+				\ifnum\written=1
+				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\else
+				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
+				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
+			}
+			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
+
+			% under-brace: unchanged memory bytes
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
+			({\memx-0.1},{\memy-1*\rh}) -- ({\memx-0.1},{\memy-4*\rh});
+			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
+			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.5}) {unchanged};
+
+			% --- Arrow: 1 byte flows down from register into memory ---
+			\draw[flow, draw=blkline] ({\regx+3*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-0*\rh-\rh/2});
+
+			% --- Address axis + brace ---
+			\def\axisx{9.1}
+			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
+			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-4*\rh-0.05});
+			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
+			at ({\axisx-0.15},{\memy-2*\rh}) {increasing address};
+			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
+			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-1*\rh});
+			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
+			at ({\axisx+0.85},{\memy-0.5*\rh}) {1 byte\\written by\\\texttt{STRB}};
+
+		\end{tikzpicture}%
+	}
+	\begin{itemize}
+		\item After \texttt{STRB R1, [R0]} runs, the \alert{memory byte} at 0x20000100 holds 0x44.
+	\end{itemize}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}[fragile]{STRH: Storing a Halfword to Memory}
+	\begin{verbatim}
+		STRH R1, [R0]
+	\end{verbatim}
+	\centering
+	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
+	\vspace{2mm}
+	\resizebox{0.92\textwidth}{!}{%
+		\begin{tikzpicture}[x=10mm, y=8mm]
+
+			% --- Register R1: only byte1,byte0 (low halfword) are stored ---
+			\foreach \p/\val/\used in {0/{0x11}/0, 1/{0x22}/0, 2/{0x33}/1, 3/{0x44}/1}{
+				\pgfmathsetmacro{\x}{\regx+\p*\bw}
+				\ifnum\used=1
+				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\else
+				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
+			}
+			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
+
+			% under-brace: high halfword not stored
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
+			({\regx},{\regy-\rh-0.1}) -- ({\regx+2*\bw},{\regy-\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
+			at ({\regx+\bw},{\regy-\rh-0.55}) {bits 31:16\\(not stored)};
+
+			% --- Memory: low 2 bytes overwritten, high 2 bytes keep their old value ---
+			\foreach \i/\val/\addr/\written in {%
+				0/{0x44}/{0x20000100}/1,
+				1/{0x33}/{0x20000101}/1,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
+				\pgfmathsetmacro{\y}{\memy-\i*\rh}
+				\ifnum\written=1
+				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\else
+				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
+				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
+			}
+			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
+
+			% under-brace: unchanged memory bytes
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
+			({\memx-.1},{\memy-2*\rh}) -- ({\memx-.1},{\memy-4*\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
+			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.5}) {unchanged};
+
+			% --- Arrows: 2 bytes flow down from register into memory ---
+			\draw[flow, draw=blkline] ({\regx+3*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-0*\rh-\rh/2});
+			\draw[flow, draw=blkline] ({\regx+2*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-1*\rh-\rh/2});
+
+			% --- Address axis + brace ---
+			\def\axisx{9.1}
+			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
+			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-4*\rh-0.05});
+			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
+			at ({\axisx-0.15},{\memy-2*\rh}) {increasing address};
+			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
+			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-2*\rh});
+			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
+			at ({\axisx+0.85},{\memy-1*\rh}) {2 bytes\\written by\\\texttt{STRH}};
+
+		\end{tikzpicture}%
+	}
+	\begin{itemize}
+		\item Assume R0 = 0x20000100, R1 = 0x11223344.
+		\item After \texttt{STRH R1, [R0]} runs, the \alert{memory halfword} at 0x20000100 holds 0x3344.
+	\end{itemize}
+\end{frame}
+}
+
 \begin{frame}{Common Memory Access Instructions}
     \begin{center}
     {\normalsize
@@ -469,6 +1079,122 @@ int f(int a, int b) {
     \end{tabular}}
     \end{center}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{Memory Copy Example}
+
+	\begin{asm}[basicstyle=\normalsize\ttfamily]
+		LDR R0, =0x20000000
+		LDR R1, =0x20000004
+		LDR R2, [R0]
+		STR R2, [R1]
+	\end{asm}
+
+	\vspace{5mm}
+
+
+	\begin{columns}[T]
+
+		% ============================== BEFORE ==============================
+		\begin{column}{0.48\textwidth}
+			\centering{\sffamily\bfseries Before}\\[1mm]
+			\resizebox{\linewidth}{!}{%
+				\begin{tikzpicture}[x=10mm, y=8mm]
+					\path[use as bounding box] (-0.4,1.6) rectangle (7.4,6.9);
+
+					\def\rw{2.4}
+					\def\rh{0.75}
+					\def\regx{0.4}
+					\def\memx{4}
+					\def\rh{0.75} \def\rowsep{0.20} % desired gap
+					\def\rowA{6.0} \def\rowB{\rowA-\rh-\rowsep} \def\rowC{\rowB-\rh-\rowsep}
+
+					\node[lbl, font=\sffamily\small\bfseries] at ({\regx+\rw/2},{\rowA+0.35}) {Registers};
+					\node[lbl, font=\sffamily\small\bfseries] at ({\memx+\rw/2},{\rowA+0.35}) {Memory};
+
+					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowA-\rh/2}) {R0};
+					\draw[extbox] (\regx,\rowA) rectangle ({\regx+\rw},{\rowA-\rh});
+					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowA-\rh/2}) {0xDEADBEEF};
+
+					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowB-\rh/2}) {R1};
+					\draw[extbox] (\regx,\rowB) rectangle ({\regx+\rw},{\rowB-\rh});
+					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowB-\rh/2}) {0xCAFEBABE};
+
+					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowC-\rh/2}) {R2};
+					\draw[extbox] (\regx,\rowC) rectangle ({\regx+\rw},{\rowC-\rh});
+					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowC-\rh/2}) {0xBAADF00D};
+
+					\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\rw+0.25},{\rowA-\rh/2}) {0x20000000};
+					\draw[memwrite] (\memx,\rowA) rectangle ({\memx+\rw},{\rowA-\rh});
+					\node[font=\ttfamily\small] at ({\memx+\rw/2},{\rowA-\rh/2}) {0x11223344};
+
+					\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\rw+0.25},{\rowB-\rh/2}) {0x20000004};
+					\draw[memkeep] (\memx,\rowB) rectangle ({\memx+\rw},{\rowB-\rh});
+					\node[font=\ttfamily\small] at ({\memx+\rw/2},{\rowB-\rh/2}) {0xFEEDFACE};
+
+				\end{tikzpicture}%
+			}
+		\end{column}
+
+		% ============================== AFTER ===============================
+		\begin{column}{0.48\textwidth}
+			\centering{\sffamily\bfseries After}\\[1mm]
+			\resizebox{\linewidth}{!}{%
+				\begin{tikzpicture}[x=10mm, y=8mm]
+					\path[use as bounding box] (-0.4,1.6) rectangle (7.4,6.9);
+
+					\def\rw{2.4}
+					\def\rh{0.75}
+					\def\regx{0.4}
+					\def\memx{4}
+					\def\rh{0.75} \def\rowsep{0.20} % desired gap
+					\def\rowA{6.0} \def\rowB{\rowA-\rh-\rowsep} \def\rowC{\rowB-\rh-\rowsep}
+
+					\node[lbl, font=\sffamily\small\bfseries] at ({\regx+\rw/2},{\rowA+0.35}) {Registers};
+					\node[lbl, font=\sffamily\small\bfseries] at ({\memx+\rw/2},{\rowA+0.35}) {Memory};
+
+					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowA-\rh/2}) {R0};
+					\draw[loadedbox] (\regx,\rowA) rectangle ({\regx+\rw},{\rowA-\rh});
+					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowA-\rh/2}) {0x20000000};
+
+					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowB-\rh/2}) {R1};
+					\draw[loadedbox] (\regx,\rowB) rectangle ({\regx+\rw},{\rowB-\rh});
+					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowB-\rh/2}) {0x20000004};
+
+					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowC-\rh/2}) {R2};
+					\draw[loadedbox] (\regx,\rowC) rectangle ({\regx+\rw},{\rowC-\rh});
+					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowC-\rh/2}) {0x11223344};
+
+					\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\rw+0.25},{\rowA-\rh/2}) {0x20000000};
+					\draw[memwrite] (\memx,\rowA) rectangle ({\memx+\rw},{\rowA-\rh});
+					\node[font=\ttfamily\small] at ({\memx+\rw/2},{\rowA-\rh/2}) {0x11223344};
+
+					\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\rw+0.25},{\rowB-\rh/2}) {0x20000004};
+					\draw[memwrite] (\memx,\rowB) rectangle ({\memx+\rw},{\rowB-\rh});
+					\node[font=\ttfamily\small] at ({\memx+\rw/2},{\rowB-\rh/2}) {0x11223344};
+
+					% Address pointers, still true after execution (offset apart so both show)
+					\draw[-{Stealth[length=2mm]}, dashed, draw=black!55, thick]
+					({\regx+\rw},{\rowA-\rh/2}) -- ({\memx},{\rowA-\rh/2});
+					\draw[-{Stealth[length=2mm]}, dashed, draw=black!55, thick]
+					({\regx+\rw},{\rowB-\rh/2}) -- ({\memx},{\rowB-\rh/2});
+
+				\end{tikzpicture}%
+			}
+		\end{column}
+
+	\end{columns}
+
+	\vspace{1mm}
+	{\scriptsize\color{black!55} dashed arrow = address used for addressing\par}
+
+	%	\begin{itemize}
+		%		\item \texttt{R0} and \texttt{R1} start out holding pointers to memory. We could have used \texttt{MOVW}/\texttt{MOVT} instead.
+		%		\item Square brackets always mean \alert{memory access}.
+		%	\end{itemize}
+
+\end{frame}
+}
 
 
 %===============================================================================
@@ -529,6 +1255,156 @@ int f(int a, int b) {
         instruction appears.
     \end{block}
 \end{frame}
+
+{\beamerextras
+\begin{frame}[fragile]{LDRSB Instruction}
+	\begin{verbatim}
+		LDRSB R1, [R0]    ; load signed byte
+	\end{verbatim}
+	\resizebox{0.92\textwidth}{!}{%
+		\begin{tikzpicture}[x=10mm, y=8mm]
+
+			% --- Register R1: only byte0 loaded; byte3,byte2,byte1 replicate the sign bit ---
+			\foreach \p/\val/\loaded in {0/{0xFF}/0, 1/{0xFF}/0, 2/{0xFF}/0, 3/{0xEE}/1}{
+				\pgfmathsetmacro{\x}{\regx+\p*\bw}
+				\ifnum\loaded=1
+				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\else
+				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
+			}
+			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
+
+			% under-brace: sign-extended upper 3 bytes
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
+			({\regx},{\regy-\rh-0.1}) -- ({\regx+3*\bw},{\regy-\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
+			at ({\regx+1.5*\bw},{\regy-\rh-0.7}) {bits 31:8 = bit 7\\(sign-extended)};
+
+			% --- Memory: 1 byte, same source byte 0x80 as LDRB (bit 7 = 1) ---
+			\foreach \i/\val/\addr/\written in {%
+				0/{0xEE}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/0,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
+				\pgfmathsetmacro{\y}{\memy-\i*\rh}
+				\ifnum\written=1
+				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\else
+				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
+				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
+			}
+			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
+
+			% --- Arrow: 1 byte flows up into byte0 ---
+			\draw[flow, draw=accentline] (\memx,{\memy-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
+
+			% --- Address axis + brace ---
+			\def\axisx{9.1}
+			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
+			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-\rh-0.05});
+			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
+			at ({\axisx-0.15},{\memy-0.5*\rh}) {addr.};
+			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
+			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-\rh});
+			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
+			at ({\axisx+0.85},{\memy-0.5*\rh}) {1 byte\\loaded by\\\texttt{LDRSB}};
+
+			% under-brace: unchanged memory bytes
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
+			({\memx-0.1},{\memy-1*\rh}) -- ({\memx-0.1},{\memy-4*\rh});
+			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
+			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.35}) {not\\copied};
+
+
+		\end{tikzpicture}%
+	}
+	\vspace{4mm}
+
+	\begin{itemize}
+		\item Assume R0 = 0x20000100, and the \alert{memory byte} at 0x20000100 holds 0xEE.
+		\item After \texttt{LDRSB R1, [R0]} runs, the lowest byte of R1 holds 0xEE, and the remaining bytes hold the sign bit of the loaded byte.
+	\end{itemize}
+\end{frame}
+}
+
+{\beamerextras
+\begin{frame}[fragile]{LDRSH Instruction}
+	\begin{verbatim}
+		LDRSH R1, [R0]    ; load signed halfword
+	\end{verbatim}
+	\resizebox{0.92\textwidth}{!}{%
+		\begin{tikzpicture}[x=10mm, y=8mm]
+
+			% --- Register R1: byte1,byte0 loaded; byte3,byte2 replicate the sign bit ---
+			\foreach \p/\val/\loaded in {0/{0xFF}/0, 1/{0xFF}/0, 2/{0xFF}/1, 3/{0xEE}/1}{
+				\pgfmathsetmacro{\x}{\regx+\p*\bw}
+				\ifnum\loaded=1
+				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\else
+				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
+			}
+			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
+
+			% under-brace: sign-extended upper half
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
+			({\regx},{\regy-\rh-0.1}) -- ({\regx+2*\bw},{\regy-\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
+			at ({\regx+\bw},{\regy-\rh-0.7}) {bits 31:16 = bit 15\\(sign-extended)};
+
+			% --- Memory: 2 bytes, same halfword 0xFFEE as LDRH (bit 15 = 1) ---
+			\foreach \i/\val/\addr/\written in {%
+				0/{0xEE}/{0x20000100}/1,
+				1/{0xFF}/{0x20000101}/1,
+				2/{0xC0}/{0x20000102}/0,
+				3/{0x00}/{0x20000103}/0}{
+				\pgfmathsetmacro{\y}{\memy-\i*\rh}
+				\ifnum\written=1
+				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\else
+				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
+				\fi
+				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
+				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
+			}
+			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
+
+			% --- Arrows: 2 bytes flow up into byte1,byte0 ---
+			\draw[flow, draw=accentline] (\memx,{\memy-0*\rh-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
+			\draw[flow, draw=accentline] (\memx,{\memy-1*\rh-\rh/2}) -| ({\regx+2*\bw+\bw/2},{\regy-\rh});
+
+			% --- Address axis + brace ---
+			\def\axisx{9.1}
+			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
+			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-2*\rh-0.05});
+			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
+			at ({\axisx-0.15},{\memy-1*\rh}) {increasing address};
+			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
+			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-2*\rh});
+			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
+			at ({\axisx+0.85},{\memy-1*\rh}) {2 bytes\\loaded by\\\texttt{LDRSH}};
+
+			% under-brace: unchanged memory bytes
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
+			({\memx-.1},{\memy-2*\rh}) -- ({\memx-.1},{\memy-4*\rh-0.1});
+			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
+			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.7}) {not\\copied};
+
+		\end{tikzpicture}%
+	}
+	\vspace{4mm}
+
+	\begin{itemize}
+		\item Assume R0 = 0x20000100, and the \alert{memory halfword} at 0x20000100 holds 0xFFEE.
+		\item After \texttt{LDRSH R1, [R0]} runs, the lower halfword of R1 holds 0xFFEE, and the top halfword holds the sign bit of the loaded halfword.
+	\end{itemize}
+\end{frame}
+}
 
 {\beamerextras
 \begin{frame}[fragile]{Predict the Register}{Zero extension or sign extension?}
@@ -889,805 +1765,6 @@ int f(int a, int b) {
         for any data width.
     \end{block}
 \end{frame}
-
-
-%===============================================================================
-\section{Beamer Extras}
-%===============================================================================
-
-% \bw, \rh, \regx, \regy, \memx, \memy are shared across every bit-level
-% TikZ frame below. Must sit OUTSIDE any \begin{frame}[fragile], because
-% Beamer's .vrb save-and-reread tokenizes the TikZ later, by which time
-% a \def made inside an earlier fragile frame is no longer visible.
-\def\bw{1.0}
-\def\rh{0.62}
-\def\regx{0.7}
-\def\regy{4.3}
-\def\memx{5.2}
-\def\memy{3.0}
-
-% stm05_todo.tex -- unreviewed slide material dropped during the
-% 2026-10-07 sync of stm05.tex to chapter 5.
-%
-% These frames carry teaching material that the book does not currently
-% cover. Each is a candidate for promotion to chapter 5 at the next book
-% edition. Treat them as raw material, not finished slides.
-%
-% NOT part of the stmNN.tex deck or the stm32primer.tex book -- this file
-% is never \include'd or \input anywhere. It is a staging ground only.
-%
-% After promoting (or rejecting) a frame, delete it from this file.
-%
-% Rule: see CLAUDE.md section "The book is the superset" --- dropped
-% slide material is parked here, never deleted.
-
-%%------------------------------------------------------------------
-% Load Group of Instructions
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}{Load Group of Instructions}
-	\begin{itemize}
-		\item An LDR-type instruction fetches data from memory and puts
-		the value into the destination register, \texttt{Rd}.
-		\item Syntax: \\ %\verb|LDR Rd, [Rn, #offset]|
-		\begin{center}
-			{\ttfamily\normalsize
-				\begin{tabular}{@{}l l@{}}
-					LDR  Rd, [Rn, \#offset] \\
-			\end{tabular}}
-			\vspace{3mm}
-		\end{center}
-		\begin{itemize}
-			\item \texttt{Rd}: destination register, where the loaded value is stored
-			\item \texttt{Rn}: base register, holding the memory address
-			\item \texttt{\#offset}: optional offset, added to the base register to compute the memory address
-		\end{itemize}
-	\end{itemize}
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% LDR: Loading a Word from Memory (Little-Endian)
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{LDR: Loading a Word from Memory (Little-Endian)}
-	\begin{verbatim}
-		LDR  R0, [R1]    ; load word
-	\end{verbatim}
-
-	\centering
-	\resizebox{0.92\textwidth}{!}{%
-		\begin{tikzpicture}[x=10mm, y=8mm]
-
-			\def\bw{1.0}    % width of one byte box
-			\def\rh{0.62}   % row height (matches the stack-frame diagram)
-
-			% --- Register R1: four contiguous byte boxes ---
-			\def\regx{0.7}
-			\def\regy{4.3}
-			\foreach \i/\val in {0/{0x00},1/{0xC0},2/{0xFF},3/{0xEE}}{
-				\pgfmathsetmacro{\x}{\regx+\i*\bw}
-				\draw[draw=blkline, fill=blkfill, thick]
-				(\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
-			}
-			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
-
-			% --- Memory: four stacked byte boxes, addresses increasing downward ---
-			\def\memx{5.2}
-			\def\memy{3.0}
-			\foreach \i/\val/\addr in {%
-				0/{0xEE}/{0x20000100},
-				1/{0xFF}/{0x20000101},
-				2/{0xC0}/{0x20000102},
-				3/{0x00}/{0x20000103}}{
-				\pgfmathsetmacro{\y}{\memy-\i*\rh}
-				\draw[draw=accentline, fill=accentfill, thick]
-				(\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
-				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
-			}
-			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
-
-			% --- Arrows: bytes flow up from memory into the register (LDR) ---
-			\draw[flow, draw=accentline] (\memx,{\memy-0*\rh-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
-			\draw[flow, draw=accentline] (\memx,{\memy-1*\rh-\rh/2}) -| ({\regx+2*\bw+\bw/2},{\regy-\rh});
-			\draw[flow, draw=accentline] (\memx,{\memy-2*\rh-\rh/2}) -| ({\regx+1*\bw+\bw/2},{\regy-\rh});
-			\draw[flow, draw=accentline] (\memx,{\memy-3*\rh-\rh/2}) -| ({\regx+0*\bw+\bw/2},{\regy-\rh});
-
-			% --- Address axis, to the right of the address column ---
-			\def\axisx{8.9}
-			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
-			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-4*\rh-0.05});
-			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
-			at ({\axisx-0.15},{\memy-2*\rh}) {increasing address};
-
-			% --- Brace naming the whole word ---
-			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
-			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-4*\rh});
-			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
-			at ({\axisx+0.85},{\memy-2*\rh}) {4 bytes\\1 word\\loaded by\\\texttt{LDR}};
-
-		\end{tikzpicture}%\
-	}
-	\begin{itemize}
-		\item Assume R0 = 0x20000100, and the \alert{memory word} at 0x20000100 holds 0x00C0FFEE.
-		\item After \texttt{LDR R1, [R0]} runs, the destination register R1 holds 0x00C0FFEE.
-	\end{itemize}
-
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% LDRH Instruction
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{LDRH Instruction}
-	\begin{verbatim}
-		LDRH  R0, [R1]    ; load halfword
-	\end{verbatim}
-	\resizebox{0.92\textwidth}{!}{%
-		\begin{tikzpicture}[x=10mm, y=8mm]
-
-			% --- Register R1: byte3..byte0 left to right; only byte1,byte0 loaded ---
-			\foreach \p/\val/\loaded in {0/{0x00}/0, 1/{0x00}/0, 2/{0xFF}/1, 3/{0xEE}/1}{
-				\pgfmathsetmacro{\x}{\regx+\p*\bw}
-				\ifnum\loaded=1
-				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\else
-				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
-			}
-			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
-
-			% under-brace: zero-extended upper half
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
-			({\regx},{\regy-\rh-0.1}) -- ({\regx+2*\bw},{\regy-\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
-			at ({\regx+\bw},{\regy-\rh-0.7}) {bits 31:16 = 0\\(zero-extended)};
-
-			% --- Memory: 2 bytes, low address on top (LSB) ---
-			\foreach \i/\val/\addr/\written in {%
-				0/{0xEE}/{0x20000100}/1,
-				1/{0xFF}/{0x20000101}/1,
-				2/{0xC0}/{0x20000102}/0,
-				3/{0x00}/{0x20000103}/0}{
-				\pgfmathsetmacro{\y}{\memy-\i*\rh}
-				\ifnum\written=1
-				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\else
-				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
-				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
-			}
-			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
-
-			% --- Arrows: 2 bytes flow up into byte1,byte0 ---
-			\draw[flow, draw=accentline] (\memx,{\memy-0*\rh-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
-			\draw[flow, draw=accentline] (\memx,{\memy-1*\rh-\rh/2}) -| ({\regx+2*\bw+\bw/2},{\regy-\rh});
-
-			% --- Address axis + brace ---
-			\def\axisx{9.1}
-			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
-			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-2*\rh-0.05});
-			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
-			at ({\axisx-0.15},{\memy-1*\rh}) {increasing address};
-			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
-			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-2*\rh});
-			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
-			at ({\axisx+0.85},{\memy-1*\rh}) {2 bytes\\loaded by\\\texttt{LDRH}};
-
-			% under-brace: unchanged memory bytes
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
-			({\memx-.1},{\memy-2*\rh}) -- ({\memx-.1},{\memy-4*\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
-			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.7}) {not\\copied};
-
-		\end{tikzpicture}%
-	}
-	\vspace{4mm}
-
-	\begin{itemize}
-		\item Assume R0 = 0x20000100, and the \alert{memory halfword} at 0x20000100 holds 0xFFEE.
-		\item After \texttt{LDRH R1, [R0]} runs, the lower halfword of R1 holds 0xFFEE, and the top halfword is \alert{cleared}.
-	\end{itemize}
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% LDRB Instruction
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{LDRB Instruction}
-	\resizebox{0.92\textwidth}{!}{%
-		\begin{tikzpicture}[x=10mm, y=8mm]
-
-			% --- Register R1: only byte0 loaded ---
-			\foreach \p/\val/\loaded in {0/{0x00}/0, 1/{0x00}/0, 2/{0x00}/0, 3/{0xEE}/1}{
-				\pgfmathsetmacro{\x}{\regx+\p*\bw}
-				\ifnum\loaded=1
-				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\else
-				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
-			}
-			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
-
-			% under-brace: zero-extended upper 3 bytes
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
-			({\regx},{\regy-\rh-0.1}) -- ({\regx+3*\bw},{\regy-\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
-			at ({\regx+1.5*\bw},{\regy-\rh-0.7}) {bits 31:8 = 0\\(zero-extended)};
-
-			% --- Memory: 1 byte ---
-			% --- Memory: only the low byte overwritten, others keep their old value ---
-			\foreach \i/\val/\addr/\written in {%
-				0/{0xEE}/{0x20000100}/1,
-				1/{0xFF}/{0x20000101}/0,
-				2/{0xC0}/{0x20000102}/0,
-				3/{0x00}/{0x20000103}/0}{
-				\pgfmathsetmacro{\y}{\memy-\i*\rh}
-				\ifnum\written=1
-				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\else
-				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
-				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
-			}
-			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
-
-			% --- Arrow: 1 byte flows up into byte0 ---
-			\draw[flow, draw=accentline] (\memx,{\memy-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
-
-			% --- Address axis + brace ---
-			\def\axisx{9.1}
-			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
-			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-\rh-0.05});
-			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
-			at ({\axisx-0.15},{\memy-0.5*\rh}) {addr.};
-			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
-			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-\rh});
-			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
-			at ({\axisx+0.85},{\memy-0.5*\rh}) {1 byte\\loaded by\\\texttt{LDRB}};
-
-			% under-brace: unchanged memory bytes
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
-			({\memx-0.1},{\memy-1*\rh}) -- ({\memx-0.1},{\memy-4*\rh});
-			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
-			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.35}) {not\\copied};
-
-		\end{tikzpicture}%
-	}
-	\vspace{4mm}
-
-	\begin{itemize}
-		\item Assume R0 = 0x20000100, and the \alert{memory byte} at 0x20000100 holds 0xEE.
-		\item After \texttt{LDRB R1, [R0]} runs, the lowest byte of R1 holds 0xEE, and the remaining bytes are \alert{cleared}.
-	\end{itemize}
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% LDRSH Instruction
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{LDRSH Instruction}
-	\begin{verbatim}
-		LDRSH R0, [R1]    ; load signed halfword
-	\end{verbatim}
-	\resizebox{0.92\textwidth}{!}{%
-		\begin{tikzpicture}[x=10mm, y=8mm]
-
-			% --- Register R1: byte1,byte0 loaded; byte3,byte2 replicate the sign bit ---
-			\foreach \p/\val/\loaded in {0/{0xFF}/0, 1/{0xFF}/0, 2/{0xFF}/1, 3/{0xEE}/1}{
-				\pgfmathsetmacro{\x}{\regx+\p*\bw}
-				\ifnum\loaded=1
-				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\else
-				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
-			}
-			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
-
-			% under-brace: sign-extended upper half
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
-			({\regx},{\regy-\rh-0.1}) -- ({\regx+2*\bw},{\regy-\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
-			at ({\regx+\bw},{\regy-\rh-0.7}) {bits 31:16 = bit 15\\(sign-extended)};
-
-			% --- Memory: 2 bytes, same halfword 0xFF80 as LDRH (bit 15 = 1) ---
-			\foreach \i/\val/\addr/\written in {%
-				0/{0xEE}/{0x20000100}/1,
-				1/{0xFF}/{0x20000101}/1,
-				2/{0xC0}/{0x20000102}/0,
-				3/{0x00}/{0x20000103}/0}{
-				\pgfmathsetmacro{\y}{\memy-\i*\rh}
-				\ifnum\written=1
-				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\else
-				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
-				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
-			}
-			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
-
-			% --- Arrows: 2 bytes flow up into byte1,byte0 ---
-			\draw[flow, draw=accentline] (\memx,{\memy-0*\rh-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
-			\draw[flow, draw=accentline] (\memx,{\memy-1*\rh-\rh/2}) -| ({\regx+2*\bw+\bw/2},{\regy-\rh});
-
-			% --- Address axis + brace ---
-			\def\axisx{9.1}
-			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
-			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-2*\rh-0.05});
-			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
-			at ({\axisx-0.15},{\memy-1*\rh}) {increasing address};
-			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
-			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-2*\rh});
-			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
-			at ({\axisx+0.85},{\memy-1*\rh}) {2 bytes\\loaded by\\\texttt{LDRSH}};
-
-			% under-brace: unchanged memory bytes
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
-			({\memx-.1},{\memy-2*\rh}) -- ({\memx-.1},{\memy-4*\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
-			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.7}) {not\\copied};
-
-		\end{tikzpicture}%
-	}
-	\vspace{4mm}
-
-	\begin{itemize}
-		\item Assume R0 = 0x20000100, and the \alert{memory halfword} at 0x20000100 holds 0xEEFF.
-		\item After \texttt{LDRH R1, [R0]} runs, the lower halfword of R1 holds 0xFFEE, and the top halfword holds the sign bit of the loaded halfword.
-	\end{itemize}
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% LDRSB Instruction
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{LDRSB Instruction}
-	\begin{verbatim}
-		LDRSB R0, [R1]    ; load signed byte
-	\end{verbatim}
-	\resizebox{0.92\textwidth}{!}{%
-		\begin{tikzpicture}[x=10mm, y=8mm]
-
-			% --- Register R1: only byte0 loaded; byte3,byte2,byte1 replicate the sign bit ---
-			\foreach \p/\val/\loaded in {0/{0xFF}/0, 1/{0xFF}/0, 2/{0xFF}/0, 3/{0xEE}/1}{
-				\pgfmathsetmacro{\x}{\regx+\p*\bw}
-				\ifnum\loaded=1
-				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\else
-				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
-			}
-			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
-
-			% under-brace: sign-extended upper 3 bytes
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
-			({\regx},{\regy-\rh-0.1}) -- ({\regx+3*\bw},{\regy-\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
-			at ({\regx+1.5*\bw},{\regy-\rh-0.7}) {bits 31:8 = bit 7\\(sign-extended)};
-
-			% --- Memory: 1 byte, same source byte 0x80 as LDRB (bit 7 = 1) ---
-			\foreach \i/\val/\addr/\written in {%
-				0/{0xEE}/{0x20000100}/1,
-				1/{0xFF}/{0x20000101}/0,
-				2/{0xC0}/{0x20000102}/0,
-				3/{0x00}/{0x20000103}/0}{
-				\pgfmathsetmacro{\y}{\memy-\i*\rh}
-				\ifnum\written=1
-				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\else
-				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
-				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
-			}
-			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
-
-			% --- Arrow: 1 byte flows up into byte0 ---
-			\draw[flow, draw=accentline] (\memx,{\memy-\rh/2}) -| ({\regx+3*\bw+\bw/2},{\regy-\rh});
-
-			% --- Address axis + brace ---
-			\def\axisx{9.1}
-			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
-			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-\rh-0.05});
-			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
-			at ({\axisx-0.15},{\memy-0.5*\rh}) {addr.};
-			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
-			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-\rh});
-			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
-			at ({\axisx+0.85},{\memy-0.5*\rh}) {1 byte\\loaded by\\\texttt{LDRSB}};
-
-			% under-brace: unchanged memory bytes
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
-			({\memx-0.1},{\memy-1*\rh}) -- ({\memx-0.1},{\memy-4*\rh});
-			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
-			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.35}) {not\\copied};
-
-
-		\end{tikzpicture}%
-	}
-	\vspace{4mm}
-
-	\begin{itemize}
-		\item Assume R0 = 0x20000100, and the \alert{memory byte} at 0x20000100 holds 0xEE.
-		\item After \texttt{LDRSB R1, [R0]} runs, the lowest byte of R1 holds 0xEE, and the remaining bytes hold the sign bit of the loaded byte.
-	\end{itemize}
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% STR: Storing a Word to Memory
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{STR: Storing a Word to Memory}
-	\begin{verbatim}
-		STR   R0, [R1]    ; store 32-bit word
-	\end{verbatim}
-	\centering
-	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
-	\vspace{2mm}
-	\resizebox{0.92\textwidth}{!}{%
-		\begin{tikzpicture}[x=10mm, y=8mm]
-
-			% --- Register R1: all four bytes are stored ---
-			\foreach \p/\val in {0/{0x11}, 1/{0x22}, 2/{0x33}, 3/{0x44}}{
-				\pgfmathsetmacro{\x}{\regx+\p*\bw}
-				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
-			}
-			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
-
-			% --- Memory: all four bytes overwritten, low address on top (LSB) ---
-			\foreach \i/\val/\addr in {%
-				0/{0x44}/{0x20000100},
-				1/{0x33}/{0x20000101},
-				2/{0x22}/{0x20000102},
-				3/{0x11}/{0x20000103}}{
-				\pgfmathsetmacro{\y}{\memy-\i*\rh}
-				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
-				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
-			}
-			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
-
-			% --- Arrows: all four bytes flow down from register into memory ---
-			\draw[flow, draw=blkline] ({\regx+3*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-0*\rh-\rh/2});
-			\draw[flow, draw=blkline] ({\regx+2*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-1*\rh-\rh/2});
-			\draw[flow, draw=blkline] ({\regx+1*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-2*\rh-\rh/2});
-			\draw[flow, draw=blkline] ({\regx+0*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-3*\rh-\rh/2});
-
-			% --- Address axis + brace ---
-			\def\axisx{9.1}
-			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
-			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-4*\rh-0.05});
-			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
-			at ({\axisx-0.15},{\memy-2*\rh}) {increasing address};
-			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
-			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-4*\rh});
-			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
-			at ({\axisx+0.85},{\memy-2*\rh}) {4 bytes\\written by\\\texttt{STR}\\(old value\\is lost)};
-
-		\end{tikzpicture}%
-	}
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% STRH: Storing a Halfword to Memory
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{STRH: Storing a Halfword to Memory}
-	\begin{verbatim}
-		STRH R0, [R1]
-	\end{verbatim}
-	\centering
-	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
-	\vspace{2mm}
-	\resizebox{0.92\textwidth}{!}{%
-		\begin{tikzpicture}[x=10mm, y=8mm]
-
-			% --- Register R1: only byte1,byte0 (low halfword) are stored ---
-			\foreach \p/\val/\used in {0/{0x11}/0, 1/{0x22}/0, 2/{0x33}/1, 3/{0x44}/1}{
-				\pgfmathsetmacro{\x}{\regx+\p*\bw}
-				\ifnum\used=1
-				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\else
-				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
-			}
-			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
-
-			% under-brace: high halfword not stored
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
-			({\regx},{\regy-\rh-0.1}) -- ({\regx+2*\bw},{\regy-\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
-			at ({\regx+\bw},{\regy-\rh-0.55}) {bits 31:16\\(not stored)};
-
-			% --- Memory: low 2 bytes overwritten, high 2 bytes keep their old value ---
-			\foreach \i/\val/\addr/\written in {%
-				0/{0x44}/{0x20000100}/1,
-				1/{0x33}/{0x20000101}/1,
-				2/{0xC0}/{0x20000102}/0,
-				3/{0x00}/{0x20000103}/0}{
-				\pgfmathsetmacro{\y}{\memy-\i*\rh}
-				\ifnum\written=1
-				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\else
-				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
-				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
-			}
-			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
-
-			% under-brace: unchanged memory bytes
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
-			({\memx-.1},{\memy-2*\rh}) -- ({\memx-.1},{\memy-4*\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
-			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.5}) {unchanged};
-
-			% --- Arrows: 2 bytes flow down from register into memory ---
-			\draw[flow, draw=blkline] ({\regx+3*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-0*\rh-\rh/2});
-			\draw[flow, draw=blkline] ({\regx+2*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-1*\rh-\rh/2});
-
-			% --- Address axis + brace ---
-			\def\axisx{9.1}
-			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
-			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-4*\rh-0.05});
-			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
-			at ({\axisx-0.15},{\memy-2*\rh}) {increasing address};
-			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
-			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-2*\rh});
-			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
-			at ({\axisx+0.85},{\memy-1*\rh}) {2 bytes\\written by\\\texttt{STRH}};
-
-		\end{tikzpicture}%
-	}
-	\begin{itemize}
-		\item Assume R0 = 0x20000100, R1 = 0x11223344.
-		\item After \texttt{STRH R1, [R0]} runs, the \alert{memory halfword} at 0x20000100 holds 0x4433.
-	\end{itemize}
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% STRB: Storing a Byte to Memory
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{STRB: Storing a Byte to Memory}
-	\begin{verbatim}
-		STRB R0, [R1]
-	\end{verbatim}
-	\centering
-	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
-	\vspace{2mm}
-	\resizebox{0.92\textwidth}{!}{%
-		\begin{tikzpicture}[x=10mm, y=8mm]
-
-			% --- Register R1: only byte0 (low byte) is stored ---
-			\foreach \p/\val/\used in {0/{0x11}/0, 1/{0x22}/0, 2/{0x33}/0, 3/{0x44}/1}{
-				\pgfmathsetmacro{\x}{\regx+\p*\bw}
-				\ifnum\used=1
-				\draw[loadedbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\else
-				\draw[extbox] (\x,\regy) rectangle ({\x+\bw},{\regy-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\x+\bw/2},{\regy-\rh/2}) {\val};
-			}
-			\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.3},{\regy-\rh/2}) {R1};
-
-			% under-brace: upper 3 bytes not stored
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=blkline]
-			({\regx},{\regy-\rh-0.1}) -- ({\regx+3*\bw},{\regy-\rh-0.1});
-			\node[lbl, font=\sffamily\scriptsize, text=blkline, align=center]
-			at ({\regx+1.5*\bw},{\regy-\rh-0.55}) {bits 31:8\\(not stored)};
-
-			% --- Memory: only the low byte overwritten, others keep their old value ---
-			\foreach \i/\val/\addr/\written in {%
-				0/{0x44}/{0x20000100}/1,
-				1/{0xFF}/{0x20000101}/0,
-				2/{0xC0}/{0x20000102}/0,
-				3/{0x00}/{0x20000103}/0}{
-				\pgfmathsetmacro{\y}{\memy-\i*\rh}
-				\ifnum\written=1
-				\draw[memwrite] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\else
-				\draw[memkeep] (\memx,\y) rectangle ({\memx+\bw},{\y-\rh});
-				\fi
-				\node[font=\ttfamily\small] at ({\memx+\bw/2},{\y-\rh/2}) {\val};
-				\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\bw+0.3},{\y-\rh/2}) {\addr};
-			}
-			\node[lbl, anchor=south, font=\sffamily\small] at ({\memx+\bw/2},{\memy+0.15}) {Memory};
-
-			% under-brace: unchanged memory bytes
-			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, draw=accentline]
-			({\memx-0.1},{\memy-1*\rh}) -- ({\memx-0.1},{\memy-4*\rh});
-			\node[lbl, font=\sffamily\scriptsize, text=accentline, align=center]
-			at ({\memx-\bw/2-.4},{\memy-2*\rh-0.5}) {unchanged};
-
-			% --- Arrow: 1 byte flows down from register into memory ---
-			\draw[flow, draw=blkline] ({\regx+3*\bw+\bw/2},{\regy-\rh}) |- (\memx,{\memy-0*\rh-\rh/2});
-
-			% --- Address axis + brace ---
-			\def\axisx{9.1}
-			\draw[-{Stealth[length=2.2mm]}, draw=black!45]
-			({\axisx},{\memy+0.05}) -- ({\axisx},{\memy-4*\rh-0.05});
-			\node[lbl, anchor=south, rotate=90, font=\sffamily\scriptsize]
-			at ({\axisx-0.15},{\memy-2*\rh}) {increasing address};
-			\draw[decorate, decoration={brace, amplitude=4pt}, draw=accentline]
-			({\axisx+0.6},{\memy}) -- ({\axisx+0.6},{\memy-1*\rh});
-			\node[lbl, anchor=west, align=left, font=\sffamily\scriptsize, text=accentline]
-			at ({\axisx+0.85},{\memy-0.5*\rh}) {1 byte\\written by\\\texttt{STRB}};
-
-		\end{tikzpicture}%
-	}
-	\begin{itemize}
-		\item After \texttt{STRB R1, [R0]} runs, the \alert{memory byte} at 0x20000100 holds 0x44.
-	\end{itemize}
-\end{frame}
-}
-
-%%------------------------------------------------------------------
-% Memory Copy Example
-%% Reason dropped: bit-level register/memory visualization not in
-%% chapter 5 (the book uses PDF-included figures bits-ldrb.pdf etc.).
-%%------------------------------------------------------------------
-
-{\beamerextras
-\begin{frame}[fragile]{Memory Copy Example}
-
-	\begin{asm}[basicstyle=\normalsize\ttfamily]
-		LDR R0, =0x2000
-		LDR R1, =0x2004
-		LDR R2, [R0]
-		STR R2, [R1]
-	\end{asm}
-
-	\vspace{5mm}
-
-
-	\begin{columns}[T]
-
-		% ============================== BEFORE ==============================
-		\begin{column}{0.48\textwidth}
-			\centering{\sffamily\bfseries Before}\\[1mm]
-			\resizebox{\linewidth}{!}{%
-				\begin{tikzpicture}[x=10mm, y=8mm]
-					\path[use as bounding box] (-0.4,1.6) rectangle (7.4,6.9);
-
-					\def\rw{2.4}
-					\def\rh{0.75}
-					\def\regx{0.4}
-					\def\memx{4}
-					\def\rh{0.75} \def\rowsep{0.20} % desired gap
-					\def\rowA{6.0} \def\rowB{\rowA-\rh-\rowsep} \def\rowC{\rowB-\rh-\rowsep}
-
-					\node[lbl, font=\sffamily\small\bfseries] at ({\regx+\rw/2},{\rowA+0.35}) {Registers};
-					\node[lbl, font=\sffamily\small\bfseries] at ({\memx+\rw/2},{\rowA+0.35}) {Memory};
-
-					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowA-\rh/2}) {R0};
-					\draw[extbox] (\regx,\rowA) rectangle ({\regx+\rw},{\rowA-\rh});
-					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowA-\rh/2}) {0xDEADBEEF};
-
-					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowB-\rh/2}) {R1};
-					\draw[extbox] (\regx,\rowB) rectangle ({\regx+\rw},{\rowB-\rh});
-					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowB-\rh/2}) {0xCAFEBABE};
-
-					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowC-\rh/2}) {R2};
-					\draw[extbox] (\regx,\rowC) rectangle ({\regx+\rw},{\rowC-\rh});
-					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowC-\rh/2}) {0xBAADF00D};
-
-					\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\rw+0.25},{\rowA-\rh/2}) {0x2000};
-					\draw[memwrite] (\memx,\rowA) rectangle ({\memx+\rw},{\rowA-\rh});
-					\node[font=\ttfamily\small] at ({\memx+\rw/2},{\rowA-\rh/2}) {0x11223344};
-
-					\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\rw+0.25},{\rowB-\rh/2}) {0x2004};
-					\draw[memkeep] (\memx,\rowB) rectangle ({\memx+\rw},{\rowB-\rh});
-					\node[font=\ttfamily\small] at ({\memx+\rw/2},{\rowB-\rh/2}) {0xFEEDFACE};
-
-				\end{tikzpicture}%
-			}
-		\end{column}
-
-		% ============================== AFTER ===============================
-		\begin{column}{0.48\textwidth}
-			\centering{\sffamily\bfseries After}\\[1mm]
-			\resizebox{\linewidth}{!}{%
-				\begin{tikzpicture}[x=10mm, y=8mm]
-					\path[use as bounding box] (-0.4,1.6) rectangle (7.4,6.9);
-
-					\def\rw{2.4}
-					\def\rh{0.75}
-					\def\regx{0.4}
-					\def\memx{4}
-					\def\rh{0.75} \def\rowsep{0.20} % desired gap
-					\def\rowA{6.0} \def\rowB{\rowA-\rh-\rowsep} \def\rowC{\rowB-\rh-\rowsep}
-
-					\node[lbl, font=\sffamily\small\bfseries] at ({\regx+\rw/2},{\rowA+0.35}) {Registers};
-					\node[lbl, font=\sffamily\small\bfseries] at ({\memx+\rw/2},{\rowA+0.35}) {Memory};
-
-					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowA-\rh/2}) {R0};
-					\draw[loadedbox] (\regx,\rowA) rectangle ({\regx+\rw},{\rowA-\rh});
-					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowA-\rh/2}) {0x2000};
-
-					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowB-\rh/2}) {R1};
-					\draw[loadedbox] (\regx,\rowB) rectangle ({\regx+\rw},{\rowB-\rh});
-					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowB-\rh/2}) {0x2004};
-
-					\node[lbl, anchor=east, font=\sffamily\small] at ({\regx-0.25},{\rowC-\rh/2}) {R2};
-					\draw[loadedbox] (\regx,\rowC) rectangle ({\regx+\rw},{\rowC-\rh});
-					\node[font=\ttfamily\small] at ({\regx+\rw/2},{\rowC-\rh/2}) {0x11223344};
-
-					\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\rw+0.25},{\rowA-\rh/2}) {0x2000};
-					\draw[memwrite] (\memx,\rowA) rectangle ({\memx+\rw},{\rowA-\rh});
-					\node[font=\ttfamily\small] at ({\memx+\rw/2},{\rowA-\rh/2}) {0x11223344};
-
-					\node[lbl, anchor=west, font=\sffamily\scriptsize] at ({\memx+\rw+0.25},{\rowB-\rh/2}) {0x2004};
-					\draw[memwrite] (\memx,\rowB) rectangle ({\memx+\rw},{\rowB-\rh});
-					\node[font=\ttfamily\small] at ({\memx+\rw/2},{\rowB-\rh/2}) {0x11223344};
-
-					% Address pointers, still true after execution (offset apart so both show)
-					\draw[-{Stealth[length=2mm]}, dashed, draw=black!55, thick]
-					({\regx+\rw},{\rowA-\rh/2}) -- ({\memx},{\rowA-\rh/2});
-					\draw[-{Stealth[length=2mm]}, dashed, draw=black!55, thick]
-					({\regx+\rw},{\rowB-\rh/2}) -- ({\memx},{\rowB-\rh/2});
-
-				\end{tikzpicture}%
-			}
-		\end{column}
-
-	\end{columns}
-
-	\vspace{1mm}
-	{\scriptsize\color{black!55} dashed arrow = address used for addressing\par}
-
-	%	\begin{itemize}
-		%		\item \texttt{R0} and \texttt{R1} start out holding pointers to memory. We could have used \texttt{MOVW}/\texttt{MOVT} instead.
-		%		\item Square brackets always mean \alert{memory access}.
-		%	\end{itemize}
-
-\end{frame}
-}
 
 
 %===============================================================================

@@ -7,8 +7,8 @@ The built slide decks, one PDF per chapter of the course book. This folder holds
 | [`stm01`](stm01.pdf) | 61 | From Digital Systems to Microcontrollers |
 | [`stm02`](stm02.pdf) | 58 | The ARM Cortex-M4 Programmer's Model |
 | [`stm03`](stm03.pdf) | 40 | Memory, Addressing and Pointers |
-| [`stm04`](stm04.pdf) | 42 | Embedded C and CMSIS |
-| [`stm05`](stm05.pdf) | 52 | ARM Assembly Fundamentals |
+| [`stm04`](stm04.pdf) | 45 | Embedded C and CMSIS |
+| [`stm05`](stm05.pdf) | 55 | ARM Assembly Fundamentals |
 | [`stm06`](stm06.pdf) | 44 | Data Processing |
 | [`stm07`](stm07.pdf) | 59 | Control Flow, Functions and the Stack |
 | [`stm08`](stm08.pdf) | 38 | General Purpose Input Output |
