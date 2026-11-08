@@ -1,8 +1,9 @@
 \documentclass[9pt,aspectratio=169,xcolor=table]{beamer}
 \usepackage[compact]{styles/stmcommon}
+\usepackage{circuitikz}
 
 \title{Designing, Building and Verifying an Embedded System}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 14}
+\subtitle{\emph{STM32 Primer} --- Chapter 14}
 
 \begin{document}
 
@@ -164,10 +165,62 @@ Raw:   2048             // LED bar on PB0-PB3 shows the level
         \item Display the level as a 4-LED bar.
         \item Transmit each reading as text over USART1 (PB6/PB7, USB-serial adapter).
         \item Button press toggles report between \alert{raw counts} and \alert{millivolts}.
-        \item Never miss a sample. No interrupt handler may block.
+        \item At 10~Hz, \alert{lose no sample} (each loop pass fits in 100~ms); detect any overrun. No ISR may block.
     \end{enumerate}}
 \end{frame}
 
+
+\begin{frame}{Wiring the Sensor Monitor}{Everything you need to build it}
+    \begin{columns}[c]
+    \begin{column}{.56\textwidth}
+        \begin{center}
+\begin{circuitikz}[x=1cm, y=1cm, scale=0.8, transform shape, font=\sffamily\scriptsize]
+\ctikzset{bipoles/length=0.75cm}
+% ---- the board ----
+\draw[thick, draw=blkline, fill=blkfill, rounded corners=2pt] (0,-0.9) rectangle (2.7,7.6);
+\node[font=\sffamily\small\bfseries, align=center] at (1.2,7.0) {NUCLEO-\\F446RE};
+\node[align=left, font=\sffamily\tiny, text=black!70] at (1.05,-0.25) {B1 button on PC13\\and USB to the PC\\are on the board};
+\foreach \y/\p in {6.4/PB0, 5.7/PB1, 5.0/PB2, 4.3/PB3, 3.3/3V3, 2.3/PA0, 1.2/PB6, 0.6/PB7, -0.5/GND}{
+  \node[anchor=east, font=\sffamily\scriptsize\ttfamily] at (2.65,\y) {\p};
+}
+% ---- four LEDs: pin -> 330 ohm -> LED -> ground ----
+\foreach \y in {6.4, 5.7, 5.0, 4.3}{
+  \draw (2.7,\y) to[R] (4.6,\y) to[empty led] (6.0,\y) -- (6.4,\y);
+}
+\draw (6.4,6.4) -- (6.4,3.9) node[ground]{};
+\node[anchor=south, font=\sffamily\scriptsize] at (3.65,6.6) {4 $\times$ 330\,$\Omega$};
+\node[anchor=west, font=\sffamily\scriptsize] at (6.55,5.35) {4 LEDs};
+% ---- potentiometer: 3V3 -- pot -- GND, wiper to PA0 ----
+\draw (2.7,3.3) -- (4.6,3.3) to[pR, n=pot, mirror] (4.6,1.6) node[ground]{};
+\node[anchor=west, font=\sffamily\scriptsize] at (4.85,2.45) {10\,k$\Omega$ potentiometer};
+\draw (2.7,2.3) -| (pot.wiper);
+% ---- USB-serial adapter ----
+\draw[thick, draw=accentline, fill=accentfill, rounded corners=2pt] (5.6,-0.9) rectangle (7.8,1.7);
+\node[align=center, font=\sffamily\scriptsize\bfseries] at (6.9,1.35) {USB-serial\\[-1pt]adapter};
+\node[anchor=west, font=\sffamily\scriptsize\ttfamily] at (5.65,1.2-0.35) {RXD};
+\node[anchor=west, font=\sffamily\scriptsize\ttfamily] at (5.65,0.6-0.35) {TXD};
+\draw[-{Stealth[length=1.6mm]}] (2.7,1.2) -- (3.6,1.2) |- (5.6,0.85);
+\draw[{Stealth[length=1.6mm]}-] (2.7,0.6) -- (3.3,0.6) |- (5.6,0.25);
+\node[anchor=west, font=\sffamily\scriptsize\ttfamily] at (5.65,-0.5) {GND};
+\draw (2.7,-0.5) -- (5.6,-0.5);
+\draw (4.2,-0.5) node[ground]{};
+\node[font=\sffamily\tiny, text=black!70] at (6.9,-0.15) {3.3\,V logic};
+\draw[-{Stealth[length=1.6mm]}] (7.8,0.4) -- (8.5,0.4) node[right, align=left, font=\sffamily\tiny] {USB\\to PC};
+\end{circuitikz}
+        \end{center}
+    \end{column}
+    \begin{column}{.42\textwidth}
+        {\small
+        \begin{itemize}\itemsep2pt
+            \item The button (B1, PC13) is \alert{already on the board}.
+            \item Each LED has its own 330\,$\Omega$ resistor: $(3.3-2.0)/330 \approx 4$\,mA.
+            \item The potentiometer divides 3.3\,V; its wiper goes to \alert{PA0}.
+            \item TX goes to RX: \alert{PB6 $\rightarrow$ RXD}, \alert{TXD $\rightarrow$ PB7}. Use a 3.3\,V-logic adapter.
+            \item \alert{Join the grounds.} Without a common ground the serial link does not work.
+        \end{itemize}}
+    \end{column}
+    \end{columns}
+\end{frame}
 
 %===============================================================================
 \section{Architecture: The Non-Blocking Main Loop}
@@ -187,7 +240,7 @@ while (1) {
         update_display();
     }
     if (button_flag) {                  // set by an ISR
-        button_flag = 0;
+        button_flag = 0;                // safe form: Program (5)
         handle_button();
     }
 }
@@ -244,6 +297,7 @@ while (1) {
                   value the ISR changes
             \item \alert{Torn access} --- \texttt{main()} reads a multi-word
                   variable while the ISR is halfway through writing it
+            \item \alert{Lost event} --- \texttt{main()} tests a flag, the ISR sets it again, then \texttt{main()} clears it
         \end{itemize}}
     \end{column}
     \begin{column}{.48\textwidth}
@@ -253,7 +307,8 @@ while (1) {
             \item Mark it \texttt{volatile}
             \item Keep it to a single \texttt{uint32\_t} --- read atomically on a
                   32-bit machine
-            \item Or disable interrupts \alert{briefly} around the access
+            \item Or disable interrupts \alert{briefly} around the access --- including a flag's test-and-clear
+            \item Remember: \texttt{volatile} is \alert{not} atomic
         \end{itemize}}
     \end{column}
     \end{columns}
@@ -282,6 +337,7 @@ volatile uint32_t msTicks     = 0;
 volatile uint16_t adc_result  = 0;
 volatile uint8_t  adc_ready   = 0;
 volatile uint8_t  button_flag = 0;
+volatile uint32_t adc_overruns = 0;  // lost results
 
 /* Application state (main context only) */
 static uint8_t show_millivolts = 0;
@@ -292,6 +348,7 @@ void SysTick_Handler(void) {
 
 void ADC_IRQHandler(void) {
     if (ADC1->SR & (1U << 1)) {   // EOC
+        if (adc_ready) adc_overruns++; // unread: lost
         adc_result = (uint16_t)ADC1->DR;
         adc_ready  = 1;
     }
@@ -301,7 +358,8 @@ void ADC_IRQHandler(void) {
     \begin{column}{.46\textwidth}
 \begin{cc}[basicstyle=\ttfamily\scriptsize]
 void EXTI15_10_IRQHandler(void) {
-    static uint32_t last_press = 0;
+    static uint32_t last_press = 0U - 201U;
+                    // first press accepted
 
     if (EXTI->PR & (1U << 13)) {
         EXTI->PR = (1U << 13);  // clear FIRST
@@ -455,19 +513,19 @@ int main(void) {
     RCC->APB1ENR |= (1U << 0);   // TIM2: 10 Hz trigger
     TIM2->PSC = 1599;            // 16 MHz / 1600 = 10 kHz
     TIM2->ARR = 999;             // 10 kHz / 1000 = 10 Hz
+    TIM2->EGR = (1U << 0);       // UG: load PSC now
     TIM2->CR2 = (2U << 4);       // TRGO on update
     TIM2->CR1 |= (1U << 0);      // start sampling
     while (1) {
-        /* Task 1: none; TIM2 starts each conversion */
-
-        /* Task 2: a result arrived (next slide) */
-
+        /* Task 1: none (TIM2). Task 2: next slide */
         /* Task 3: button pressed */
-        if (button_flag) {
-            button_flag = 0;
+        __disable_irq();          // take and clear
+        uint8_t pressed = button_flag;
+        button_flag = 0;          // atomically
+        __enable_irq();
+        if (pressed) {
             show_millivolts = !show_millivolts;
-            uart_print(show_millivolts
-                       ? "-> millivolts\r\n" : "-> raw\r\n");
+            uart_print(show_millivolts ? "-> mV\r\n" : "-> raw\r\n");
         }
     }
 }
@@ -479,7 +537,7 @@ int main(void) {
         \begin{itemize}\itemsep2pt
             \item Sampling: \alert{TIM2} starts each conversion in hardware.
             \item \texttt{adc\_ready}: a result \alert{arrived}.
-            \item \texttt{button\_flag}: the user \alert{pressed}.
+            \item \texttt{button\_flag}: the user \alert{pressed}. It is copied and cleared with interrupts off, so a second press cannot be lost between the test and the clear.
         \end{itemize}}
         \vspace{1mm}
         {\small Each branch returns to the top. Even the slow UART branch \alert{cannot delay a sample}.}
@@ -541,6 +599,21 @@ if (adc_ready) {
         \textbf{Priorities follow urgency} & ADC priority 1, button priority 3. A conversion result is lost if not read before the next one. A button press can wait. \\
         \textbf{Integer maths, no FPU} & \texttt{(raw * 3300) / 4095}: multiply first to keep precision. $4095\times3300$ fits in 32 bits. Dividing first would truncate to zero. \\
         \textbf{The LED bar is atomic} & One \texttt{BSRR} store updates all four LEDs, so no half-finished pattern is ever visible. \\
+        \bottomrule
+    \end{tabular}}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Design Decisions Worth Noting (2)}{Two limits that a demonstration hides}
+    \begin{center}
+    {\footnotesize
+    \striped
+    \begin{tabular}{@{}l R{.7\textwidth}@{}}
+        \toprule
+        \textbf{Decision} & \textbf{Why} \\
+        \midrule
+        \textbf{Take and clear a flag in one step} & \texttt{if (button\_flag) \{ button\_flag = 0; \ldots\ \}} has a race. If a new press arrives between the test and the clear, the clear wipes it out. The flag is copied and cleared with interrupts off, then the copy is tested. \texttt{volatile} cannot prevent this: it is not atomic. \\
+        \textbf{The ADC buffer holds one result} & \texttt{adc\_result} is a one-slot mailbox. If \texttt{main()} is still busy when the next conversion ends, the old sample is overwritten, and nothing looks wrong. At 10~Hz each loop pass fits easily in 100~ms, so it cannot happen. \texttt{adc\_overruns} proves it during verification. Under heavier load, use a ring buffer or DMA. \\
         \bottomrule
     \end{tabular}}
     \end{center}
@@ -661,6 +734,7 @@ if (msTicks >= next_sample) {
                   scope
             \item Read \texttt{SysTick->VAL} before and after
             \item Toggle a pin per loop iteration and measure the frequency
+            \item Timing a UART message? Wait for \alert{\texttt{TC}}, not \texttt{TXE}, before the pin goes low: \texttt{TXE} is set while the last character is still leaving
         \end{itemize}}
     \end{column}
     \end{columns}
@@ -690,7 +764,8 @@ if (msTicks >= next_sample) {
             \item Whether it survives the \alert{counter wrap} at 49 days
             \item Whether the deadline is met in the \alert{worst case}, not the
                   typical one
-            \item Whether a shared variable is ever \alert{torn}
+            \item Whether a shared variable is ever \alert{torn}, or a button press during transmission is ever \alert{lost}
+            \item Whether \texttt{adc\_overruns} still reads \alert{0} after a long run
             \item What happens when a sensor \alert{fails} rather than reads wrong
             \item Whether it works at the \alert{temperature extremes}
         \end{itemize}}
@@ -750,9 +825,9 @@ if (msTicks >= next_sample) {
         \toprule
         \textbf{Step} & \textbf{Question} & \textbf{The observation that settles it} \\
         \midrule
-        1 & Is the clock enabled? & Write \texttt{0xFFFF} to \texttt{GPIOA->MODER} and read it back. If it reads zero, the \texttt{RCC->AHB1ENR} bit is missing. \\
+        1 & Is the clock enabled? & Read \texttt{GPIOAEN} (bit 0) of \texttt{RCC->AHB1ENR}. Do not test by writing \texttt{MODER}: it reconfigures live pins. \\
         2 & Is the pin an output? & Read \texttt{MODER} bits 11:10. If not \texttt{01}, the driver is disconnected. \\
-        3 & Is \texttt{ODR} changing? & Watch \texttt{ODR} bit 5 while stepping. If it never changes, the write is not running, or \texttt{volatile} is missing. \\
+        3 & Is \texttt{ODR} changing? & Watch \texttt{ODR} bit 5 while stepping. If it never changes, the write is not running, or other code overwrites it. (CMSIS registers are already \texttt{volatile}.) \\
         4 & Does the pin move? & Meter or scope on PA5. \texttt{ODR} toggles but the pin does not: an alternate function or analog mode has claimed it. \\
         5 & Is it the pin you think? & Check the schematic. On some Nucleo variants the LED is not on PA5. \\
         6 & Is the circuit right? & Voltage but no light: a reversed LED, an open resistor, or the wrong sink/source direction. \\
@@ -761,7 +836,7 @@ if (msTicks >= next_sample) {
     \end{center}
 
     \vspace{1mm}
-    {\small The walk goes \alert{up the five levels}: register, configuration, C, pin voltage, circuit. Steps 1--4 use the debugger and a meter, not the source code. Rereading the program is almost always the slowest move.}
+    {\small The walk moves through the levels in order: \alert{Register} (steps 1--3), \alert{Physical} at the pin (step 4), then the board and circuit \alert{Hardware} (steps 5--6). Steps 1--4 use the debugger and a meter, not the source code. Rereading the program is almost always the slowest move.}
 \end{frame}
 
 
@@ -812,7 +887,7 @@ if (msTicks >= next_sample) {
 
 \begin{frame}{The Capstone Project}{A system you design before you build}
     \leavevmode
-    {\small Six weeks, in a group, on hardware you keep. It replaces a final exam question with a final exam \emph{system}: one you can plug in, measure, and defend.}
+    {\small Six weeks, in a group, on hardware you keep, \alert{alongside} the last six weeks of lectures. It replaces a final exam question with a final exam \emph{system}: one you can plug in, measure, and defend.}
 
     \vspace{2mm}
     \begin{columns}[T]

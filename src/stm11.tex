@@ -2,7 +2,7 @@
 \usepackage[compact]{styles/stmcommon}
 
 \title{ADC and Analog Interfacing}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 11}
+\subtitle{\emph{STM32 Primer} --- Chapter 11}
 
 \begin{document}
 
@@ -227,7 +227,7 @@ voltage = ((float)raw * 3.3f) / 4095.0f;
         \end{itemize}
 
         \vspace{2mm}
-        {\ttfamily\scriptsize ADC1->SMPR2 |= (7U << 0);~// 480 cycles}
+        {\ttfamily\scriptsize ADC1->SMPR2 |= (7U <{}< 0);~// 480 cycles}
     \end{column}
     \begin{column}{.46\textwidth}
         \begin{block}{Too short, and you read nonsense}

@@ -2,7 +2,7 @@
 \usepackage{styles/stmcommon}
 
 \title{General Purpose Input Output}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 8}
+\subtitle{\emph{STM32 Primer} --- Chapter 8}
 
 \begin{document}
 
@@ -216,8 +216,8 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
     \end{column}
     \begin{column}{.56\textwidth}
         {\ttfamily\footnotesize
-        GPIOA->MODER \&= \textasciitilde(3U << (5*2));~~// clear \\
-        GPIOA->MODER |=~~(1U << (5*2));~~// set 01}
+        GPIOA->MODER \&= \textasciitilde(3U <{}< (5*2));~~// clear \\
+        GPIOA->MODER |=~~(1U <{}< (5*2));~~// set 01}
 
         \vspace{2mm}
         {\small \alert{Clear first, then set.} Without the clear step, you
@@ -248,7 +248,7 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
     \end{column}
     \begin{column}{.56\textwidth}
         {\ttfamily\footnotesize
-        GPIOA->OTYPER \&= \textasciitilde(1U << 5);~~// push-pull}
+        GPIOA->OTYPER \&= \textasciitilde(1U <{}< 5);~~// push-pull}
 
         \vspace{2mm}
         {\small Unlike \texttt{MODER}, each pin owns only \alert{one bit}: \texttt{OT}$y$ for pin $y$. There are only two output types to choose from.}
@@ -367,7 +367,7 @@ GPIOA->BSRR = (1U << (5 + 16));   // PA5 low:  LED off
         happens.
 
         \vspace{1mm}
-        {\ttfamily\normalsize RCC->AHB1ENR |= (1U << 0);~~// GPIOA}
+        {\ttfamily\normalsize RCC->AHB1ENR |= (1U <{}< 0);~~// GPIOA}
     \end{block}
 \end{frame}
 
@@ -456,7 +456,7 @@ GPIOA->ODR   ^=  (1U << 5);
 
     \vspace{2mm}
     \visible<2->{\begin{block}{The answer}
-        The C is fine. The \alert{clock is off}: \texttt{RCC->AHB1ENR |= (1U << 0);} is missing. A peripheral with no clock ignores writes and reads back zero. Write a pattern to \texttt{MODER} in the debugger and read it back.
+        The C is fine. The \alert{clock is off}: \texttt{RCC->AHB1ENR |= (1U <{}< 0);} is missing. A peripheral with no clock ignores writes and reads back zero. Write a pattern to \texttt{MODER} in the debugger and read it back.
     \end{block}}
 \end{frame}
 }
@@ -553,8 +553,8 @@ int main(void) {
     \begin{column}{.44\textwidth}
         \begin{block}{Mind the brackets}
             In C, \texttt{\&} binds \emph{looser} than \texttt{==}. So
-            \texttt{IDR \& (1<<13) == 0} is parsed as
-            \texttt{IDR \& ((1<<13) == 0)}, which is always zero.
+            \texttt{IDR \& (1<{}<13) == 0} is parsed as
+            \texttt{IDR \& ((1<{}<13) == 0)}, which is always zero.
 
             \vspace{2mm}
             \alert{Always put brackets around the mask.}
@@ -626,7 +626,8 @@ int main(void) {
 		GPIOA->BSRR = (1U << (5+16));   // acknowledge
 		delay_ms(1000);
 	}
-}	\end{cc}
+}
+\end{cc}
 
 	{\small This measurement is only as accurate as \texttt{delay\_ms},
 		a calibrated software loop. Its timing shifts with compiler
@@ -666,7 +667,8 @@ int main(void) {
 
 		delay_ms(80);
 	}
-}	\end{cc}
+}
+\end{cc}
 
 	\vspace{0.5mm}
 	\begin{block}{One lit bit, walking back and forth}
@@ -698,7 +700,8 @@ void GPIO_Init(void)
     /* Configure PC0-PC7 as outputs */
     GPIOC->MODER &= ~0x0000FFFFU;
     GPIOC->MODER |=  0x00005555U;
-}	\end{cc}
+}
+\end{cc}
 
 	\vspace{0.5mm}
 	\begin{block}{Two pins, one register, same pattern}
@@ -806,7 +809,8 @@ void Display_7Segment(uint8_t number)
     };
 
     GPIOC->ODR = (GPIOC->ODR & ~0xFFU) | segment[number];
-}	\end{cc}
+}
+\end{cc}
 
 	\vspace{0.5mm}
 	\begin{block}{Trading logic for memory}
@@ -858,7 +862,7 @@ void Display_7Segment(uint8_t number)
         \midrule
         Physical hardware & PMOS/NMOS output pair charging the LED's series resistor \\
         Register & \texttt{GPIOA\_BSRR} bit 5, at \texttt{0x40020018} \\
-        C & \texttt{GPIOA->BSRR = (1U << 5);} \\
+        C & \texttt{GPIOA->BSRR = (1U <{}< 5);} \\
         Assembly & \texttt{MOV R0,\#0x20} / \texttt{STR R0,[R1,\#0x18]} \\
         Machine code & Two Thumb-2 encodings in Flash \\
         \bottomrule

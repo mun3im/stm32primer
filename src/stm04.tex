@@ -40,7 +40,7 @@
 }
 
 \title{Embedded C and CMSIS}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 4}
+\subtitle{\emph{STM32 Primer} --- Chapter 4}
 
 \begin{document}
 
@@ -59,11 +59,11 @@
         \begin{block}{After this chapter, you can:}
         {\small
         \begin{enumerate}\itemsep2pt
-            \item Predict the assembly the compiler generates for simple C.
+            \item Describe what the compiler does with simple C: where variables live, and why arithmetic needs loads and stores.
             \item Explain the CMSIS components and which one does register-level work.
             \item Show how a C structure overlays a peripheral's registers.
             \item Justify \texttt{volatile} with two optimizations it prevents.
-            \item Apply the set, clear, toggle and test idioms.
+            \item Apply the set, clear, toggle and test idioms, and combine them into wait, read, act.
             \item Write a bare-metal CMSIS program that drives a GPIO pin.
         \end{enumerate}}
         \end{block}
@@ -97,7 +97,7 @@ GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
         \textbf{Question raised} & \textbf{Answered in} \\
         \midrule
         What is \texttt{GPIOA->ODR}? & CMSIS: a struct laid over the registers \\
-        Why \texttt{(1U << 5)}? & Bit manipulation: building a mask \\
+        Why \texttt{(1U \shl\ 5)}? & Bit manipulation: building a mask \\
         Why is nothing deleted by the compiler? & The \texttt{volatile} keyword \\
         Why does nothing happen with the clock off? & A complete bare-metal program \\
         \bottomrule
@@ -133,28 +133,26 @@ GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
         Each step is a separate program. You can inspect each one. This
         is how you find out what your C code actually became.
 
-        \vspace{3mm}
-        \begin{block}{Why you learned assembly first}
+        \vspace{1mm}
+        \begin{block}{Why assembly comes next}
             You will write C for the rest of this book. But when
             something goes wrong, the debugger shows you
             \alert{instructions}, not C.
 
             \vspace{2mm}
-            Chapters 5--7 taught you to read that disassembly window.
+            Chapters 5--7 teach you to read that disassembly window.
         \end{block}
 
-        \vspace{3mm}
+        \vspace{1mm}
         {\small The linker adds \alert{startup code}. It sets the
-        stack pointer, clears your global variables to zero, and calls
+        stack pointer, prepares your global variables, and calls
         \texttt{main()}. All of this runs before any line you wrote.}
     \end{column}
     \end{columns}
 
-    \vspace{2mm}
+    \vspace{0mm}
     \begin{block}{Where this leaves us}
-        The compiler handles the instruction-level detail. We can
-        write most code in C. We use assembly only when we need to
-        read or control what the compiler generated.
+        Write most code in C. Read the assembly when you need to check what the compiler did.
     \end{block}
 \end{frame}
 
@@ -174,21 +172,21 @@ int z = x + y;
         \vspace{2mm}
         {\small \textbf{Notice}
         \begin{itemize}\itemsep1pt
-            \item Locals live on the \alert{stack}, as offsets from \texttt{SP}.
+            \item Unoptimised, locals live on the \alert{stack}.
             \item Arithmetic uses \alert{registers only}.
-            \item With optimisation, the compiler may remove memory accesses. This is why \texttt{volatile} exists.
+            \item Optimised, the compiler drops extra memory trips, but never a register access. That needs \texttt{volatile}.
         \end{itemize}}
     \end{column}
     \begin{column}{.6\textwidth}
 \begin{asm}[basicstyle=\ttfamily\footnotesize]
-MOV   R0, #5         ; x = 5
-STR   R0, [SP, #0]   ; store x on the stack
-MOV   R1, #10        ; y = 10
-STR   R1, [SP, #4]   ; store y
-LDR   R0, [SP, #0]   ; reload x
-LDR   R1, [SP, #4]   ; reload y
-ADD   R2, R0, R1     ; z = x + y
-STR   R2, [SP, #8]   ; store z
+MOV   R0, #5         @ x = 5
+STR   R0, [SP, #0]   @ store x on the stack
+MOV   R1, #10        @ y = 10
+STR   R1, [SP, #4]   @ store y
+LDR   R0, [SP, #0]   @ reload x
+LDR   R1, [SP, #4]   @ reload y
+ADD   R2, R0, R1     @ z = x + y
+STR   R2, [SP, #8]   @ store z
 \end{asm}
     \end{column}
     \end{columns}
@@ -226,8 +224,8 @@ STR   R2, [SP, #8]   ; store z
     \vspace{2mm}
     \begin{block}{C and assembly can mix}
         If both follow the same convention, C can call an assembly
-        function, and assembly can call a C function. Chapters 5--7
-        showed how.
+        function, and assembly can call a C function. Chapter 5
+        shows how.
     \end{block}
 \end{frame}
 
@@ -289,8 +287,8 @@ STR   R2, [SP, #8]   ; store z
     \leavevmode
     { \textbf{C}ortex \textbf{M}icrocontroller \textbf{S}oftware
     \textbf{I}nterface \textbf{S}tandard. This is ARM's layer between
-    your C code and the silicon. It works the same way across
-    different chip vendors.}
+    your C code and the silicon. Every Cortex-M vendor uses
+    the same style.}
 
     \vspace{3mm}
     \begin{columns}[T]
@@ -310,7 +308,7 @@ STR   R2, [SP, #8]   ; store z
         \textbf{Why it matters}
         {\small
         \begin{itemize}\itemsep1pt
-            \item The \alert{same names} across every vendor's Cortex-M
+            \item Core parts (NVIC, SysTick) have the \alert{same names} on every vendor's chip; peripherals follow the same style
             \item Readable: \texttt{GPIOA->ODR} rather than
                   \texttt{*(volatile uint32\_t*)0x40020014}
             \item The struct layout does the address arithmetic for you
@@ -324,7 +322,7 @@ STR   R2, [SP, #8]   ; store z
 
 \begin{frame}{The CMSIS Components}
     \leavevmode
-    CMSIS is ARM's standard layer. It names every register the same way on any vendor's Cortex-M chip. It has six parts:
+    CMSIS is ARM's standard way to describe a Cortex-M chip in C. It has six parts:
 
     \vspace{2mm}
     \begin{center}
@@ -369,8 +367,8 @@ typedef struct {
     \end{column}
     \begin{column}{.5\textwidth}
         Each member is one \alert{32-bit register}, in hardware order.
-        A \texttt{uint32\_t} is 4 bytes, so member $n$ sits at offset
-        $4n$. These are exactly the offsets given in the reference
+        C keeps the declared order, and adds no gaps between 32-bit
+        members. So member $n$ sits at offset $4n$. These are exactly the offsets given in the reference
         manual.
 
         \vspace{2mm}
@@ -576,13 +574,8 @@ while ((*status & (1U << 5)) == 0)
         hardware, that assumption is wrong.
     \end{block}
 
-    \vspace{2mm}
-    \begin{block}{Hardware can change a value by itself}
-        \texttt{volatile} stops the compiler from assuming a hardware
-        register keeps its old value. We can now access the registers
-        safely. Next: change one bit at a time, not the whole
-        register.
-    \end{block}
+    \vspace{1mm}
+    {\small Next: change \alert{one bit} at a time, not the whole register.}
 \end{frame}
 
 
@@ -862,6 +855,79 @@ while (!(USART1->SR & (1U << 7))) {
     \end{columns}
 \end{frame}
 
+\begin{frame}{Wait, Read, Act}{The shape of most polled embedded code}
+    \begin{columns}[c]
+    \begin{column}{.46\textwidth}
+        \begin{center}
+        \begin{tikzpicture}[font=\sffamily\scriptsize]
+            \node[blk, text width=38mm, align=center] (start) {\textbf{Start} (if needed)};
+            \node[cpublk, diamond, aspect=2.6, below=4mm of start,
+                  text width=16mm, inner sep=0pt, align=center] (test) {\textbf{Wait:}\\flag set?};
+            \node[blk, below=4mm of test, text width=38mm, align=center] (read) {\textbf{Read} the data register \emph{once}};
+            \node[blk, below=3mm of read, text width=38mm, align=center] (decide) {\textbf{Decide}, using the copy};
+            \node[blk, below=3mm of decide, text width=38mm, align=center] (act) {\textbf{Act}: write another register};
+            \draw[flow] (start) -- (test);
+            \draw[flow] (test) -- node[lbl, right] {yes} (read);
+            \draw[flow] (read) -- (decide);
+            \draw[flow] (decide) -- (act);
+            \draw[flow] (test.east) -- ++(6mm,0) |- ([yshift=3mm]test.north);
+            \node[lbl, anchor=west] at ([xshift=7mm]test.east) {no};
+            \draw[flow] (act.west) -- ++(-5mm,0) |- (start.west);
+        \end{tikzpicture}
+        \end{center}
+    \end{column}
+    \begin{column}{.5\textwidth}
+        Testing a bit says \alert{whether} something happened. The busy-wait waits \alert{until} it happens. Then the program reads the data and changes a \alert{different} register.
+
+        \vspace{2mm}
+        {\small
+        \begin{itemize}\itemsep1pt
+            \item UART: wait for a received byte
+            \item ADC: wait for a conversion
+            \item Timer: wait for the count to finish
+        \end{itemize}}
+
+        \vspace{1mm}
+        \begin{block}{Very typical embedded behaviour}
+            The registers change from one peripheral to the next. The \alert{shape} of the code does not.
+        \end{block}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Wait, Read, Act with the ADC}{An LED that turns on above half scale}
+    \begin{columns}[T]
+    \begin{column}{.58\textwidth}
+\begin{cc}[basicstyle=\ttfamily\scriptsize]
+while (1) {
+  ADC1->CR2 |= (1U << 30);               // start
+  while ((ADC1->SR & (1U << 1)) == 0) {} // wait: EOC
+  uint16_t v = (uint16_t)ADC1->DR;       // read once
+
+  if (v > 2048U)                         // decide
+    GPIOA->BSRR = (1U << 5);             // act: on
+  else
+    GPIOA->BSRR = (1U << (5 + 16));      // act: off
+}
+\end{cc}
+        {\small Input 2.0~V: \texttt{SR} reads \texttt{0x0}, then \texttt{0x2}. \texttt{v} $\approx 2482 > 2048$, so \texttt{BSRR} gets \texttt{0x20}: LED on.}
+    \end{column}
+    \begin{column}{.38\textwidth}
+        \begin{block}{Three rules}
+        {\small
+        \begin{enumerate}\itemsep1pt
+            \item \alert{Read the data once.} Reading \texttt{DR} clears the flag.
+            \item \alert{Wait on the status register}, not the data register.
+            \item \alert{Act with a safe write}: \texttt{BSRR} for outputs.
+        \end{enumerate}}
+        \end{block}
+
+        \vspace{1mm}
+        {\small In Chapter 9 an interrupt replaces the \emph{wait}. Read, decide and act stay the same.}
+    \end{column}
+    \end{columns}
+\end{frame}
+
 \begin{frame}{One Register Write, Viewed at Four Levels}
     \begin{center}
     {\normalsize
@@ -880,7 +946,7 @@ while (!(USART1->SR & (1U << 7))) {
 
     \vspace{3mm}
     \begin{block}{One row is deliberately missing}
-        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. You learned that row in Chapters 5--7.
+        Between the C statement and the machine code sits the \alert{assembly}: the instructions the compiler really emits. The next three chapters fill in that row.
     \end{block}
 \end{frame}
 
@@ -976,9 +1042,9 @@ int main(void)
         \toprule
         \textbf{Step} & \textbf{Statement} & \textbf{Takeaway} \\
         \midrule
-        1. Enable the clock & \texttt{RCC->AHB1ENR |= (1U << 0);} & The peripheral clock must be enabled first \\
+        1. Enable the clock & \texttt{RCC->AHB1ENR |= (1U \shl\ 0);} & The peripheral clock must be enabled first \\
         2. Configure the pin & \texttt{MODER \&= \ldots; MODER |= \ldots;} & Each GPIO pin has a two-bit configuration field \\
-        3. Control the output & \texttt{GPIOA->ODR \^{}= (1U << 5);} & XOR toggles the selected bit without changing the others \\
+        3. Control the output & \texttt{GPIOA->ODR \^{}= (1U \shl\  5);} & XOR toggles the selected bit without changing the others \\
         4. Add a delay & \texttt{for (volatile int i=0; \ldots)} & The compiler must not remove a delay loop whose iterations have no observable effect \\
         \bottomrule
     \end{tabular}}
@@ -1000,7 +1066,7 @@ int main(void) {
     return 0;   // back to the OS
 }
 \end{cc}
-\vspace{1em}
+\vspace{1mm}
         {\small It runs, returns, and the OS cleans up.}
     \end{column}
     \begin{column}{.48\textwidth}
@@ -1012,25 +1078,18 @@ int main(void) {
 
     while (1) {
         // loop: runs forever
-        //   read, decide, drive
+        //   wait, read, act
     }
 }
 \end{cc}
-\vspace{1em}
+\vspace{1mm}
         {\small No OS. \texttt{main} must never return.}
     \end{column}
     \end{columns}
 
-\textbf{Two consequences of having no operating system} \\
- \alert{No standard library:} \texttt{printf} needs a screen
- and an OS. To produce output, you must drive a peripheral
- yourself.\\ \alert{No cleanup:} the hardware stays in whatever
- state you leave it.
+    {\small \textbf{No OS means:} \alert{no standard library} (\texttt{printf} needs a screen and an OS, so output means driving a peripheral yourself), and \alert{no cleanup} (the hardware stays as you leave it). \emph{If you know Arduino:} \texttt{setup()} is the code above the loop, and \texttt{loop()} is its body.}
 
-%    \vspace{1mm}
-    {\small \emph{If you know Arduino:} \texttt{setup()} is the code above the loop, and \texttt{loop()} is its body.}
-
- %   \vspace{2mm}
+    \vspace{1mm}
     \begin{block}{One question left}
         Every example so far began inside \texttt{main()}. You never
         call \texttt{main()} yourself. \alert{So what calls it?}
@@ -1068,11 +1127,9 @@ int main(void) {
     \vspace{1mm}
     {\small A global such as \texttt{int count = 5;} is ready when \texttt{main} starts, because startup code copied it there. If \texttt{main} ever returned, there would be nowhere to return to.}
 
-    \vspace{2mm}
+    \vspace{1mm}
     \begin{block}{\texttt{main()} is not the starting point}
-        Startup code prepares the system first. Then it calls
-        \texttt{main()}. This is the same startup code from the first
-        diagram in this chapter.
+        Startup code prepares the system first, then calls \texttt{main()}.
     \end{block}
 \end{frame}
 
@@ -1129,8 +1186,8 @@ GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
 					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n1) at (0,-1.05) {CMSIS struct overlays the registers};
 					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n2) at (0,-2.10) {\texttt{GPIOA->ODR} is \texttt{*(0x40020014)}};
 					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n3) at (0,-3.15) {\texttt{\_\_IO} means \texttt{volatile}};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n4) at (0,-4.20) {Read--modify--write keeps other bits};
-					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n5) at (0,-5.25) {Multi-bit field: clear, then set};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n4) at (0,-4.20) {Read--modify--write; a field is cleared, then set};
+					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n5) at (0,-5.25) {Polling: wait, read once, decide, act};
 					\node[blk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize] (n6) at (0,-6.30) {Enable the peripheral clock first};
 					\node[cpublk, minimum width=56mm, minimum height=5.0mm, inner sep=1.2pt, font=\scriptsize, align=center] (n7) at (0,-7.65) {One C assignment becomes\\a voltage on a pin};
 					\foreach \a/\b in {0/1,1/2,2/3,3/4,4/5,5/6,6/7}{\draw[flow] (n\a) -- (n\b);}
@@ -1145,12 +1202,13 @@ GPIOA->ODR ^= (1U << 5);    // toggle the user LED on PA5
 					\item Struct overlay
 					\item \texttt{volatile}, \texttt{\_\_IO}
 					\item Set, clear, toggle, test
+					\item Wait, read, act
 					\item Peripheral clock enable
 				\end{itemize}
 				\vspace{3mm}
-				\textbf{Next: Chapter 8}\\[1mm]
-				\emph{General Purpose Input Output}\\[1mm]
-				We use these ideas to drive real pins.}
+				\textbf{Next: Chapter 5}\\[1mm]
+				\emph{ARM Assembly Fundamentals}\\[1mm]
+				What this C becomes, one instruction at a time.}
 		\end{column}
 	\end{columns}
 \end{frame}

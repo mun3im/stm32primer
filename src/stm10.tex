@@ -2,7 +2,7 @@
 \usepackage[compact]{styles/stmcommon}
 
 \title{Timers, Timing and PWM}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 10}
+\subtitle{\emph{STM32 Primer} --- Chapter 10}
 
 \begin{document}
 
@@ -441,7 +441,7 @@ void TIM2_IRQHandler(void)
 			fires makes it longer than requested. Do not use this
 			in real designs. */
 		}
-	\end{cc}
+\end{cc}
 \end{frame}
 
 \begin{frame}[fragile]{A Proper \texttt{delay\_ms()} --- Built on SysTick}
@@ -466,7 +466,7 @@ void TIM2_IRQHandler(void)
 				__asm volatile ("wfi");  // sleep between ticks
 			}
 		}
-	\end{cc}
+\end{cc}
 \end{frame}
 
 \begin{frame}[fragile]{An Alternative: \texttt{delay\_ms()} on a General-Purpose Timer}
@@ -485,7 +485,7 @@ void TIM2_IRQHandler(void)
 			while (TIM2->CNT < n)
 			;
 		}
-	\end{cc}
+\end{cc}
 	{\small Useful when SysTick is already claimed by an RTOS, and the
 		mechanism is the same prescaler/auto-reload arithmetic from earlier in
 		this chapter.}
@@ -643,7 +643,7 @@ TIM2->CR1   |= (1U << 0);        // start
 			uint32_t arr = TIM2->ARR;
 			TIM2->CCR1 = ((uint32_t)percent * (arr + 1)) / 100U;
 		}
-	\end{cc}
+\end{cc}
 \end{frame}
 
 \begin{frame}[fragile]{Example: A Breathing LED, Non-Blocking}
@@ -660,7 +660,7 @@ TIM2->CR1   |= (1U << 0);        // start
 				pwm_set_duty_percent((uint8_t)duty);
 			}
 		}
-	\end{cc}
+\end{cc}
 	{\small Every 20\,ms the duty cycle steps by one percentage point up or
 		down, driven entirely by \texttt{task\_due()} --- no blocking call
 		anywhere in the loop.}
@@ -1173,7 +1173,6 @@ void systick_init_1ms(void) {
 }
 \end{cc}
 
-    \vspace{2mm}
     \begin{block}{The two things CMSIS does for you}
         {\small \texttt{SysTick\_Config()} wraps the same four writes
         \alert{plus} an \texttt{NVIC\_SetPriority(SysTick\_IRQn, \ldots)}

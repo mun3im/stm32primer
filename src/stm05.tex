@@ -10,7 +10,7 @@
 }
 
 \title{ARM Assembly Fundamentals}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 5}
+\subtitle{\emph{STM32 Primer} --- Chapter 5}
 
 \begin{document}
 
@@ -21,7 +21,7 @@
 %===============================================================================
 
 \begin{frame}{Why This Chapter Matters}
-    \begin{columns}[T]
+    \begin{columns}[c]
     \begin{column}{.47\textwidth}
         {\normalsize Your C code reaches a hardware register, and that code compiles into instructions. At some time you must read them: in a fault handler, in unexpected compiler output, in an exact timing loop, or in startup code. The next three chapters make the machine visible. The goal is not fluency, but the ability to see what the processor does under any line of C.}
     \end{column}
@@ -50,10 +50,10 @@
     \begin{center}
     \begin{minipage}{.9\textwidth}
 \begin{asm}[basicstyle=\ttfamily\small]
-LDR   R0, [R1]        ; load a
-LDR   R2, [R1, #4]    ; load b
-ADD   R0, R0, R2      ; add: registers only
-STR   R0, [R1, #8]    ; store total
+LDR   R0, [R1]      @ load a
+LDR   R2, [R1, #4]  @ load b
+ADD   R0, R0, R2    @ add: registers only
+STR   R0, [R1, #8]  @ store total
 \end{asm}
     \end{minipage}
     \end{center}
@@ -126,84 +126,89 @@ STR   R0, [R1, #8]    ; store total
 \section{A First Assembly Program}
 %===============================================================================
 
-\begin{frame}[fragile]{A Complete ARM Assembly Program}
+\begin{frame}[fragile]{A Complete Assembly Function}
     \leavevmode
-    {\small Something smaller than the blinking LED: add two constants,
-    then stop. The \alert{shape} of an assembly file --- directives,
-    labels, instructions --- is visible before any register touches
-    hardware.}
+    {\small Something smaller than the blinking LED: add two constants and
+    return the sum to C. Assembly today is a \alert{function} that C calls.}
 
-    \vspace{2mm}
-    \begin{center}
-    \begin{asm}[basicstyle=\footnotesize\ttfamily]
-; Define register aliases and constants
-VAL1    RN  R1               ; VAL1 is an alias for R1
-VAL2    RN  R2               ; VAL2 is an alias for R2
-SUM     RN  R3               ; SUM  is an alias for R3
-MY_CONST EQU 0x25            ; EQU names a constant
+    \vspace{1mm}
+    \begin{columns}[T]
+    \begin{column}{.58\textwidth}
+        {\scriptsize\textbf{first.s} (GNU syntax)}
+        \begin{asm}[basicstyle=\footnotesize\ttfamily]
+    .syntax unified       @ modern syntax
+    .thumb                @ Thumb code only
+    .equ  MY_CONST, 0x25  @ like #define
 
-        AREA MY_ASM_PROG, CODE, READONLY
-        ENTRY                ; program entry point
-__main
-        MOV  VAL1, #MY_CONST ; R1 = 0x25
-        MOV  VAL2, #0x34     ; R2 = 0x34
-        ADD  SUM, VAL1, VAL2 ; R3 = R1 + R2
+    .text                 @ code -> Flash
+    .global add_consts    @ visible to C
+    .thumb_func           @ a Thumb function
+add_consts:
+    MOV   R1, #MY_CONST   @ R1 = 0x25
+    MOV   R2, #0x34       @ R2 = 0x34
+    ADD   R0, R1, R2      @ R0 = result
+    BX    LR              @ return to C
+\end{asm}
+    \end{column}
+    \begin{column}{.40\textwidth}
+        {\scriptsize\textbf{main.c}}
+        \begin{lstlisting}[basicstyle=\footnotesize\ttfamily]
+extern uint32_t
+    add_consts(void);
 
-HERE    B    HERE            ; infinite loop to halt
-        END                  ; end of assembly file
-    \end{asm}
-    \end{center}
+int main(void) {
+  uint32_t sum =
+      add_consts();  // 0x59
+  (void)sum;
+  while (1) { }
+}
+\end{lstlisting}
+    \end{column}
+    \end{columns}
 \end{frame}
 
 \begin{frame}{Three Kinds of Line}
     \begin{center}
     \resizebox{.95\textwidth}{!}{%
     \begin{tikzpicture}[x=6mm, y=8mm]
-        \def\colL{0}    \def\colM{2.8}  \def\colO{6.4}  \def\colC{12.2}
-        \def\colA{17.8} \def\ruleR{24.0}
+        \def\colL{0}    \def\colM{4.2}  \def\colO{7.0}  \def\colC{12.4}
+        \def\colA{17.8} \def\ruleR{25.0}
         \foreach \x/\name in {\colL/label, \colM/mnemonic, \colO/operands, \colC/comment}{
             \node[lbl, anchor=south west, font=\sffamily\scriptsize\itshape] at (\x,3.2) {\name};
         }
         \node[lbl, anchor=south west, font=\sffamily\scriptsize\itshape] at (\colA,3.2) {kind of line};
         \draw[draw=black!25] (-0.35,3.1) -- (\ruleR,3.1);
         % Row 1: directive
-        \node[anchor=west, font=\small\ttfamily] at (\colL,2.5) {VAL1};
-        \node[anchor=west, font=\small\ttfamily] at (\colM,2.5) {RN};
-        \node[anchor=west, font=\small\ttfamily] at (\colO,2.5) {R1};
-        \node[anchor=west, font=\small\ttfamily, text=black!55] at (\colC,2.5) {; alias};
-        % Row 2: instruction
-        \node[anchor=west, font=\small\ttfamily] at (\colM,1.5) {MOV};
-        \node[anchor=west, font=\small\ttfamily] at (\colO,1.5) {R1, \#0x25};
-        \node[anchor=west, font=\small\ttfamily, text=black!55] at (\colC,1.5) {; R1 = 0x25};
-        % Row 3: labelled instruction
-        \node[anchor=west, font=\small\ttfamily] at (\colL,0.5) {HERE};
-        \node[anchor=west, font=\small\ttfamily] at (\colM,0.5) {B};
-        \node[anchor=west, font=\small\ttfamily] at (\colO,0.5) {HERE};
-        \node[anchor=west, font=\small\ttfamily, text=black!55] at (\colC,0.5) {; loop forever};
+        \node[anchor=west, font=\small\ttfamily] at (\colM,2.5) {.equ};
+        \node[anchor=west, font=\small\ttfamily] at (\colO,2.5) {MY\_CONST, 0x25};
+        \node[anchor=west, font=\small\ttfamily, text=black!55] at (\colC,2.5) {@ constant};
+        % Row 2: label
+        \node[anchor=west, font=\small\ttfamily] at (\colL,1.5) {add\_consts:};
+        % Row 3: instruction
+        \node[anchor=west, font=\small\ttfamily] at (\colM,0.5) {ADD};
+        \node[anchor=west, font=\small\ttfamily] at (\colO,0.5) {R0, R1, R2};
+        \node[anchor=west, font=\small\ttfamily, text=black!55] at (\colC,0.5) {@ R0 = R1+R2};
         \node[lbl, anchor=west, text=accentline, align=left] at (\colA,2.5)
             {\textbf{directive} --- assembler only};
         \node[lbl, anchor=west, align=left] at (\colA,1.5)
-            {\textbf{instruction} --- becomes machine code};
+            {\textbf{label} --- names an address};
         \node[lbl, anchor=west, align=left] at (\colA,0.5)
-            {\textbf{instruction} --- with a label};
+            {\textbf{instruction} --- becomes machine code};
         \draw[decorate, decoration={brace, amplitude=3pt}, draw=accentline]
-            (-0.35,0.15) -- (-0.35,2.9);
-        \node[lbl, anchor=south, text=accentline, align=center, rotate=90] at (-0.65,1.5)
-            {names an address};
+            (-0.35,1.1) -- (-0.35,1.9);
+        \node[lbl, anchor=east, text=accentline, align=right] at (-0.55,1.5)
+            {ends in a colon};
     \end{tikzpicture}}
     \end{center}
 
     \vspace{2mm}
     {\small
     \begin{itemize}\itemsep1pt
-        \item \textbf{Instructions} (\texttt{MOV}, \texttt{ADD}, \texttt{B}) become machine code.
-        \item \textbf{Directives} (\texttt{RN}, \texttt{EQU}, \texttt{AREA}, \texttt{ENTRY}, \texttt{END}) are commands to the \alert{assembler}. They produce no instructions.
-        \item \textbf{Labels} (\texttt{\_\_main}, \texttt{HERE}) name an address.
+        \item \textbf{Instructions} (\texttt{MOV}, \texttt{ADD}, \texttt{BX}) become machine code.
+        \item \textbf{Directives} start with a dot (\texttt{.text}, \texttt{.equ}, \texttt{.global}). They are commands to the \alert{assembler} and produce no instructions.
+        \item \textbf{Labels} (\texttt{add\_consts:}) name an address. A label ends in a colon.
+        \item \textbf{Comments} start with \texttt{@}. \alert{Never use \texttt{;}}: in GNU syntax it separates two statements.
     \end{itemize}}
-
-    \vspace{1mm}
-    {\small \texttt{B HERE} at the end: a bare-metal program has no OS to
-    return to, so an infinite loop is the normal, correct way to stop.}
 \end{frame}
 
 {\beamerextras
@@ -215,24 +220,23 @@ HERE    B    HERE            ; infinite loop to halt
         \toprule
         \textbf{Directive} & \textbf{Example} & \textbf{What it does} & \textbf{C equivalent} \\
         \midrule
-        \texttt{AREA}   & \texttt{AREA prog, CODE, READONLY} & code section (Flash)    & --- \\
-                        & \texttt{AREA vars, DATA, READWRITE} & data section (SRAM)    & --- \\
-        \texttt{ENTRY}  & \texttt{ENTRY}               & first instruction to run            & \texttt{main()} \\
-        \texttt{END}    & \texttt{END}                 & end of source file    & --- \\
-        \texttt{EQU}    & \texttt{LED\_PIN EQU 5}      & name a constant           & \texttt{\#define} \\
-        \texttt{RN}     & \texttt{SUM RN R3}           & name for a register                & --- \\
-        \texttt{DCB/DCW/DCD} & \texttt{x DCD 7} & store 8/16/32-bit data            & \texttt{uint32\_t x = 7;} \\
-        \texttt{SPACE}  & \texttt{buf SPACE 64}        & reserve bytes, no value          & \texttt{uint8\_t buf[64];} \\
-        \texttt{ALIGN}  & \texttt{ALIGN 4}             & next 4-byte boundary      & --- \\
-        \texttt{EXPORT} & \texttt{EXPORT \_\_main}     & make a label public        & non-\texttt{static} \\
-        \texttt{IMPORT} & \texttt{IMPORT delay}        & use another file's label         & \texttt{extern} \\
+        \texttt{.syntax}  & \texttt{.syntax unified}     & modern ARM syntax          & --- \\
+        \texttt{.thumb}   & \texttt{.thumb}              & Thumb instructions         & --- \\
+        \texttt{.text}    & \texttt{.text}               & code section (Flash)       & --- \\
+        \texttt{.data}    & \texttt{.data}               & data section (SRAM)        & --- \\
+        \texttt{.equ}     & \texttt{.equ LED\_PIN, 5}    & name a constant            & \texttt{\#define} \\
+        \texttt{.req}     & \texttt{SUM .req r3}         & name for a register        & --- \\
+        \texttt{.byte/.hword/.word} & \texttt{x: .word 7} & store 8/16/32-bit data    & \texttt{uint32\_t x = 7;} \\
+        \texttt{.space}   & \texttt{buf: .space 64}      & reserve bytes, no value    & \texttt{uint8\_t buf[64];} \\
+        \texttt{.balign}  & \texttt{.balign 4}           & next 4-byte boundary       & --- \\
+        \texttt{.global}  & \texttt{.global add\_consts} & make a label public        & non-\texttt{static} \\
+        \texttt{.thumb\_func} & \texttt{.thumb\_func}    & next label is a function   & --- \\
         \bottomrule
     \end{tabular}}
     \end{center}
 
     \vspace{2mm}
-    {\small Directives produce no instructions. Only \texttt{DCB}/\texttt{DCW}/\texttt{DCD} and \texttt{SPACE} take up memory.
-    These are Keil (armasm) names. GNU \texttt{as} uses \texttt{.equ}, \texttt{.word}, \texttt{.global} and so on.}
+    {\small Directives produce no instructions. Only \texttt{.byte}/\texttt{.hword}/\texttt{.word} and \texttt{.space} take up memory.}
 \end{frame}
 }
 
@@ -242,148 +246,365 @@ HERE    B    HERE            ; infinite loop to halt
     \striped
     \begin{tabular}{@{}l l l l@{}}
         \toprule
-        \textbf{After executing} & \textbf{R1} & \textbf{R2} & \textbf{R3} \\
+        \textbf{After executing} & \textbf{R1} & \textbf{R2} & \textbf{R0} \\
         \midrule
         \texttt{MOV R1, \#0x25}       & \texttt{0x25} & ---           & ---           \\
         \texttt{MOV R2, \#0x34}       & \texttt{0x25} & \texttt{0x34} & ---           \\
-        \texttt{ADD R3, R1, R2}       & \texttt{0x25} & \texttt{0x34} & \texttt{0x59} \\
+        \texttt{ADD R0, R1, R2}       & \texttt{0x25} & \texttt{0x34} & \texttt{0x59} \\
         \bottomrule
     \end{tabular}}
     \end{center}
 
     \vspace{3mm}
     \begin{block}{Reading the shape of a statement}
-        The first operand is the \alert{destination}. \texttt{ADD R3, R1, R2}
-        reads as ``R3 becomes R1 plus R2.'' Right to left.
+        The first operand is the \alert{destination}. \texttt{ADD R0, R1, R2}
+        reads as ``R0 becomes R1 plus R2.'' Right to left.
+    \end{block}
+
+    \begin{block}{Where does the program stop?}
+        \texttt{BX LR} returns the result in R0 to C. A microcontroller has no
+        operating system to return to, so \texttt{main()} ends in \texttt{while (1) \{ \}}.
+        The infinite loop now lives in C.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Two Syntaxes: A Short History}
+    \begin{itemize}\itemsep3pt
+        \item \textbf{1990s:} the ARM7TDMI is in many products. Compilers are weak and memory is
+              expensive, so engineers write \alert{whole programs} in assembly with ARM's
+              \emph{armasm}.
+        \item \textbf{2005:} ARM buys Keil. Keil \textmu Vision becomes the standard lab tool. A
+              program is a standalone file: \texttt{AREA}, \texttt{ENTRY}, \texttt{\_\_main},
+              \texttt{HERE B HERE}.
+        \item \textbf{Today:} firmware is written in C. GCC is free and is inside STM32CubeIDE.
+              Assembly appears as \alert{functions called from C}, in startup files, and in the
+              disassembly view.
+    \end{itemize}
+
+    \vspace{2mm}
+    \begin{block}{This course uses GNU syntax}
+        The \alert{instructions} are the same in both (ARM's Unified Assembler Language).
+        Only directives, labels and comments differ. You still need to \emph{read} Keil
+        syntax: it is in older books, application notes and past papers.
     \end{block}
 \end{frame}
 
 {\beamerextras
-\begin{frame}[fragile]{Keil or GNU? Same Program, Two Assemblers}
+\begin{frame}[fragile]{GNU or Keil? Same Function, Two Assemblers}
     \begin{columns}[T]
-    \begin{column}{.48\textwidth}
-        {\small\textbf{Keil armasm} (this book)}
+    \begin{column}{.50\textwidth}
+        {\small\textbf{GNU as} (this course)}
         \begin{asm}[basicstyle=\scriptsize\ttfamily]
-VAL1    RN   R1
-VAL2    RN   R2
-SUM     RN   R3
+    .syntax unified
+    .thumb
+    .equ  MY_CONST, 0x25
+    .text
+    .global add_consts
+    .thumb_func
+add_consts:
+    MOV   R1, #MY_CONST
+    MOV   R2, #0x34
+    ADD   R0, R1, R2
+    BX    LR      @ return
+\end{asm}
+    \end{column}
+    \begin{column}{.46\textwidth}
+        {\small\textbf{Keil armasm} (older code)}
+        \begin{asm}[basicstyle=\scriptsize\ttfamily]
 MY_CONST EQU 0x25
 
-        AREA prog, CODE, READONLY
-        ENTRY
-__main
-        MOV  VAL1, #MY_CONST
-        MOV  VAL2, #0x34
-        ADD  SUM, VAL1, VAL2
+    AREA |.text|, CODE, READONLY
+    EXPORT add_consts
 
-HERE    B    HERE        ; stop
-        END
-        \end{asm}
-    \end{column}
-    \begin{column}{.48\textwidth}
-        {\small\textbf{GNU as} (STM32CubeIDE)}
-        \begin{asm}[basicstyle=\scriptsize\ttfamily, morecomment={[l]{@}}]
-        .syntax unified
-        .thumb
-VAL1    .req r1
-VAL2    .req r2
-SUM     .req r3
-        .equ MY_CONST, 0x25
-
-        .text
-        .global main
-        .thumb_func
-main:
-        MOV  VAL1, #MY_CONST
-        MOV  VAL2, #0x34
-        ADD  SUM, VAL1, VAL2
-HERE:   B    HERE        @ stop
-        \end{asm}
+add_consts
+    MOV  R1, #MY_CONST
+    MOV  R2, #0x34
+    ADD  R0, R1, R2
+    BX   LR        ; return
+    END
+\end{asm}
     \end{column}
     \end{columns}
 
     \vspace{1mm}
-    \begin{block}{Why it matters}
-        The \alert{instructions} are identical. Only directives, labels and comments differ.
-        The book uses Keil syntax. STM32CubeIDE uses GCC, so it expects GNU syntax.
-        Paste book code into CubeIDE unchanged, and it will not assemble.
+    \begin{block}{Old program, new project}
+        To move an old standalone Keil program into CubeIDE: remove \texttt{ENTRY} and the
+        final infinite loop, give the code a \texttt{.global} label, end it with
+        \texttt{BX LR}, and call it from \texttt{main()}.
     \end{block}
 \end{frame}
 }
 
 {\beamerextras
-\begin{frame}{Keil to GNU: A Translation Table}
+\begin{frame}{GNU to Keil: A Translation Table}
     \begin{center}
-    {\scriptsize
+    {\footnotesize
     \striped
     \begin{tabular}{@{}l l l@{}}
         \toprule
-        \textbf{Purpose} & \textbf{Keil armasm} & \textbf{GNU as} \\
+        \textbf{Purpose} & \textbf{GNU as (this course)} & \textbf{Keil armasm (older code)} \\
         \midrule
-        Comment          & \texttt{; text}                    & \texttt{@ text} \quad or \quad \texttt{/* text */} \\
-        Label            & \texttt{HERE} \quad (column 1, no colon) & \texttt{HERE:} \quad (colon required) \\
-        Code / data section & \texttt{AREA p, CODE, READONLY} / \texttt{DATA, READWRITE} & \texttt{.text} / \texttt{.data} \\
-        Constant         & \texttt{X EQU 5}                   & \texttt{.equ X, 5} \\
-        Register name    & \texttt{SUM RN R3}                 & \texttt{SUM .req r3} \\
-        Data             & \texttt{DCB} / \texttt{DCW} / \texttt{DCD} & \texttt{.byte} / \texttt{.hword} / \texttt{.word} \\
-        Reserve bytes    & \texttt{SPACE 64}                  & \texttt{.space 64} \\
-        Align            & \texttt{ALIGN 4}                   & \texttt{.balign 4} \\
-        Make public      & \texttt{EXPORT f}                  & \texttt{.global f} \ + \ \texttt{.thumb\_func} \\
-        Use external     & \texttt{IMPORT f}                  & nothing needed \\
-        Entry point      & \texttt{ENTRY}                     & none: the startup file calls \texttt{main} \\
-        End of file      & \texttt{END}                       & \texttt{.end} \quad (optional) \\
-        Instruction set  & Thumb by default                   & \texttt{.syntax unified} \ + \ \texttt{.thumb} \\
+        Comment          & \texttt{@ text} \quad or \quad \texttt{/* text */} & \texttt{; text} \\
+        Label            & \texttt{HERE:} \quad (colon required) & \texttt{HERE} \quad (column 1, no colon) \\
+        Code / data section & \texttt{.text} / \texttt{.data} & \texttt{AREA p, CODE, READONLY} / \texttt{DATA, READWRITE} \\
+        Constant         & \texttt{.equ X, 5}                 & \texttt{X EQU 5} \\
+        Register name    & \texttt{SUM .req r3}               & \texttt{SUM RN R3} \\
+        Data             & \texttt{.byte} / \texttt{.hword} / \texttt{.word} & \texttt{DCB} / \texttt{DCW} / \texttt{DCD} \\
+        Reserve bytes    & \texttt{.space 64}                 & \texttt{SPACE 64} \\
+        Align            & \texttt{.balign 4}                 & \texttt{ALIGN 4} \\
+        Make public      & \texttt{.global f} \ + \ \texttt{.thumb\_func} & \texttt{EXPORT f} \\
+        Use external     & nothing needed                     & \texttt{IMPORT f} \\
+        Entry point      & none: the startup file calls \texttt{main} & \texttt{ENTRY} and \texttt{\_\_main} \\
+        End of file      & \texttt{.end} \quad (optional)     & \texttt{END} \quad (required) \\
+        Instruction set  & \texttt{.syntax unified} \ + \ \texttt{.thumb} & Thumb by default \\
         \bottomrule
     \end{tabular}}
     \end{center}
 
     \vspace{1mm}
-    {\small Two traps:
+    {\small Three traps when moving old code into CubeIDE:
     \begin{itemize}\itemsep0pt
+        \item A \texttt{;} comment is not a comment in GNU. Change it to \texttt{@}.
         \item On ARM, GNU \texttt{.align 2} means $2^2 = 4$ bytes, not 2. Use \texttt{.balign 4} to say what you mean.
         \item Leave out \texttt{.thumb\_func}, and a call from C can jump to the wrong mode and cause a HardFault.
     \end{itemize}}
 \end{frame}
 }
 
-{\beamerextras
-\begin{frame}[fragile]{Using the Assembler in STM32CubeIDE}
-    \begin{columns}[T]
-    \begin{column}{.52\textwidth}
-        {\small
-        \begin{enumerate}\itemsep1pt
-            \item Create an STM32 project for the NUCLEO-F446RE.
-            \item Right-click \texttt{Core/Src} $\rightarrow$ New $\rightarrow$ File, name it \texttt{add2.s}.
-                  {\scriptsize(\texttt{.S}, capital S, runs the C preprocessor first, so \texttt{\#define} works.)}
-            \item Write the function in GNU syntax (right).
-            \item In \texttt{main.c}, declare and call it:\\
-                  \texttt{extern int add2(int a, int b);}\\
-                  \texttt{r = add2(0x25, 0x34);}
-            \item Build, then Debug. Open \textbf{Window $\rightarrow$ Show View $\rightarrow$ Disassembly} and \textbf{Registers}.
-                  Turn on \textbf{Instruction Stepping Mode} to step one instruction at a time.
-        \end{enumerate}}
-    \end{column}
-    \begin{column}{.44\textwidth}
-        \begin{asm}[basicstyle=\scriptsize\ttfamily, morecomment={[l]{@}}]
-@ add2.s
-        .syntax unified
-        .thumb
-        .text
-        .global add2
-        .thumb_func
-add2:                 @ a in R0, b in R1
-        ADD  r0, r0, r1
-        BX   lr       @ result in R0
-        \end{asm}
+\section{Using the Assembler in STM32CubeIDE}
 
-        {\scriptsize Arguments arrive in R0--R3 and the result goes back in R0. Chapter 7 explains this rule (AAPCS).\par}
 
-        \vspace{2mm}
-        {\scriptsize\textbf{Free example:} \texttt{Core/Startup/startup\_stm32f446retx.s} in every project is GNU assembly. Open it and read it.\par}
-    \end{column}
-    \end{columns}
+% ============================================================
+% Activity Part A: Calling Assembly from C
+% ============================================================
+
+\begin{frame}{Activity: Calling Assembly from C}
+	\begin{block}{Part A -- Software Development}
+		In this activity, we will write a small ARM assembly
+		function and call it from a C program.
+	\end{block}
+
+	\textbf{Learning outcomes}
+	\begin{itemize}
+		\item Create an STM32 project in STM32CubeIDE.
+		\item Add a GNU assembly source file to the project.
+		\item Call an assembly function from C.
+		\item Build and link a mixed C--assembly program.
+	\end{itemize}
+
+	\begin{alertblock}{Hardware requirement}
+		A NUCLEO-F446RE board is \textbf{not required} for Part A.
+		We will only write and build the program.
+	\end{alertblock}
 \end{frame}
+
+
+% ------------------------------------------------------------
+\begin{frame}{Step 1: Create an STM32 Project}
+	\begin{enumerate}
+		\item Open STM32CubeIDE.
+		\item Select \textbf{File $\rightarrow$ New
+			$\rightarrow$ STM32 Project}.
+		\item In the Create / Import STM32 Project window,
+		expand \textbf{Create New STM32 Project}.
+		\item Select \textbf{STM32CubeIDE Empty Project}.
+		\item Click \textbf{Next}.
+		\item Select the STM32F446RE microcontroller
+		(or NUCLEO-F446RE board, if available).
+		\item Enter the project name, e.g. \texttt{simpler}.
+		\item Click \textbf{Finish}.
+	\end{enumerate}
+
+	\begin{block}{Important}
+		Select \textbf{STM32CubeIDE Empty Project}, not
+		C Project or C++ Project.
+	\end{block}
+\end{frame}
+
+
+% ------------------------------------------------------------
+\begin{frame}{Step 2: Examine the Project Structure}
+	After project creation, open the \textbf{Project Explorer}
+	(Window $\rightarrow$ Show View $\rightarrow$ Project Explorer).
+
+	Expand the project. The structure should resemble:
+
+	\begin{center}
+		\begin{tabular}{ll}
+			\textbf{Folder / File} & \textbf{Purpose} \\
+			\hline
+			\texttt{Includes} & Header search paths \\
+			\texttt{Inc} & Project header files \\
+			\texttt{Src} & C and assembly source files \\
+			\texttt{Startup} & Startup assembly code \\
+			\texttt{*.ld} & Linker scripts \\
+		\end{tabular}
+	\end{center}
+
+	\begin{alertblock}{Note}
+		In this project, source files are under \texttt{Src},
+		not \texttt{Core/Src}. Both project layouts are possible.
+	\end{alertblock}
+\end{frame}
+
+
+% ------------------------------------------------------------
+\begin{frame}{Step 3: Add an Assembly Source File}
+	\begin{enumerate}
+		\item In Project Explorer, right-click the \texttt{Src}
+		folder.
+		\item Select \textbf{New $\rightarrow$ File}.
+		\item Enter the filename \texttt{add2.s}
+		(lowercase \texttt{s}).
+		\item Click \textbf{Finish}.
+	\end{enumerate}
+
+	\begin{block}{Why .s?}
+		The \texttt{.s} extension identifies a GNU assembler
+		source file. CubeIDE will pass it to the assembler
+		during the build.
+	\end{block}
+
+	\textbf{Project Explorer should now contain:}
+
+	\begin{center}
+		\begin{tabular}{l}
+			\texttt{simpler} \\
+			\quad \texttt{Src} \\
+			\qquad \texttt{main.c} \\
+			\qquad \texttt{syscalls.c} \\
+			\qquad \texttt{sysmem.c} \\
+			\qquad \texttt{add2.s} \quad $\leftarrow$ New file
+		\end{tabular}
+	\end{center}
+\end{frame}
+
+
+% ------------------------------------------------------------
+\begin{frame}[fragile]{Step 4: Write the Assembly Function}
+	\leavevmode
+	{\small Open \texttt{add2.s} and enter the following code:}
+
+	\begin{asm}[basicstyle=\footnotesize\ttfamily, morecomment={[l]{@}}]
+    .syntax unified
+    .thumb
+    .text
+    .global add2
+    .type add2, %function
+    .thumb_func
+add2:
+    ADD   r0, r0, r1
+    BX    lr
+\end{asm}
+
+	\vspace{1mm}
+	{\small
+	\begin{block}{What does the function do?}
+		\begin{itemize}\itemsep0pt
+			\item Receives two integer arguments in R0 and R1.
+			\item Adds the two values and stores the result in R0.
+			\item Returns to the calling program using LR.
+		\end{itemize}
+	\end{block}}
+
+	{\small Save the file (\textbf{Cmd+S} on macOS).}
+\end{frame}
+
+
+% ------------------------------------------------------------
+\begin{frame}[fragile]{Step 5: Call the Assembly Function from C}
+	\leavevmode
+	{\small Open \texttt{Src/main.c}. Replace its contents with:}
+
+	\begin{lstlisting}[language=C,basicstyle=\footnotesize\ttfamily]
+/* Function implemented in add2.s */
+extern int add2(int a, int b);
+
+volatile int result;   /* for inspection */
+
+int main(void)
+{
+	result = add2(0x25, 0x34);
+	while (1) { /* wait here */ }
 }
+\end{lstlisting}
+
+	\vspace{1mm}
+	{\small
+	\begin{block}{Understanding the function call}
+		\begin{itemize}\itemsep0pt
+			\item \texttt{extern} declares a function implemented
+			in another source file.
+			\item The arguments \texttt{0x25} and \texttt{0x34}
+			are passed in R0 and R1.
+			\item The returned value is stored in \texttt{result}.
+		\end{itemize}
+	\end{block}}
+
+	Save \texttt{main.c}.
+\end{frame}
+
+
+% ------------------------------------------------------------
+\begin{frame}{Step 6: Build the Project}
+	Building translates the C and assembly source files into
+	machine code and links them into one executable.
+
+	\begin{enumerate}
+		\item Right-click the project name (\texttt{simpler})
+		in Project Explorer.
+		\item Select \textbf{Build Project}.
+		\item Observe the build messages in the Console.
+		\item Check the final build status.
+	\end{enumerate}
+
+	\begin{block}{Successful build}
+		The build should complete with:
+		\begin{itemize}
+			\item 0 errors
+			\item The assembly file \texttt{add2.s} included
+			in the build.
+			\item A successfully linked executable.
+		\end{itemize}
+	\end{block}
+
+	\begin{alertblock}{If the build fails}
+		Check that \texttt{add2.s} is inside \texttt{Src},
+		that its extension is lowercase \texttt{.s}, and
+		that the function name is exactly \texttt{add2}.
+	\end{alertblock}
+\end{frame}
+
+
+% ------------------------------------------------------------
+\begin{frame}{Part A Complete: C and Assembly}
+	\begin{center}
+		\Large\textbf{You have successfully built a mixed
+			C--assembly program!}
+	\end{center}
+
+	\vspace{3mm}
+
+	\begin{block}{What have we accomplished?}
+		\begin{enumerate}
+			\item Created an STM32 project.
+			\item Added a GNU assembly source file.
+			\item Implemented an assembly function.
+			\item Called the function from C.
+			\item Built and linked the program.
+		\end{enumerate}
+	\end{block}
+
+	\begin{exampleblock}{Expected result when executed}
+		\[
+		\texttt{result} = 0x25 + 0x34 = 0x59
+		\]
+	\end{exampleblock}
+
+	\textbf{Next: Part B -- Debugging the program on the
+		NUCLEO-F446RE board.}
+\end{frame}
+
 
 
 %===============================================================================
@@ -416,10 +637,11 @@ add2:                 @ a in R0, b in R1
 \end{center}
     \begin{center}
     \begin{asm}[basicstyle=\small\ttfamily]
-	LDR   R0, [R1]        ; load a  (memory -> register)
-	LDR   R2, [R1, #4]    ; load b  (memory -> register)
-	ADD   R0, R0, R2      ; process (register + register)
-	STR   R0, [R1, #8]    ; store c (register -> memory) \end{asm}
+LDR   R0, [R1]      @ load a  (memory -> register)
+LDR   R2, [R1, #4]  @ load b  (memory -> register)
+ADD   R0, R0, R2    @ process (register + register)
+STR   R0, [R1, #8]  @ store c (register -> memory)
+\end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -482,7 +704,8 @@ add2:                 @ a in R0, b in R1
         \begin{cc}
 int f(int a, int b) {
     return a + b;
-}        \end{cc}
+}
+\end{cc}
 
         \vspace{2mm}
         {\footnotesize Arguments arrive in \texttt{R0} and \texttt{R1} by
@@ -493,8 +716,9 @@ int f(int a, int b) {
 
         \vspace{1mm}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-	ADD   R0, R0, R1
-	BX    LR        \end{asm}
+ADD   R0, R0, R1
+BX    LR
+\end{asm}
 
         \vspace{3mm}
         {\small Same addition. \alert{Two instructions} instead of four.}
@@ -597,7 +821,7 @@ int f(int a, int b) {
 {\beamerextras
 \begin{frame}[fragile]{LDR: Loading a Word from Memory (Little-Endian)}
 	\begin{verbatim}
-		LDR  R1, [R0]    ; load word
+		LDR  R1, [R0]    @ load word
 	\end{verbatim}
 
 	\centering
@@ -666,7 +890,7 @@ int f(int a, int b) {
 {\beamerextras
 \begin{frame}[fragile]{STR: Storing a Word to Memory}
 	\begin{verbatim}
-		STR   R1, [R0]    ; store 32-bit word
+		STR   R1, [R0]    @ store 32-bit word
 	\end{verbatim}
 	\centering
 	{\small\itshape Before: R1 = 0x11223344, \quad [0x20000100] = 0x00C0FFEE\par}
@@ -812,7 +1036,7 @@ int f(int a, int b) {
 {\beamerextras
 \begin{frame}[fragile]{LDRH Instruction}
 	\begin{verbatim}
-		LDRH  R1, [R0]    ; load halfword
+		LDRH  R1, [R0]    @ load halfword
 	\end{verbatim}
 	\resizebox{0.92\textwidth}{!}{%
 		\begin{tikzpicture}[x=10mm, y=8mm]
@@ -894,16 +1118,18 @@ int f(int a, int b) {
     \begin{columns}[T]
     \begin{column}{.48\textwidth}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-	LDR  R0, =0x11223344
-	STRB R0, [R1]        \end{asm}
+LDR   R0, =0x11223344
+STRB  R0, [R1]
+\end{asm}
 
         \vspace{2mm}
         {\small Stores only \texttt{0x44}. The upper 24 bits are ignored.}
     \end{column}
     \begin{column}{.48\textwidth}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-	LDR  R0, =0x12345678
-	STRH R0, [R1]        \end{asm}
+LDR   R0, =0x12345678
+STRH  R0, [R1]
+\end{asm}
 
         \vspace{2mm}
         {\small Stores only \texttt{0x5678}. The upper 16 bits are ignored.}
@@ -1084,11 +1310,11 @@ int f(int a, int b) {
 \begin{frame}[fragile]{Memory Copy Example}
 
 	\begin{asm}[basicstyle=\normalsize\ttfamily]
-		LDR R0, =0x20000000
-		LDR R1, =0x20000004
-		LDR R2, [R0]
-		STR R2, [R1]
-	\end{asm}
+LDR   R0, =0x20000000
+LDR   R1, =0x20000004
+LDR   R2, [R0]
+STR   R2, [R1]
+\end{asm}
 
 	\vspace{5mm}
 
@@ -1259,7 +1485,7 @@ int f(int a, int b) {
 {\beamerextras
 \begin{frame}[fragile]{LDRSB Instruction}
 	\begin{verbatim}
-		LDRSB R1, [R0]    ; load signed byte
+		LDRSB R1, [R0]    @ load signed byte
 	\end{verbatim}
 	\resizebox{0.92\textwidth}{!}{%
 		\begin{tikzpicture}[x=10mm, y=8mm]
@@ -1334,7 +1560,7 @@ int f(int a, int b) {
 {\beamerextras
 \begin{frame}[fragile]{LDRSH Instruction}
 	\begin{verbatim}
-		LDRSH R1, [R0]    ; load signed halfword
+		LDRSH R1, [R0]    @ load signed halfword
 	\end{verbatim}
 	\resizebox{0.92\textwidth}{!}{%
 		\begin{tikzpicture}[x=10mm, y=8mm]
@@ -1415,9 +1641,9 @@ int f(int a, int b) {
     \begin{columns}[T]
     \begin{column}{.52\textwidth}
 \begin{asm}[basicstyle=\ttfamily\small]
-	LDR   R0, [R1]
-	LDRB  R2, [R1]
-	LDRSB R3, [R1]
+LDR   R0, [R1]
+LDRB  R2, [R1]
+LDRSB R3, [R1]
 \end{asm}
     \end{column}
     \begin{column}{.44\textwidth}
@@ -1526,10 +1752,10 @@ int f(int a, int b) {
     \vspace{2mm}
     \begin{block}{Prologue and epilogue}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-	PUSH {LR}    ; prologue: save the return address
-	...          ; the function body
-	POP  {PC}    ; epilogue: return by loading PC directly
-        \end{asm}
+PUSH  {LR}    @ prologue: save the return address
+...           @ the function body
+POP   {PC}    @ epilogue: return by loading PC directly
+\end{asm}
 
         {\footnotesize \texttt{POP \{PC\}} \emph{is} the return. Recognising
         this pair on sight is one of the most useful disassembly skills.}
@@ -1582,10 +1808,11 @@ int f(int a, int b) {
     \vspace{2mm}
     \begin{center}
     \begin{asm}[basicstyle=\normalsize\ttfamily]
-	MOV R0, R1       ; R0 = R1
-	MOV R0, #25      ; R0 = 25
-	MVN R0, #0       ; R0 = 0xFFFFFFFF
-	MVN R0, R1       ; R0 = ~R1  (one's complement)    \end{asm}
+MOV   R0, R1   @ R0 = R1
+MOV   R0, #25  @ R0 = 25
+MVN   R0, #0   @ R0 = 0xFFFFFFFF
+MVN   R0, R1   @ R0 = ~R1  (one's complement)
+\end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -1605,7 +1832,8 @@ int f(int a, int b) {
     \vspace{2mm}
     \begin{center}
     \begin{asm}[basicstyle=\large\ttfamily]
-	LDR R0, =0x40020014    \end{asm}
+LDR   R0, =0x40020014
+\end{asm}
     \end{center}
 
     \vspace{3mm}
@@ -1637,9 +1865,10 @@ int f(int a, int b) {
     \vspace{2mm}
     \begin{center}
     \begin{asm}[basicstyle=\small\ttfamily]
-; build 0x40020014 (GPIOA->ODR), one halfword at a time
-	MOVW R0, #0x0014   ; R0 = 0x00000014, high half cleared
-	MOVT R0, #0x4002   ; R0 = 0x40020014, high half set, low half kept    \end{asm}
+@ build 0x40020014 (GPIOA->ODR), one halfword at a time
+MOVW  R0, #0x0014  @ R0 = 0x00000014, high half cleared
+MOVT  R0, #0x4002  @ R0 = 0x40020014, high half set, low half kept
+\end{asm}
     \end{center}
 
     \vspace{2mm}
@@ -1660,9 +1889,10 @@ int f(int a, int b) {
     \leavevmode
     \begin{center}
     \begin{asm}[basicstyle=\normalsize\ttfamily]
-	MOVW R3, #0x0014
-	MOVT R3, #0x4002   ; "R3 is being given a 32-bit address"
-	LDR  R2, [R3]      ; "...and now something is read through it"    \end{asm}
+MOVW  R3, #0x0014
+MOVT  R3, #0x4002  @ "R3 is being given a 32-bit address"
+LDR   R2, [R3]     @ "...and now something is read through it"
+\end{asm}
     \end{center}
 
     \vspace{3mm}
@@ -1705,17 +1935,19 @@ int f(int a, int b) {
         \vspace{1mm}
         \begin{cc}
 	int c;
-	c = a + b;        \end{cc}
+	c = a + b;
+\end{cc}
 
         \vspace{3mm}
         \textbf{The listing}
 
         \vspace{1mm}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-	LDR  R3, [R7, #4]
-	LDR  R2, [R7, #8]
-	ADD  R3, R3, R2
-	STR  R3, [R7, #12]        \end{asm}
+LDR   R3, [R7, #4]
+LDR   R2, [R7, #8]
+ADD   R3, R3, R2
+STR   R3, [R7, #12]
+\end{asm}
     \end{column}
     \begin{column}{.5\textwidth}
         \textbf{Reading it back}

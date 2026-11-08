@@ -18,7 +18,7 @@
 }
 
 \title{Data Processing}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 6}
+\subtitle{\emph{STM32 Primer} --- Chapter 6}
 
 \begin{document}
 
@@ -29,7 +29,7 @@
 %===============================================================================
 
 \begin{frame}[fragile]{Why This Chapter Matters}
-    \begin{columns}[T]
+    \begin{columns}[c]
     \begin{column}{.47\textwidth}
         {\normalsize Every peripheral is controlled by setting and clearing single bits inside a 32-bit register, without changing neighbouring bits. Load, modify, store back: this is the most common pattern in embedded firmware. This chapter builds it from instructions. You will then know exactly what \verb+GPIOA->MODER |= (1U << 10)+ executes, and why.}
     \end{column}
@@ -58,13 +58,13 @@
     \begin{center}
     \begin{minipage}{.9\textwidth}
 \begin{asm}[basicstyle=\ttfamily\small]
-GPIOA->MODER &= ~(3U << 10);   // clear bits 11:10
-GPIOA->MODER |=  (1U << 10);   // write 01
+@ GPIOA->MODER &= ~(3U << 10);  // clear bits 11:10
+@ GPIOA->MODER |=  (1U << 10);  // write 01
 
-LDR   R1, [R0]          ; read MODER
-BIC   R1, R1, #0xC00    ; clear the field
-ORR   R1, R1, #0x400    ; write 01
-STR   R1, [R0]          ; write back
+LDR   R1, [R0]        @ read MODER
+BIC   R1, R1, #0xC00  @ clear the field
+ORR   R1, R1, #0x400  @ write 01
+STR   R1, [R0]        @ write back
 \end{asm}
     \end{minipage}
     \end{center}
@@ -129,23 +129,25 @@ STR   R1, [R0]          ; write back
 
         \vspace{1mm}
         \begin{cc}
-total = a + b - c;        \end{cc}
+total = a + b - c;
+\end{cc}
     \end{column}
     \begin{column}{.5\textwidth}
         \textbf{In assembly}
 
         \vspace{1mm}
         \begin{asm}
-	LDR  R0, =a
-	LDR  R0, [R0]   ; R0 = a
-	LDR  R1, =b
-	LDR  R1, [R1]   ; R1 = b
-	LDR  R2, =c
-	LDR  R2, [R2]   ; R2 = c
-	ADD  R3, R0, R1 ; R3 = a + b
-	SUB  R3, R3, R2 ; R3 = (a+b) - c
-	LDR  R4, =total
-	STR  R3, [R4]        \end{asm}
+LDR   R0, =a
+LDR   R0, [R0]    @ R0 = a
+LDR   R1, =b
+LDR   R1, [R1]    @ R1 = b
+LDR   R2, =c
+LDR   R2, [R2]    @ R2 = c
+ADD   R3, R0, R1  @ R3 = a + b
+SUB   R3, R3, R2  @ R3 = (a+b) - c
+LDR   R4, =total
+STR   R3, [R4]
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -180,6 +182,7 @@ total = a + b - c;        \end{cc}
         \texttt{ORR} & \texttt{Rd = Rn | Op2}                 & \textbf{Setting} bits to 1 \\
         \texttt{EOR} & \texttt{Rd = Rn \^{} Op2}              & \textbf{Toggling} bits \\
         \texttt{BIC} & \texttt{Rd = Rn \& \textasciitilde Op2}& \textbf{Clearing} bits to 0 \\
+        \texttt{ORN} & \texttt{Rd = Rn | \textasciitilde Op2}& Setting bits where the mask is \textbf{0} \\
         \bottomrule
     \end{tabular}}
     \end{center}
@@ -189,14 +192,14 @@ total = a + b - c;        \end{cc}
         In C you clear bits with \texttt{x \&= \textasciitilde mask}.
         ARM gives this its own instruction. So the compiler emits
         \emph{one} \texttt{BIC}, where you might expect \texttt{MVN}
-        followed by \texttt{AND}.
+        followed by \texttt{AND}. \texttt{ORN} does the same for \texttt{x |= \textasciitilde mask}.
     \end{block}
 \end{frame}
 
-\begin{frame}[fragile]{The Four Operations on the Same Bits}
+\begin{frame}[fragile]{The Five Operations on the Same Bits}
 	R0 contains 12$_{10}$, R1 contains 10$_{10}$.
     \begin{center}
-    \begin{tikzpicture}[x=10mm, y=6mm]
+    \begin{tikzpicture}[x=10mm, y=5.2mm]
     \def\bw{1}
 
     % Bit numbering above the top row
@@ -251,35 +254,41 @@ total = a + b - c;        \end{cc}
         \node[font=\scriptsize\ttfamily\bfseries] at (\i*\bw+\bw/2,-5.7) {\b};
     }
     \node[lbl, anchor=west] at (4.2*\bw,-5.7) {\texttt{R2,R0,R1} --- clear where R1 is 1};
+
+    % Row: ORN  (R0 OR NOT R1)
+    \node[lbl, anchor=east] at (-0.3,-6.8) {\texttt{ORN}};
+    \foreach \i/\b in {0/1,1/1,2/0,3/1}{
+        \draw[draw=primary, fill=primary!15, thick] (\i*\bw,-7.15) rectangle (\i*\bw+\bw,-6.45);
+        \node[font=\scriptsize\ttfamily\bfseries] at (\i*\bw+\bw/2,-6.8) {\b};
+    }
+    \node[lbl, anchor=west] at (4.2*\bw,-6.8) {\texttt{R2,R0,R1} --- set where R1 is \alert{0}};
     \end{tikzpicture}
     \end{center}
 \end{frame}
 
 \begin{frame}[fragile]{Read--Modify--Write}{The sequence behind every peripheral write}
     \begin{columns}[T]
-    \begin{column}{.46\textwidth}
+    \begin{column}{.4\textwidth}
         \textbf{In C}
 
         \vspace{1mm}
         \begin{cc}
-GPIOA->MODER &=
-        ~(3U << 10);
+GPIOA->MODER &= ~(3U << 10);
 
-GPIOA->MODER |=
-        (1U << 10);
-        \end{cc}
+GPIOA->MODER |=  (1U << 10);
+\end{cc}
     \end{column}
-    \begin{column}{.5\textwidth}
+    \begin{column}{.55\textwidth}
         \textbf{In assembly}
 
         \vspace{1mm}
         \begin{asm}
-	LDR  R3, =0x40020000
-	LDR  R0, [R3]
-	BIC  R0, R0, #0xC00   ; clear bits 11:10
-	ORR  R0, R0, #0x400   ; set bit 10
-	STR  R0, [R3]
-        \end{asm}
+LDR   R3, =0x40020000
+LDR   R0, [R3]
+BIC   R0, R0, #0xC00  @ clear bits 11:10
+ORR   R0, R0, #0x400  @ set bit 10
+STR   R0, [R3]
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -341,8 +350,8 @@ GPIOA->MODER |=
         \textbf{Step} & \textbf{Assembly} & \textbf{Equivalent C} \\
         \midrule
         Load the register & \texttt{LDR R1, [R0]} & implicit in \texttt{GPIOA->MODER} \\
-        Clear the field & \texttt{BIC R1, R1, R2} & \texttt{\&= \textasciitilde(3U << 10)} \\
-        Set the new value & \texttt{ORR R1, R1, \#0x400} & \texttt{|= (1U << 10)} \\
+        Clear the field & \texttt{BIC R1, R1, R2} & \texttt{\&= \textasciitilde(3U <{<} 10)} \\
+        Set the new value & \texttt{ORR R1, R1, \#0x400} & \texttt{|= (1U <{<} 10)} \\
         Store the register & \texttt{STR R1, [R0]} & implicit in the \texttt{->} assignment \\
         \bottomrule
     \end{tabular}}
@@ -367,7 +376,7 @@ GPIOA->MODER |=
         \midrule
         Physical hardware & Two configuration flip-flops selecting the PA5 output driver \\
         Register          & \texttt{GPIOA\_MODER} bits 11:10 \\
-        C                 & \texttt{MODER \&= \textasciitilde(3U << 10); MODER |= (1U << 10);} \\
+        C                 & \texttt{MODER \&= \textasciitilde(3U {<}< 10); MODER |= (1U {<}< 10);} \\
         Assembly          & \texttt{LDR} / \texttt{BIC} / \texttt{ORR} / \texttt{STR} \\
         Machine code      & Four Thumb-2 encodings \\
         \bottomrule
@@ -425,10 +434,10 @@ GPIOA->MODER |=
 \begin{frame}[fragile]{Shifts as Ordinary Instructions}
     \leavevmode
     \begin{asm}
-	LSL R0, R1, #2    ; R0 = R1 << 2   (R1 times 4)
-	LSR R0, R1, #1    ; R0 = R1 >> 1   (R1 divided by 2, unsigned)
-	ASR R0, R1, #1    ; R0 = R1 >> 1   (R1 divided by 2, signed)
-    \end{asm}
+LSL   R0, R1, #2  @ R0 = R1 << 2   (R1 times 4)
+LSR   R0, R1, #1  @ R0 = R1 >> 1   (R1 divided by 2, unsigned)
+ASR   R0, R1, #1  @ R0 = R1 >> 1   (R1 divided by 2, signed)
+\end{asm}
 
     \vspace{3mm}
     {\small Written this way, a shift is a complete instruction: it
@@ -497,8 +506,8 @@ GPIOA->MODER |=
     \begin{columns}[T]
     \begin{column}{.52\textwidth}
 \begin{asm}[basicstyle=\ttfamily\small]
-LSR  R2, R1, #2
-ASR  R3, R1, #2
+LSR   R2, R1, #2
+ASR   R3, R1, #2
 \end{asm}
     \end{column}
     \begin{column}{.44\textwidth}
@@ -607,7 +616,7 @@ ASR  R3, R1, #2
         \vspace{1mm}
         \begin{cc}
 total = 4 * a + b;
-        \end{cc}
+\end{cc}
 
         \vspace{2mm}
         {\small \texttt{a} and \texttt{b} are already in \texttt{R0} and
@@ -618,10 +627,10 @@ total = 4 * a + b;
 
         \vspace{1mm}
         \begin{asm}
-	LSL  R2, R0, #2  ; R2 = a << 2
-	                 ;    = a * 4
-	ADD  R3, R2, R1  ; R3 = (4*a) + b
-        \end{asm}
+LSL   R2, R0, #2  @ R2 = a << 2
+                  @    = a * 4
+ADD   R3, R2, R1  @ R3 = (4*a) + b
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -688,9 +697,9 @@ total = 4 * a + b;
 
 	\vspace{2mm}
 	\begin{asm}
-		ADD R0, R1, R2, LSR #3    ; R0 = R1 + (R2 >> 3)
-		ORR R0, R1, R2, LSL #2    ; R0 = R1 | (R2 << 2)
-	\end{asm}
+ADD   R0, R1, R2, LSR #3  @ R0 = R1 + (R2 >> 3)
+ORR   R0, R1, R2, LSL #2  @ R0 = R1 | (R2 << 2)
+\end{asm}
 
 	\vspace{2mm}
 	\begin{block}{Folded into the instruction, not a separate step}
@@ -814,25 +823,25 @@ total = 4 * a + b;
     \begin{column}{0.48\textwidth}
         \textbf{1. Simple offset}
         \begin{asm}
-	LDR R0, [R1, #8]
-	; address = R1 + 8
-	; R1 unchanged
-        \end{asm}
+LDR   R0, [R1, #8]
+@ address = R1 + 8
+@ R1 unchanged
+\end{asm}
 
         \vspace{5mm}
         \textbf{2. Pre-indexed}: Calculate first, then access.
         \begin{asm}
-	LDR R0, [R1, #8]!
-	; address = R1 + 8
-	; R1 = R1 + 8
-        \end{asm}
+LDR   R0, [R1, #8]!
+@ address = R1 + 8
+@ R1 = R1 + 8
+\end{asm}
         \vspace{5mm}
                 \textbf{3. Post-indexed}: Access first, then calculate.
         \begin{asm}
-	LDR R0, [R1], #8
-	; address = R1
-    ; R1 = R1 + 8 (after)
-        \end{asm}
+LDR   R0, [R1], #8
+@ address = R1
+@ R1 = R1 + 8 (after)
+\end{asm}
 
     \end{column}
     \begin{column}{0.48\textwidth}
@@ -950,8 +959,8 @@ total = 4 * a + b;
 	\begin{columns}[T]
 		\begin{column}{.48\textwidth}
 			\begin{asm}
-	LDR R0, [R1, R2, LSL #2]
-			\end{asm}
+LDR   R0, [R1, R2, LSL #2]
+\end{asm}
 
 			\vspace{3mm}
 			{\small
@@ -1002,7 +1011,7 @@ total = 4 * a + b;
 
 			\begin{cc}
 	int x = array[i];
-			\end{cc}
+\end{cc}
 
 			\vspace{2mm}
 			{\small
@@ -1027,10 +1036,10 @@ total = 4 * a + b;
 			\textbf{Typical ARM}
 
 			\begin{asm}
-	; R1 = array
-	; R2 = i
-	LDR R0, [R1, R2, LSL #2]
-			\end{asm}
+@ R1 = array
+@ R2 = i
+LDR   R0, [R1, R2, LSL #2]
+\end{asm}
 			\vspace{2mm}
 			\begin{block}{Address calculation}
 				\[
@@ -1065,7 +1074,7 @@ This is why array access on ARM is so cheap.
 
 	int *p = array;
 	int x = p[i];   // same as *(p + i)
-			\end{cc}
+\end{cc}
 
 			\vspace{2mm}
 			{\small
@@ -1114,21 +1123,21 @@ This is why array access on ARM is so cheap.
 	for (i = 0; i < 10; i++) {
 		sum += array[i];
 	}
-			\end{cc}
+\end{cc}
 		\end{column}
 		\begin{column}{.48\textwidth}
 			\textbf{ARM assembly}
 			\begin{asm}
-	LDR  R1, =array     ; base address
-	MOV  R0, #0         ; sum = 0
-	MOV  R2, #0         ; i = 0
-loop
-	LDR  R3, [R1, R2, LSL #2]
-	ADD  R0, R0, R3     ; sum += a[i]
-	ADD  R2, R2, #1     ; i++
-	CMP  R2, #10
-	BLT  loop
-			\end{asm}
+    LDR   R1, =array  @ base address
+    MOV   R0, #0      @ sum = 0
+    MOV   R2, #0      @ i = 0
+loop:
+    LDR   R3, [R1, R2, LSL #2]
+    ADD   R0, R0, R3  @ sum += a[i]
+    ADD   R2, R2, #1  @ i++
+    CMP   R2, #10
+    BLT   loop
+\end{asm}
 		\end{column}
 	\end{columns}
 
@@ -1169,8 +1178,8 @@ loop
 uint64_t sum = a + b;
 \end{cc}
 \begin{asm}[basicstyle=\ttfamily\footnotesize]
-ADDS R0, R0, R2   ; low words, sets C
-ADC  R1, R1, R3   ; high words + carry
+ADDS  R0, R0, R2  @ low words, sets C
+ADC   R1, R1, R3  @ high words + carry
 \end{asm}
     \end{column}
     \begin{column}{.46\textwidth}
@@ -1204,7 +1213,7 @@ ADC  R1, R1, R3   ; high words + carry
     \begin{center}
     {\small
     \striped
-    \begin{tabular}{@{}l l R{.34\textwidth}@{}}
+    \begin{tabular}{@{}c l R{.34\textwidth}@{}}
         \toprule
         \textbf{Constant} & \textbf{Instruction} & \textbf{Why} \\
         \midrule
@@ -1248,7 +1257,7 @@ ADC  R1, R1, R3   ; high words + carry
 			{\scriptsize
 				\textbf{Terminology covered}\\[1mm]
 				\begin{itemize}
-					\item AND, ORR, EOR, BIC
+					\item AND, ORR, EOR, BIC, ORN
 					\item Shifts and rotate
 					\item Flexible second operand
 					\item Pre- and post-indexed

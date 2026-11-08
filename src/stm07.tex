@@ -2,7 +2,7 @@
 \usepackage{styles/stmcommon}
 
 \title{Control Flow, Functions and the Stack}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 7}
+\subtitle{\emph{STM32 Primer} --- Chapter 7}
 
 \begin{document}
 
@@ -43,12 +43,12 @@
     \begin{center}
     \begin{minipage}{.9\textwidth}
 \begin{asm}[basicstyle=\ttfamily\small]
-if (x == 5) { y = 1; }
+@ if (x == 5) { y = 1; }
 
-    CMP   R0, #5      ; compare x with 5
-    BNE   skip        ; opposite of ==
-    MOVS  R1, #1      ; y = 1
-skip
+    CMP   R0, #5  @ compare x with 5
+    BNE   skip    @ opposite of ==
+    MOVS  R1, #1  @ y = 1
+skip:
 \end{asm}
     \end{minipage}
     \end{center}
@@ -103,10 +103,10 @@ skip
 
         \vspace{1mm}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-ADD  R0, R1, R2   ; flags unchanged
+ADD   R0, R1, R2  @ flags unchanged
 
-ADDS R0, R1, R2   ; updates N Z C V
-        \end{asm}
+ADDS  R0, R1, R2  @ updates N Z C V
+\end{asm}
     \end{column}
     \begin{column}{.5\textwidth}
         \textbf{Compare and test --- no result kept}
@@ -344,23 +344,23 @@ if (a == b)
     x = 1;
 else
     x = 2;
-        \end{cc}
+\end{cc}
     \end{column}
     \begin{column}{.4\textwidth}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-		CMP   R0, R1
-        BNE   else_block
+    CMP   R0, R1
+    BNE   else_block
 
-; if-block: a == b
-        MOV   R2, #1
-        B     endif
+    @ if-block: a == b
+    MOV   R2, #1
+    B     endif
 
-else_block
-        ; Else-block: a != b
-        MOV   R2, #2          ; x = 2
+else_block:
+    @ Else-block: a != b
+    MOV   R2, #2  @ x = 2
 
-endif
-    \end{asm}
+endif:
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -394,13 +394,13 @@ endif
 if (x > y) {
     z = x - y;
 }
-        \end{cc}
+\end{cc}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-     CMP   R0, R1    ; x vs y
-     BLE   endif     ; x <= y: skip
-     SUB   R2, R0, R1
-endif
-        \end{asm}
+    CMP   R0, R1  @ x vs y
+    BLE   endif   @ x <= y: skip
+    SUB   R2, R0, R1
+endif:
+\end{asm}
     \end{column}
     \begin{column}{.48\textwidth}
         \textbf{\texttt{if (x < y)}}
@@ -408,13 +408,13 @@ endif
 if (x < y) {
     x = y;
 }
-        \end{cc}
+\end{cc}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-     CMP   R0, R1    ; x vs y
-     BGE   endif     ; x >= y: skip
-     MOV   R0, R1    ; x = y
-endif
-        \end{asm}
+    CMP   R0, R1  @ x vs y
+    BGE   endif   @ x >= y: skip
+    MOV   R0, R1  @ x = y
+endif:
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -436,21 +436,21 @@ if (x > y)
     max = x;
 else
     max = y;
-        \end{cc}
+\end{cc}
     \end{column}
     \begin{column}{.56\textwidth}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-     CMP   R0, R1     ; x vs y
-     BLE   elsepart   ; x <= y: else
+    CMP   R0, R1    @ x vs y
+    BLE   elsepart  @ x <= y: else
 
-     MOV   R2, R0     ; max = x
-     B     endif      ; skip else
+    MOV   R2, R0    @ max = x
+    B     endif     @ skip else
 
-elsepart
-     MOV   R2, R1     ; max = y
+elsepart:
+    MOV   R2, R1    @ max = y
 
-endif
-        \end{asm}
+endif:
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -496,13 +496,13 @@ endif
 if (temp >= 50) {
     alarm = 1;
 }
-        \end{cc}
+\end{cc}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-     CMP   R0, #50
-     BLT   endif     ; temp < 50
-     MOV   R1, #1    ; alarm = 1
-endif
-        \end{asm}
+    CMP   R0, #50
+    BLT   endif   @ temp < 50
+    MOV   R1, #1  @ alarm = 1
+endif:
+\end{asm}
     \end{column}
     \begin{column}{.48\textwidth}
         \textbf{Unsigned: ADC reading}
@@ -510,13 +510,13 @@ endif
 if (adc > 2048) {
     high = 1;
 }
-        \end{cc}
+\end{cc}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-     CMP   R0, #2048
-     BLS   endif     ; adc <= 2048
-     MOV   R1, #1    ; high = 1
-endif
-        \end{asm}
+    CMP   R0, #2048
+    BLS   endif   @ adc <= 2048
+    MOV   R1, #1  @ high = 1
+endif:
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -547,20 +547,20 @@ endif
 sum = 0;
 for (i = 1; i <= 5; i++)
     sum = sum + i;
-        \end{cc}
+\end{cc}
     \end{column}
     \begin{column}{.37\textwidth}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-		MOV   r0, #0
-		MOV   r1, #1
-loop
- 	   CMP   r1, #5    ; r1 holds i
- 	   BGT   done
- 	   ADD   r0, r0, r1
- 	   ADD   r1, r1, #1
- 	   B     loop
-done
-        \end{asm}
+    MOV   r0, #0
+    MOV   r1, #1
+loop:
+    CMP   r1, #5  @ r1 holds i
+    BGT   done
+    ADD   r0, r0, r1
+    ADD   r1, r1, #1
+    B     loop
+done:
+\end{asm}
     \end{column}
     \end{columns}
 \end{frame}
@@ -584,19 +584,19 @@ int c = 0;
 for (; x != 0; x >>= 1)
     if (x & 1)
         c++;
-        \end{cc}
+\end{cc}
     \end{column}
     \begin{column}{.5\textwidth}
         \begin{asm}
-		LDR   r1, =0x5555
-		MOV   r0, #0       ; count = 0
-loop
-		AND   r2, r1, #1   ; check bit 0
-		ADD   r0, r2       ; c++
-    	LSRS  r1, r1, #1   ; next bit
-    	BNE   loop
-done
-        \end{asm}
+    LDR   r1, =0x5555
+    MOV   r0, #0      @ count = 0
+loop:
+    AND   r2, r1, #1  @ check bit 0
+    ADD   r0, r2      @ c++
+    LSRS  r1, r1, #1  @ next bit
+    BNE   loop
+done:
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -631,18 +631,18 @@ do {
     sum = sum + i;
     i++;
 } while (i <= 5);
-        \end{cc}
+\end{cc}
     \end{column}
     \begin{column}{.4\textwidth}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-		MOV   r0, #0
-		MOV   r1, #1
-loop
-    	ADD   r0, r0, r1
-    	ADD   r1, r1, #1
-    	CMP   r1, #5
-    	BLE   loop
-    \end{asm}
+    MOV   r0, #0
+    MOV   r1, #1
+loop:
+    ADD   r0, r0, r1
+    ADD   r1, r1, #1
+    CMP   r1, #5
+    BLE   loop
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -664,13 +664,13 @@ loop
 
         \vspace{1mm}
         \begin{asm}[basicstyle=\ttfamily\small]
-     MOV  r0, #0
-loop
-     ...          ; body
-     ADD  r0, #1
-     CMP  r0, #10
-     BLT  loop
-        \end{asm}
+    MOV   r0, #0
+loop:
+    ...           @ body
+    ADD   r0, #1
+    CMP   r0, #10
+    BLT   loop
+\end{asm}
 
         \vspace{3mm}
         {\small \alert{Three} instructions of overhead per iteration.}
@@ -680,12 +680,12 @@ loop
 
         \vspace{1mm}
         \begin{asm}[basicstyle=\ttfamily\small]
-     MOV  r0, #10
-loop
-     ...          ; body
-     SUBS r0, #1  ; and set flags
-     BNE  loop
-        \end{asm}
+    MOV   r0, #10
+loop:
+    ...           @ body
+    SUBS  r0, #1  @ and set flags
+    BNE   loop
+\end{asm}
 
         \vspace{3mm}
         {\small \alert{Two} --- the \texttt{CMP} is gone.}
@@ -712,18 +712,18 @@ sum = 0;
 for (i = 0; i < n; i++) {
     sum = sum + i;
 }
-        \end{cc}
+\end{cc}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-     MOV   R2, #0     ; sum
-     MOV   R0, #0     ; i
-loop
-     CMP   R0, R1     ; i vs n
-     BGE   done       ; i >= n
-     ADD   R2, R2, R0
-     ADD   R0, R0, #1
-     B     loop
-done
-        \end{asm}
+    MOV   R2, #0  @ sum
+    MOV   R0, #0  @ i
+loop:
+    CMP   R0, R1  @ i vs n
+    BGE   done    @ i >= n
+    ADD   R2, R2, R0
+    ADD   R0, R0, #1
+    B     loop
+done:
+\end{asm}
     \end{column}
     \begin{column}{.48\textwidth}
         \textbf{Countdown: leave on \texttt{BLE}}
@@ -733,17 +733,17 @@ while (n > 0) {
     sum = sum + n;
     n--;
 }
-        \end{cc}
+\end{cc}
         \begin{asm}[basicstyle=\footnotesize\ttfamily]
-     MOV   R1, #0     ; sum
-loop
-     CMP   R0, #0     ; n vs 0
-     BLE   done       ; n <= 0
-     ADD   R1, R1, R0
-     SUB   R0, R0, #1
-     B     loop
-done
-        \end{asm}
+    MOV   R1, #0  @ sum
+loop:
+    CMP   R0, #0  @ n vs 0
+    BLE   done    @ n <= 0
+    ADD   R1, R1, R0
+    SUB   R0, R0, #1
+    B     loop
+done:
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -773,21 +773,22 @@ do {
     ptr++;
     nwords--;
 } while (nwords);
-        \end{cc}
+\end{cc}
     \end{column}
     \begin{column}{.58\textwidth}
         \begin{asm}
-		MOV    r0, #0          ; max
-		LDR    r1, =0x20001000 ; ptr
-		MOV    r2, #64         ; nwords
-loop
-    	LDR    r3, [r1], #4   ; *ptr, ptr++
-    	CMP    r0, r3
-    	BGE    skip
-    	MOV    r0, r3         ; new max
-skip	SUBS   r2, #1
-    	BNE    loop
-        \end{asm}
+    MOV   r0, #0           @ max
+    LDR   r1, =0x20001000  @ ptr
+    MOV   r2, #64          @ nwords
+loop:
+    LDR   r3, [r1], #4     @ *ptr, ptr++
+    CMP   r0, r3
+    BGE   skip
+    MOV   r0, r3           @ new max
+skip:
+    SUBS  r2, #1
+    BNE   loop
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -817,13 +818,13 @@ skip	SUBS   r2, #1
 uint32_t read_gpioport(void) {
     return GPIOA->IDR;
 }
-	\end{cc}
+\end{cc}
 
 	\vspace{2mm}
 	{\small A caller simply writes}
 	\begin{cc}
 uint32_t state = read_gpioport();
-	\end{cc}
+\end{cc}
 
 	\vspace{0mm}
 	{\small The same idea applies in assembly: the instructions that read the
@@ -975,18 +976,18 @@ uint32_t state = read_gpioport();
 
 	\vspace{2mm}
 	\begin{asm}[basicstyle=\small\ttfamily]
-read_gpioport
-		MOVW  R1, #0x0010   ; GPIOA_IDR low half
-		MOVT  R1, #0x4002   ; GPIOA_IDR high half
-		LDR   R0, [R1]      ; read GPIO input register
-		BX    LR            ; return, with result in R0
-	\end{asm}
+read_gpioport:
+    MOVW  R1, #0x0010  @ GPIOA_IDR low half
+    MOVT  R1, #0x4002  @ GPIOA_IDR high half
+    LDR   R0, [R1]     @ read GPIO input register
+    BX    LR           @ return, with result in R0
+\end{asm}
 
 	\vspace{2mm}
 	\begin{asm}[basicstyle=\small\ttfamily]
-		BL    read_gpioport
-		; R0 now contains the GPIO port value
-	\end{asm}
+BL    read_gpioport
+@ R0 now contains the GPIO port value
+\end{asm}
 
 	\vspace{2mm}
 	{\small \texttt{read\_gpioport} takes no arguments, yet still returns a
@@ -1003,7 +1004,7 @@ read_gpioport
 uint32_t read_bit(uint32_t port, uint32_t mask) {
     return port & mask;
 }
-	\end{cc}
+\end{cc}
 
 	\vspace{2mm}
 	\begin{columns}[T]
@@ -1023,10 +1024,10 @@ uint32_t read_bit(uint32_t port, uint32_t mask) {
 		\end{column}
 		\begin{column}{.46\textwidth}
 			\begin{asm}[basicstyle=\small\ttfamily]
-read_bit
+read_bit:
     AND   R0, R0, R1
     BX    LR
-			\end{asm}
+\end{asm}
 		\end{column}
 	\end{columns}
 
@@ -1053,18 +1054,18 @@ int counter(void) {
     static int n = 0;
     return ++n;
 }
-        \end{cc}
+\end{cc}
     \end{column}
     \begin{column}{.5\textwidth}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-counter
-     LDR   R0, =n
-     LDR   R1, [R0]
-     ADDS  R1, R1, #1
-     STR   R1, [R0]
-     MOV   R0, R1
-     BX    LR
-        \end{asm}
+counter:
+    LDR   R0, =n
+    LDR   R1, [R0]
+    ADDS  R1, R1, #1
+    STR   R1, [R0]
+    MOV   R0, R1
+    BX    LR
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -1086,22 +1087,22 @@ int foo(int a, int b) {
 }
 
 x = foo(y, z);
-        \end{cc}
+\end{cc}
     \end{column}
     \begin{column}{.6\textwidth}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-foo
-     LSLS  R0, R0, #1   ; a*2
-     ADDS  R0, R0, R1   ; +b
-     BX    LR
-        \end{asm}
+foo:
+    LSLS  R0, R0, #1  @ a*2
+    ADDS  R0, R0, R1  @ +b
+    BX    LR
+\end{asm}
 
         \vspace{2mm}
         \begin{asm}[basicstyle=\normalsize\ttfamily]
-; y already in R0, z in R1
-     BL    foo
-     MOVS  R4, R0        ; x = result
-        \end{asm}
+@ y already in R0, z in R1
+BL    foo
+MOVS  R4, R0  @ x = result
+\end{asm}
     \end{column}
     \end{columns}
 
@@ -1118,7 +1119,7 @@ foo
 int popcount(uint32_t x);
 ...
 int n = popcount(mask);
-    \end{cc}
+\end{cc}
 
     \vspace{2mm}
     {\small A straightforward version checks every bit, shifting right until
@@ -1126,16 +1127,16 @@ int n = popcount(mask);
     wrapped as a callable function:}
 
     \begin{asm}[basicstyle=\small\ttfamily]
-popcount
-    MOV   R1, #0        ; count = 0
-loop
-    ANDS  R2, R0, #1    ; check bit 0
-    ADD   R1, R1, R2    ; count += bit
-    LSRS  R0, R0, #1    ; next bit
+popcount:
+    MOV   R1, #0      @ count = 0
+loop:
+    ANDS  R2, R0, #1  @ check bit 0
+    ADD   R1, R1, R2  @ count += bit
+    LSRS  R0, R0, #1  @ next bit
     BNE   loop
     MOV   R0, R1
     BX    LR
-    \end{asm}
+\end{asm}
 \end{frame}
 
 \begin{frame}[fragile]{A Faster \texttt{popcount}: Same Signature}
@@ -1147,19 +1148,19 @@ loop
 
     \vspace{1mm}
     \begin{asm}[basicstyle=\small\ttfamily]
-popcount
-    MOV   R1, #0        ; count = 0
+popcount:
+    MOV   R1, #0      @ count = 0
     CMP   R0, #0
     BEQ   done
-loop
-    ADD   R1, R1, #1    ; count++
-    SUBS  R2, R0, #1    ; R2 = x - 1
-    ANDS  R0, R0, R2    ; x &= (x - 1)
+loop:
+    ADD   R1, R1, #1  @ count++
+    SUBS  R2, R0, #1  @ R2 = x - 1
+    ANDS  R0, R0, R2  @ x &= (x - 1)
     BNE   loop
-done
+done:
     MOV   R0, R1
     BX    LR
-    \end{asm}
+\end{asm}
 
 \begin{block}{Same signature, same calling sequence --- different caller cannot tell}
     Argument in \texttt{R0}, result in \texttt{R0}, \texttt{BX LR} to return
@@ -1280,9 +1281,9 @@ done
     \begin{columns}[T]
     \begin{column}{.52\textwidth}
 \begin{asm}[basicstyle=\ttfamily\small]
-outer
-    BL    inner     ; call inner
-    BX    LR        ; return to caller
+outer:
+    BL    inner   @ call inner
+    BX    LR      @ return to caller
 \end{asm}
     \end{column}
     \begin{column}{.44\textwidth}
@@ -1349,13 +1350,13 @@ outer
 	\begin{columns}[T]
 		\begin{column}{.6\textwidth}
 			\begin{asm}[basicstyle=\small\ttfamily]
-		BL    AddNumbers
+    BL    AddNumbers
 
-AddNumbers
-		PUSH  {LR}      ; save caller's return address
-		ADD   R0, R0, R1
-		POP   {PC}      ; restore and return
-			\end{asm}
+AddNumbers:
+    PUSH  {LR}    @ save caller's return address
+    ADD   R0, R0, R1
+    POP   {PC}    @ restore and return
+\end{asm}
 
 			\vspace{3mm}
 			{\small
@@ -1431,11 +1432,11 @@ AddNumbers
     \begin{center}
     \begin{minipage}{.8\textwidth}
 \begin{asm}[basicstyle=\ttfamily\small]
-ProcessData
-    PUSH  {R4, LR}    ; save registers
-    ; ... body ...
+ProcessData:
+    PUSH  {R4, LR}  @ save registers
+    @ ... body ...
     BL    AddNumbers
-    POP   {R4, PC}    ; restore registers and return
+    POP   {R4, PC}  @ restore registers and return
 \end{asm}
     \end{minipage}
     \end{center}
@@ -1779,14 +1780,15 @@ ProcessData
 
     \vspace{2mm}
     \begin{asm}[basicstyle=\small\ttfamily]
-foo  PUSH {R4, R5}    ; save registers this function will use
-     MOV  R4, #0
-     MOV  R5, #0xAB
-     ADD  R4, R4, R5
-     ...
-     POP  {R4, R5}    ; restore their original values
-     BX   LR
-    \end{asm}
+foo:
+    PUSH  {R4, R5}  @ save registers this function will use
+    MOV   R4, #0
+    MOV   R5, #0xAB
+    ADD   R4, R4, R5
+    ...
+    POP   {R4, R5}  @ restore their original values
+    BX    LR
+\end{asm}
 
     \vspace{2mm}
 \begin{block}{Why this matters} The caller can continue using \texttt{R4} and \texttt{R5} after \texttt{foo} returns, knowing their values are unchanged. No special agreement is needed at each call site. \end{block}
@@ -1807,20 +1809,20 @@ int weighted_sum(int a, int b,
     \end{column}
     \begin{column}{.6\textwidth}
 \begin{asm}[basicstyle=\ttfamily\scriptsize]
-; Caller: a..d already in R0-R3
-    SUB   SP, SP, #8   ; reserve 8 bytes: stays aligned
-    LDR   R12, =e_value ; R12 is scratch
+@ Caller: a..d already in R0-R3
+    SUB   SP, SP, #8     @ reserve 8 bytes: stays aligned
+    LDR   R12, =e_value  @ R12 is scratch
     LDR   R12, [R12]
-    STR   R12, [SP]    ; the fifth argument, e
+    STR   R12, [SP]      @ the fifth argument, e
     BL    weighted_sum
-    ADD   SP, SP, #8   ; caller releases it
+    ADD   SP, SP, #8     @ caller releases it
 
-weighted_sum
-    ADD   R0, R0, R1   ; a + b
-    ADD   R0, R0, R2   ; + c
-    ADD   R0, R0, R3   ; + d
-    LDR   R1, [SP]     ; e, read from the stack
-    ADD   R0, R0, R1   ; + e
+weighted_sum:
+    ADD   R0, R0, R1     @ a + b
+    ADD   R0, R0, R2     @ + c
+    ADD   R0, R0, R3     @ + d
+    LDR   R1, [SP]       @ e, read from the stack
+    ADD   R0, R0, R1     @ + e
     BX    LR
 \end{asm}
     \end{column}
@@ -1844,21 +1846,21 @@ int sum_array(const int *data,
     \end{column}
     \begin{column}{.58\textwidth}
 \begin{asm}[basicstyle=\ttfamily\scriptsize]
-sum_array
-    PUSH  {R4, LR}   ; prologue: save R4, LR
-    MOV   R2, #0     ; total = 0
-    MOV   R3, #0     ; i = 0
-    CMP   R1, #0     ; is n <= 0 ?
-    BLE   done       ; yes: skip the loop
-loop
-    LDR   R4, [R0, R3, LSL #2] ; data[i]
-    ADD   R2, R2, R4           ; total += R4
-    ADD   R3, R3, #1           ; i++
-    CMP   R3, R1               ; i < n ?
-    BLT   loop                 ; signed compare
-done
-    MOV   R0, R2     ; return value in R0
-    POP   {R4, PC}   ; epilogue: restore, return
+sum_array:
+    PUSH  {R4, LR}              @ prologue: save R4, LR
+    MOV   R2, #0                @ total = 0
+    MOV   R3, #0                @ i = 0
+    CMP   R1, #0                @ is n <= 0 ?
+    BLE   done                  @ yes: skip the loop
+loop:
+    LDR   R4, [R0, R3, LSL #2]  @ data[i]
+    ADD   R2, R2, R4            @ total += R4
+    ADD   R3, R3, #1            @ i++
+    CMP   R3, R1                @ i < n ?
+    BLT   loop                  @ signed compare
+done:
+    MOV   R0, R2                @ return value in R0
+    POP   {R4, PC}              @ epilogue: restore, return
 \end{asm}
     \end{column}
     \end{columns}

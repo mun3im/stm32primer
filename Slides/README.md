@@ -5,10 +5,10 @@ The built slide decks, one PDF per chapter of the course book. This folder holds
 | Deck | Pages | Chapter |
 |---|---|---|
 | [`stm01`](stm01.pdf) | 61 | From Digital Systems to Microcontrollers |
-| [`stm02`](stm02.pdf) | 58 | The ARM Cortex-M4 Programmer's Model |
+| [`stm02`](stm02.pdf) | 59 | The ARM Cortex-M4 Programmer's Model |
 | [`stm03`](stm03.pdf) | 40 | Memory, Addressing and Pointers |
-| [`stm04`](stm04.pdf) | 45 | Embedded C and CMSIS |
-| [`stm05`](stm05.pdf) | 55 | ARM Assembly Fundamentals |
+| [`stm04`](stm04.pdf) | 47 | Embedded C and CMSIS |
+| [`stm05`](stm05.pdf) | 64 | ARM Assembly Fundamentals |
 | [`stm06`](stm06.pdf) | 44 | Data Processing |
 | [`stm07`](stm07.pdf) | 59 | Control Flow, Functions and the Stack |
 | [`stm08`](stm08.pdf) | 38 | General Purpose Input Output |
@@ -17,7 +17,7 @@ The built slide decks, one PDF per chapter of the course book. This folder holds
 | [`stm11`](stm11.pdf) | 32 | ADC and Analog Interfacing |
 | [`stm12`](stm12.pdf) | 34 | UART Communication |
 | [`stm13`](stm13.pdf) | 42 | Synchronous Serial Interfaces: SPI and I²C |
-| [`stm14`](stm14.pdf) | 45 | Designing, Building and Verifying an Embedded System |
+| [`stm14`](stm14.pdf) | 47 | Designing, Building and Verifying an Embedded System |
 
 Page counts include the section-divider pages that beamer inserts.
 

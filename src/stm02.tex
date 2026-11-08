@@ -2,7 +2,7 @@
 \usepackage{styles/stmcommon}
 
 \title{The ARM Cortex-M4 Programmer's Model}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 2}
+\subtitle{\emph{STM32 Primer} --- Chapter 2}
 
 \begin{document}
 \titlepage
@@ -145,8 +145,8 @@ if (sensor_value == 0) { turn_on_led(); }
 
 			{\small\color{red!75!black}
 				\begin{verbatim}
-					; x = x + 1
-					ADD [eax], ebx
+; x = x + 1
+ADD [eax], ebx
 			\end{verbatim}}
 		\end{column}
 		\begin{column}{.48\textwidth}
@@ -160,13 +160,77 @@ if (sensor_value == 0) { turn_on_led(); }
 
 			{\small\color{red!75!black}
 				\begin{verbatim}
-					; x = x + 1
-					LDR r0, [r1]   ; load into register
-					ADD r0, r0, r2 ; register arithmetic
-					STR r0, [r1]   ; store back to memory
+@ x = x + 1
+LDR   r0, [r1]      @ load into register
+ADD   r0, r0, r2    @ register arithmetic
+STR   r0, [r1]      @ store back to memory
 			\end{verbatim}}
 		\end{column}
 	\end{columns}
+\end{frame}
+
+% Helpers for the ISA-density frame. Kept at document level: a \def with #1
+% parameters inside a frame body breaks, because Beamer reads the body as an argument.
+% Same body as fig:isa_density in chapter2.tex: four 4-byte-wide memory grids, one per encoding style.
+% \isagrid{x}{y}{title}{note} draws an empty grid with its top-left corner
+% at (x,y); \isablk{x}{y}{row}{col}{width}{style}{label} fills an instruction.
+\def\cw{9}\def\ch{6}
+\def\isagrid#1#2#3#4{%
+  \foreach \r/\a in {0/00,1/04,2/08,3/0C}{%
+    \foreach \c in {0,...,3}{%
+      \draw[draw=cellline, fill=cellfill] ({#1+\c*\cw},{#2-\r*\ch}) rectangle ++(\cw,-\ch);}
+    \node[anchor=east, font=\scriptsize\ttfamily] at ({#1-0.6},{#2-\r*\ch-\ch/2}) {0x\a};}
+  \foreach \c in {0,...,3}{%
+    \node[anchor=south, font=\scriptsize\sffamily] at ({#1+\c*\cw+\cw/2},{#2+0.2}) {+\c};}
+  \node[anchor=south, font=\sffamily\small\bfseries] at ({#1+2*\cw},{#2+3.6}) {#3};
+  \node[anchor=north, font=\sffamily\scriptsize, text width=35mm, align=center]
+       at ({#1+2*\cw},{#2-4*\ch-1.2}) {#4};}
+\def\isablk#1#2#3#4#5#6#7{%
+  \draw[#6, thick] ({#1+#4*\cw},{#2-#3*\ch}) rectangle ++({#5*\cw},-\ch);
+  \node[font=\sffamily\scriptsize\bfseries] at ({#1+#4*\cw+#5*\cw/2},{#2-#3*\ch-\ch/2}) {#7};}
+\tikzset{i1/.style={draw=accentline, fill=accentfill},
+         i2/.style={draw=blkline, fill=blkfill},
+         i3/.style={draw=memline, fill=memfill},
+         i4/.style={draw=violet!70!black, fill=violet!12}}
+
+\begin{frame}{Instruction Length and Code Density}{CISC $\rightarrow$ ARM $\rightarrow$ Thumb $\rightarrow$ Thumb-2}
+    \begin{center}
+    % geometry scaled by x/y only, so the text keeps its full size
+    \begin{tikzpicture}[x=0.78mm, y=0.9mm]
+    \def\Ax{10}\def\Ay{0}\def\Bx{58}\def\By{0}
+    \def\Cx{106}\def\Cy{0}\def\Dx{154}\def\Dy{0}
+% CISC: 1 + 5 + 2 + 1 bytes, packed with no gaps; Inst2 crosses the word boundary like Thumb-2
+\isagrid{\Ax}{\Ay}{CISC (e.g.\ x86)}{Very dense, but the length varies, so decoding is hard.}
+\isablk{\Ax}{\Ay}{0}{0}{1}{i1}{Inst1}
+\isablk{\Ax}{\Ay}{0}{1}{3}{i2}{Inst2}
+\isablk{\Ax}{\Ay}{1}{0}{2}{i2}{Inst2}
+\isablk{\Ax}{\Ay}{1}{2}{2}{i3}{Inst3}
+\isablk{\Ax}{\Ay}{2}{0}{1}{i4}{Inst4}
+% ARM: three 32-bit instructions
+\isagrid{\Bx}{\By}{ARM, 32-bit (1985)}{Uses the most memory. Fixed length makes decoding easy.}
+\isablk{\Bx}{\By}{0}{0}{4}{i1}{Inst1}
+\isablk{\Bx}{\By}{1}{0}{4}{i2}{Inst2}
+\isablk{\Bx}{\By}{2}{0}{4}{i3}{Inst3}
+\isablk{\Bx}{\By}{3}{0}{4}{i4}{Inst4}
+% Thumb: three 16-bit instructions
+\isagrid{\Cx}{\Cy}{Thumb, 16-bit (1994)}{Dense, but limited. Needs a mode switch (T bit) to reach ARM instructions.}
+\isablk{\Cx}{\Cy}{0}{0}{2}{i1}{Inst1}
+\isablk{\Cx}{\Cy}{0}{2}{2}{i2}{Inst2}
+\isablk{\Cx}{\Cy}{1}{0}{2}{i3}{Inst3}
+\isablk{\Cx}{\Cy}{1}{2}{2}{i4}{Inst4}
+% Thumb-2: 16 + 32 + 16 bits; the 32-bit one crosses the word boundary
+\isagrid{\Dx}{\Dy}{Thumb-2, 16/32-bit (2003)}{Dense and complete: 16- and 32-bit mixed, no mode switch. Used by every Cortex-M.}
+\isablk{\Dx}{\Dy}{0}{0}{2}{i1}{Inst1}
+\isablk{\Dx}{\Dy}{0}{2}{2}{i2}{Inst2}
+\isablk{\Dx}{\Dy}{1}{0}{2}{i2}{Inst2}
+\isablk{\Dx}{\Dy}{1}{2}{2}{i3}{Inst3}
+\isablk{\Dx}{\Dy}{2}{0}{2}{i4}{Inst4}
+    \end{tikzpicture}
+    \end{center}
+    \vspace{1mm}
+    \begin{block}{Why it matters: Flash is small}
+        {\small A microcontroller keeps its program in Flash, so smaller code means a cheaper chip. Thumb-2 gives ARM's full instruction set at close to Thumb's size. The Cortex-M4 runs only Thumb-2: every \texttt{.s} file starts with \texttt{.thumb}, and the T bit in xPSR must stay 1.}
+    \end{block}
 \end{frame}
 
 \begin{frame}{The Load-Store Principle}
@@ -239,13 +303,13 @@ if (sensor_value == 0) { turn_on_led(); }
         \textbf{Term} & \textbf{RISC effect} & \textbf{Why} \\
         \midrule
         Instruction count & \alert{Higher} & More, simpler instructions per task \\
-        Cycles per instruction & \alert{Lower} & Each instruction finishes in one cycle \\
-        Clock period & \alert{Lower} & A simple decoder permits a faster clock \\
+        Cycles per instruction & \alert{Can be lower} & Simple instructions pipeline easily \\
+        Clock period & \alert{Can be lower} & A simple decoder allows a faster clock \\
         \bottomrule
     \end{tabular}}
     \end{center}
     \vspace{3mm}
-    {\small The product of all three terms is what matters in the end. RISC improves two of the three terms, which is why it usually wins.}
+    {\small Only the product of all three terms matters. RISC \emph{aims} to lower CPI and the clock period, but the real values depend on the processor design.}
 \end{frame}
 
 {\beamerextras
@@ -258,7 +322,7 @@ if (sensor_value == 0) { turn_on_led(); }
     \begin{column}{.48\textwidth}
         \textbf{Fragment A}
 \begin{asm}[basicstyle=\ttfamily\footnotesize]
-    ADD [0x20000100], R1
+ADD   [0x20000100], R1
 \end{asm}
         {\footnotesize ``Add R1 to the memory word at \texttt{0x20000100}.''}
 
@@ -269,10 +333,10 @@ if (sensor_value == 0) { turn_on_led(); }
     \begin{column}{.48\textwidth}
         \textbf{Fragment B}
 \begin{asm}[basicstyle=\ttfamily\footnotesize]
-    MOV  R0, #5
-    MOV  R1, #5
-    CMP  R0, R1
-    ; which flag is now 1?
+MOV   R0, #5
+MOV   R1, #5
+CMP   R0, R1
+@ which flag is now 1?
 \end{asm}
 
         \textbf{Predict}
@@ -698,10 +762,10 @@ if (sensor_value == 0) { turn_on_led(); }
 				\midrule
 				Profile & Application --- highest performance & Real-time --- fast response & Microcontroller --- smallest, lowest power \\
 				OS & Linux, Android & RTOS & Bare metal / RTOS \\
-		        Instruction set  & 64-bit, 32-bit, Thumb & 32-bit, Thumb & Thumb only \\
+		        Instruction set  & 32- and/or 64-bit & 32-bit, Thumb & Thumb only \\
 				Interrupts  & Software-managed & Deterministic, software-managed & Hardware-managed \\
 				Pipeline & Long & Long to medium & {Short} \\
-				Cache & Multi-level & Yes & {None (M7: small)} \\
+				Cache / TCM & Multi-level caches & TCMs and/or caches & {None (M7: small)} \\
 				Found in & Phones, tablets, servers & Storage, industrial, automotive & IoT, sensors, control \\
 				\bottomrule
 		\end{tabular}}
@@ -1195,7 +1259,7 @@ int z = x + y;    // at 0x2004
         \textbf{What you write in C} & \textbf{What it becomes} & \textbf{Where it lands} \\
         \midrule
         \texttt{c = a + b;}              & \texttt{STR R2, [R3]} & SRAM, \texttt{0x2000\,xxxx} \\
-        \texttt{GPIOA->ODR |= (1<<5);}   & \texttt{STR R2, [R3]} & \alert{peripheral}, \texttt{0x4002\,0014} \\
+        \texttt{GPIOA->ODR |= (1<{}<5);}   & \texttt{STR R2, [R3]} & \alert{peripheral}, \texttt{0x4002\,0014} \\
         \bottomrule
     \end{tabular}
     \end{center}

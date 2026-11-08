@@ -2,7 +2,7 @@
 \usepackage{styles/stmcommon}
 
 \title{Interrupts and Event-Driven Programming}
-\subtitle{\emph{Introduction to ARM Cortex-M Microprocessors} --- Chapter 9}
+\subtitle{\emph{STM32 Primer} --- Chapter 9}
 
 \begin{document}
 
@@ -89,7 +89,7 @@ while (1) {
 	if (button_pressed())
 		do_something();
 }
-			\end{cc}
+\end{cc}
 
 			\vspace{5mm}
 			{\small
@@ -109,7 +109,7 @@ while (1) {
 void EXTI15_10_IRQHandler(void) {
 	do_something();
 }
-			\end{cc}
+\end{cc}
 
 			\vspace{5mm}
 			{\small
@@ -705,7 +705,7 @@ void EXTI15_10_IRQHandler(void) {
 
     \vspace{2mm}
     \visible<2->{\begin{block}{The answer}
-        The pending flag is never cleared. The request stays asserted, so the NVIC calls the handler \alert{again, immediately}. Add \texttt{EXTI->PR = (1U << 13);} at the top of the handler.
+        The pending flag is never cleared. The request stays asserted, so the NVIC calls the handler \alert{again, immediately}. Add \texttt{EXTI->PR = (1U <{}< 13);} at the top of the handler.
     \end{block}}
 \end{frame}
 }
@@ -961,7 +961,7 @@ void EXTI15_10_IRQHandler(void) {
 while (1) {
     __WFI();   // sleep until an interrupt wakes the CPU
 }
-    \end{lstlisting}
+\end{lstlisting}
 
     \begin{itemize}
         \item The core's clock halts; the NVIC keeps watching for a
